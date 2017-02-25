@@ -1,0 +1,22 @@
+{
+  "name": "reverie",
+  "version": "0.0.1",
+  "description": "An experiment in online worlds.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jorsi/reverie.git"
+  },
+  "main": "reverie.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jonathon Orsi",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.14.1",
+    "mongodb": "^2.2.24",
+    "socket.io": "^1.7.3",
+    "webpack": "^2.2.1"
+  }
+}
