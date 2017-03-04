@@ -20,21 +20,11 @@ process.argv.forEach(function (arg, index, array) {
 
 // Register application events for ending process
 process.on('SIGINT', function() {
-
-  console.log('Nice SIGINT-handler');
-  var listeners = process.listeners('SIGINT');
-  for (var i = 0; i < listeners.length; i++) {
-      console.log(listeners[i].toString());
-  }
-
+  console.log('sigint');
   process.exit();
 });
 process.on('exit', function () {
     console.log('exit');
-    var listeners = process.listeners('exit');
-    for (var i = 0; i < listeners.length; i++) {
-        console.log(listeners[i].toString());
-    }
 });
 
 // setup the express server
@@ -46,16 +36,17 @@ server.listen(3000, function () {
 });
 
 const Events = require('./src/Events')(io);
-const log = require('./utils/Log');
+//const log = require('./utils/Log');
 
-const World = require('./src/World');
-const rev1 = require('./src/Reverie');
-rev1.setTest('asdf');
-const rev2 = require('./src/Reverie');
-const rev3 = require('./src/Reverie');
-
-console.log(rev1);
-console.log(rev2);
-console.log(rev3);
-
-console.log(World.reverie);
+const Reverie = require('./src/Reverie');
+console.time('generation');
+Reverie.generateWorld({
+  x: 150,
+  y: 150,
+  steps: 10,
+  alivePercent: 0.4,
+  birth: [6,7,8],
+  survival: [3,4,5,6,7,8],
+});
+console.timeEnd('generation');
+// console.dir(Reverie.getWorlds()[0].cellMap);

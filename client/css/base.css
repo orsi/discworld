@@ -4,7 +4,7 @@ body {
   height: 100%;
   width: 100%;
 }
-#world {
+#reverie {
   position: relative;
   height: 100%;
   width: 100%;
@@ -22,4 +22,13 @@ body {
   outline: none;
   background-color: rgba(255,255,255,.05);
   border: none;
+}
+tile {
+  display: inline-block;
+}
+tile[value="false"] {
+  background-color: #222;
+}
+tile[value="true"] {
+  background-color: #fff;
 }

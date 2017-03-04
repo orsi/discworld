@@ -1,6 +1,6 @@
 const Actor = require('./Actor');
+const Reverie = require('./Reverie');
 
-module.exports = Events;
 function Events (io) {
   if (!(this instanceof Events)) return new Events(io);
   // registers all events for the network
@@ -8,16 +8,20 @@ function Events (io) {
 }
 
 Events.prototype.onConnection = function (socket) {
-    console.log('new connection', socket.id);
-    socket.actor = new Actor();
+  console.log('new connection', socket.id);
 
-    // send actor information back to client socket
-    socket.emit('actor connected', socket.actor);
+  // send actor information back to client socket
+  socket.emit('world data', Reverie.getWorld());
 
-    // register socket events with client socket
-    socket.on('actor move', Events.prototype.onActorMove);
-    socket.on('actor message', Events.prototype.onActorMessage);
-  }
+  // register socket events with client socket
+  socket.on('world create', Events.prototype.createNewWorld);
+  // socket.on('actor move', Events.prototype.onActorMove);
+  // socket.on('actor message', Events.prototype.onActorMessage);
+}
+Events.prototype.createNewWorld = function (opts, res) {
+  let newWorld = Reverie.generateWorld(opts);
+  res(true, newWorld);
+}
 Events.prototype.onActorMove = function (movement, res) {
     // socket.actor.x = movement.x;
     // socket.actor.y = movement.y;
@@ -30,3 +34,5 @@ Events.prototype.onActorMessage = function (message, res) {
 
     res(true, { text: message });
   };
+
+  module.exports = Events;

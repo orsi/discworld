@@ -38,3 +38,7 @@ Drawbacks include no constructor function contained within object. Initializatio
 
 ## Side Effects
 Node.js will cache modules based on the filename, which allows for most singleton patterns to exist. However, typos in the referencing, such as require('./Singleton') and require('./singleton'), will both fetch the same module, except there will always be two instances no matter which method is used.
+
+## Random
+### Array.forEach()
+Array.forEach() only performs callback when element at index is set. Unfortunately, new Array(5) only sets the array length to 5, and every element is undefined. Therefore, Array.forEach(cb) never gets called!
