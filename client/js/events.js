@@ -28,11 +28,13 @@ document.addEventListener('keyup', onKeyUp);
 document.addEventListener('keypress', onKeyPress);
 function onKeyDown (e) {
   // console.log(e.key);
+  $terminal.focus();
   switch (e.key) {
-    case 'Backspace':
-      $terminal.value = $terminal.value.substr(0, $terminal.value.length - 1);
-      break;
     // submit terminal if enter
+    case 'ArrowUp':
+    case 'ArrowDown':
+      onTerminalHistory(e.key);
+      break;
     case 'Enter':
       onTerminalSubmit($terminal.value);
       $terminal.value = '';
@@ -40,17 +42,7 @@ function onKeyDown (e) {
   }
 }
 function onKeyUp() {}
-function onKeyPress(e) {
-  e.preventDefault();
-  // console.log(e);
-  switch (e.key) {
-    case 'Enter':
-      break;
-    default:
-      $terminal.value += e.key;
-      break;
-  }
-}
+function onKeyPress(e) {}
 
 // attach receive events from server
 socket.on('actor connected', onActorConnected);
@@ -102,8 +94,32 @@ function onCreateWorld(response, world) {
   if (response) renderWorld(world);
 }
 
+var historyIndex = 0;
+var terminalHistory = [];
+function onTerminalHistory (key) {
+  if (terminalHistory.length > 0) {
+    switch (key) {
+      case 'ArrowUp':
+        historyIndex++;
+        break;
+      case 'ArrowDown':
+        historyIndex--;
+        break;
+    }
 
+    if (historyIndex < 0) historyIndex = 0;
+    if (historyIndex > terminalHistory.length - 1) historyIndex = terminalHistory.length - 1;
+    $terminal.value = terminalHistory[historyIndex];
+
+    // set caret at the end of line
+    // strange hack for chrome
+    setTimeout(function () { $terminal.value = $terminal.value; }, 0);
+  }
+}
 function onTerminalSubmit(input) {
+  // save input to terminal history
+  terminalHistory.push(input);
+
   // parse input to see if it is a command or a simple message
   var parsedInput = input.split(' ');
   var isCommand = parsedInput[0].startsWith('/');
@@ -139,7 +155,7 @@ function onTerminalSubmit(input) {
           }
           args[key] = value;
         }
-        
+
         // send
         socket.emit('world create', args, onCreateWorld);
         break;

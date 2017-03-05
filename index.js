@@ -40,13 +40,6 @@ const Events = require('./src/Events')(io);
 
 const Reverie = require('./src/Reverie');
 console.time('generation');
-Reverie.generateWorld({
-  x: 150,
-  y: 150,
-  steps: 10,
-  alivePercent: 0.4,
-  birth: [6,7,8],
-  survival: [3,4,5,6,7,8],
-});
+Reverie.generateWorld({});
 console.timeEnd('generation');
 // console.dir(Reverie.getWorlds()[0].cellMap);

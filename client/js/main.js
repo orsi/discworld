@@ -16,15 +16,20 @@ function renderWorld (world) {
 
   if (Array.isArray(world.cellMap)) {
     world.cellMap.forEach(function (element) {
-      let $row = document.createElement('div');
-      element.forEach(function (cell) {
+      let $col = document.createElement('div');
+      $col.className = 'column';
+      $col.style.width = '10px';
+      $col.style.display = 'inline-block';
+      element.forEach(function (cell, index) {
         var $tile = document.createElement('tile');
         $tile.setAttribute('value', cell);
-        $tile.style.width = '1px';
-        $tile.style.height = '1px';
-        $row.appendChild($tile);
+        $tile.style.float = 'left';
+        $tile.style.width = '10px';
+        $tile.style.height = '10px';
+        $tile.style.clear = index === 0 ? 'left' : 'none';
+        $col.appendChild($tile);
       });
-      $world.appendChild($row);
+      $world.appendChild($col);
     });
   }
   $reverie.appendChild($world);

@@ -34,17 +34,14 @@ function countAliveNeighbours(map, x, y) {
         for(let j = -1; j < 2; j++){
             let neighbourX = x + i;
             let neighbourY = y + j;
-            //If we're looking at the middle point
             if(i == 0 && j == 0){
-                //Do nothing, we don't want to add ourselves in!
-            }
-            //In case the index we're looking at it off the edge of the map
-            else if(neighbourX < 0 || neighbourY < 0 || neighbourX >= map.length || neighbourY >= map[0].length){
-                count = count + 1;
-            }
-            //Otherwise, a normal check of the neighbour
-            else if(map[neighbourX][neighbourY]) {
-                count = count + 1;
+              // Do nothing
+            } else if(neighbourX < 0 || neighbourY < 0 || neighbourX >= map.length || neighbourY >= map[0].length) {
+              // Count out of bounds tiles as dead
+              count--;
+            } else if(map[neighbourX][neighbourY]) {
+              //Otherwise, a normal check of the neighbour
+              count++;
             }
         }
     }
@@ -63,8 +60,13 @@ class World {
     for (let i = 0; i < this.x; i++) {
       cellMap.push([]);
       for (let j = 0; j < this.y; j++) {
-          let alive = Math.random() < alivePercent;
-          cellMap[i].push(alive);
+        // Borders of map should be dead
+        if (i == 0 || j == 0 || i == this.x -1 || j == this.y -1) {
+            cellMap[i].push(false);
+        } else { // randomly choose alive/dead
+            let alive = Math.random() < alivePercent;
+            cellMap[i].push(alive);
+        }
       }
     }
 
@@ -78,12 +80,12 @@ class World {
   constructor(opts) {
     // check for options
     opts = opts || {};
-    opts.x = opts.hasOwnProperty('x') ? opts.x : 150;
-    opts.y = opts.hasOwnProperty('y') ? opts.y : 150;
-    opts.steps = opts.hasOwnProperty('steps') ? opts.steps : 15;
-    opts.alivePercent = opts.hasOwnProperty('alivePercent') ? opts.alivePercent : 0.4;
-    opts.birth = opts.hasOwnProperty('birth') ? opts.birth : [6,7,8];
-    opts.survival = opts.hasOwnProperty('survival') ? opts.survival : [3,4,5,6,7,8];
+    opts.x = opts.hasOwnProperty('x') ? opts.x : 70;
+    opts.y = opts.hasOwnProperty('y') ? opts.y : 50;
+    opts.steps = opts.hasOwnProperty('steps') ? opts.steps : 5;
+    opts.alivePercent = opts.hasOwnProperty('alivePercent') ? opts.alivePercent : 0.5;
+    opts.birth = opts.hasOwnProperty('birth') ? opts.birth : [1,2,3];
+    opts.survival = opts.hasOwnProperty('survival') ? opts.survival : [5,6,7,8];
 
     // set properties
     this.x = opts.x;
