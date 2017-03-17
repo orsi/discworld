@@ -14,13 +14,19 @@ Events.prototype.onConnection = function (socket) {
   socket.emit('world data', Reverie.getWorld());
 
   // register socket events with client socket
-  socket.on('world create', Events.prototype.createNewWorld);
+  socket.on('world create', Events.prototype.onCommandWorldCreate);
+  socket.on('world step', Events.prototype.onCommandWorldStep);
   // socket.on('actor move', Events.prototype.onActorMove);
   // socket.on('actor message', Events.prototype.onActorMessage);
 }
-Events.prototype.createNewWorld = function (opts, res) {
+Events.prototype.onCommandWorldCreate = function (opts, res) {
   let newWorld = Reverie.generateWorld(opts);
   res(true, newWorld);
+}
+Events.prototype.onCommandWorldStep = function (opts, res) {
+  let world = Reverie.getWorld();
+  world.getAutomata().next();
+  res(true, world);
 }
 Events.prototype.onActorMove = function (movement, res) {
     // socket.actor.x = movement.x;

@@ -8,15 +8,21 @@
   },
   "main": "index.js",
   "scripts": {
-    "debug": "node index.js --debug",
-    "start": "node index.js",
+    "build:js": "browserify -g uglifyify ./src/client/main.js > ./public/js/reverie-client.js",
+    "build": "npm run build:js && npm start",
+    "dev": "nodemon --ignore public/js/ --exec \"npm run build\"",
+    "start": "node index -- --live",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Jonathon Orsi",
   "license": "ISC",
   "dependencies": {
     "express": "^4.14.1",
-    "socket.io": "^1.7.3",
-    "webpack": "^2.2.1"
+    "socket.io": "^1.7.3"
+  },
+  "devDependencies": {
+    "browserify": "^14.1.0",
+    "uglifyify": "^3.0.4",
+    "nodemon": "^1.11.0"
   }
 }
