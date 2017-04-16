@@ -12,3 +12,11 @@ Reverie.input = require('./input')();
 Reverie.sockets = require('./sockets')(io());
 Reverie.terminal = require('./terminal')(Reverie.dom.terminal);
 Reverie.canvas = require('./canvas')(Reverie.dom.canvas);
+Reverie.world = require('./world')();
+
+// start animation loop
+function canvasLoop() {
+  Canvas.render();
+  requestAnimationFrame(canvasLoop);
+}
+canvasLoop();

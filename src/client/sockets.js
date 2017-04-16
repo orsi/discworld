@@ -1,5 +1,6 @@
 // imports
 var Canvas = require('./canvas');
+var World = require('./world');
 
 module.exports = Sockets = function (socket) {
   socket.on('world data', Sockets.onWorldData);
@@ -8,8 +9,9 @@ module.exports = Sockets = function (socket) {
 
   return this;
 }
-Sockets.onWorldData = function (world) {
-
+Sockets.onWorldData = function (map) {
+  console.log(map);
+  World.set(map);
 }
 Sockets.newMessage = function (message) {
 }

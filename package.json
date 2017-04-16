@@ -11,7 +11,7 @@
     "build:js": "browserify -g uglifyify ./src/client/main.js > ./public/js/reverie-client.js",
     "build": "npm run build:js && npm start",
     "dev": "nodemon --ignore public/js/ --exec \"npm run build\"",
-    "start": "node index -- --live",
+    "start": "node ./src/index -- --live",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Jonathon Orsi",

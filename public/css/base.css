@@ -6,7 +6,14 @@ body {
   background-color: #111;
   color: #fafafa;
 }
-#reverie {}
+canvas {
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: -o-crisp-edges;
+    image-rendering: optimize-contrast;
+    -ms-interpolation-mode: nearest-neighbor;
+}
 #terminal {
   position: absolute;
   left: 0; bottom: 0;
@@ -19,22 +26,4 @@ body {
   outline: none;
   background-color: rgba(255,255,255,.05);
   border: none;
-}
-cursor {
-  position: fixed;
-  z-index: 9999;
-}
-.column::after {
-  display: table;
-  content: '';
-  clear: both;
-}
-tile {
-  display: inline-block;
-}
-tile[value="false"] {
-  background-color: #222;
-}
-tile[value="true"] {
-  background-color: #fff;
 }

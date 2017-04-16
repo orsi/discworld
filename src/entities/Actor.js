@@ -1,4 +1,4 @@
-let Actor = function (actor) {
+var Actor = function (actor) {
   if (!actor) actor = {}; // catches empty argument list
 
   this.symbol = actor.symbol || '☺';
