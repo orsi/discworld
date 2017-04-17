@@ -1,56 +1,84 @@
 // dependencies
 var Random = require('../utils/Random');
-var Automata = require('../utils/Automata');
+var Map = require('./Map');
+var Automaton = require('../utils/Automaton');
+var Perlin = require('../utils/Perlin');
 
 module.exports = World = {
-  width: 0,
-  height: 0,
-  seed: 0,
-  automata: 0,
-  players: [],
+  seed: 'Reverie',
+  width: 1000,
+  height: 1000,
+  elevation: 50,
+  maps: {},
   entities: [],
-  get: function () {
-    console.log('getting map', aWorld.utomata);
-    return World.automata;
-  },
-  generate: function (opts) {
-      // check for options
-      var defaults = {
-        width: 50,
-        height: 50,
-        seed: 'Reverie'
-      };
-      defaults.override(opts);
-
-      World.width = defaults.width;
-      World.height = defaults.height;
-      World.seed = defaults.seed;
-
+  generate: function () {
       // Set seed in random number generate
       Random.seed(World.seed);
 
-      World.automata = new Automata({}).getMap();
-      // _elevationMap = createElevationMap();
+      // pre-generate world maps
+      World.maps.land = World.generateLand(World.width, World.height);
+      World.maps.elevation = World.generateElevation(World.width, World.height, World.maps.land);
   },
-  getLocation: function(x, y) {
-    return World.automata[x][y];
+  generateLand: function (width, height) {
+    var scale = 1/20;
+    var scaledWidth = Math.floor(width * scale);
+    var scaledHeight = Math.floor(height * scale);
+    var cellMap = new Automaton(scaledWidth, scaledHeight);
+
+    var land = [];
+    for (var x = 0; x < width; x++) {
+      land.push([]);
+      var scaleX = Math.floor(x * scale);
+      for (var y = 0; y < height; y++) {
+        var scaleY =  Math.floor(y * scale);
+        land[x][y] = cellMap.atLocation(scaleX, scaleY);
+      }
+    }
+    return land;
   },
-  getMapRange: function(topX, topY, bottomX, bottomY) {
-    if (topX >= 0 && topY >= 0 && bottomX < World.width && bottomY < World.height) {
-      var range = [];
-      for (var i = 0; i + topX <= bottomX; i++) {
-        range.push([]);
-        for (var j = 0; j + topY <= bottomY; j++) {
-          range[i][j] = World.getLocation(i, j);
+  generateElevation: function (width, height, land) {
+    var elevation = [];
+    for (var x = 0; x < width; x++) {
+      elevation.push([]);
+      for (var y = 0; y < height; y++) {
+        if (land[x][y]) {
+          elevation[x][y] = World.elevation * Perlin.noise(x / (width * 1/20), y / (height * 1/20));
+        } else {
+          elevation[x][y] = 0;
         }
       }
-      return range;
-    } else {
-      return 'out of range';
     }
+    return elevation;
   },
-  getAutomata: function() {
-    return World.automata;
+  getLocation: function(x, y) {
+    // Gather all information for particular location in world
+    var location = {
+      land: World.maps.land[x][y],
+      elevation: World.maps.elevation[x][y]
+    };
+    return location;
+  },
+  get: function (scale) {
+    var scaledWidth = Math.floor(World.width * scale);
+    var scaledHeight = Math.floor(World.height * scale);
+    var world = [];
+    for (var x = 0; x < scaledWidth; x++) {
+      world.push([]);
+      for (var y = 0; y < scaledHeight; y++) {
+        world[x][y] = World.getLocation(x * Math.ceil(1 / scale), y * Math.ceil(1 / scale));
+      }
+    }
+    return world;
+  },
+  getMapRange: function(startX, startY, endX, endY) {
+    var range = [];
+    for (var x = 0; x + startX <= endX; x++) {
+      range.push([]);
+      for (var y = 0; y + startY <= endY; y++) {
+        range[x][y] = World.getLocation(x + startX, y + startY);
+      }
+    }
+    return range;
   },
   getWidth: function() {
     return World.width;

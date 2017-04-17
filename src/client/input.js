@@ -5,7 +5,7 @@ module.exports = Input = function () {
   window.addEventListener('resize', Canvas.resize);
 
   // IE9, Chrome, Safari, Opera
-  window.addEventListener("mousewheel", Input.onMouseWheel, false);
+  window.addEventListener("wheel", Input.onMouseWheel, false);
 
   // remove context menu
   window.addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -25,10 +25,10 @@ module.exports = Input = function () {
 
 Input.mouseInterval = null;
 Input.onMouseWheel = function (e) {
-  if (e.wheelDelta > 0) {
-    canvas.increaseWorldScale();
+  if (e.deltaY < 0) {
+    Canvas.increaseWorldScale();
   } else {
-    canvas.decreaseWorldScale();
+    Canvas.decreaseWorldScale();
   }
 }
 Input.onMouseEvent = function (e) {

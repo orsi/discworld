@@ -10,7 +10,7 @@ Events.prototype.onConnection = function (socket) {
   console.log('new connection', socket.id);
 
   // send actor information back to client socket
-  socket.emit('world data', World.getMapRange(0, 0, 49, 49));
+  socket.emit('world data', World.get(0.05));
 
   // register socket events with client socket
   socket.on('world create', Events.prototype.onCommandWorldCreate);

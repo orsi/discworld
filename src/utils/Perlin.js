@@ -21,30 +21,54 @@ function lerp (t, a, b) {
 function grad (hash, x) {
   return (hash & 1) == 0 ? x : -x;
 }
-function Perlin (opts) {
-    if (opts) {
-      this.seed = opts.seed ? opts.seed : 'Reverie';
-      this.amplitude = opts.amplitude ? opts.amplitude : 1;
-      this.frequency = opts.frequency ? opts.frequency : 10;
-      this.octaves = opts.octaves ? opts.octaves : 6;
-      this.persistence = opts.persistence ? opts.persistence : 0.5;
-      this.lacunarity = opts.lacunarity ? opts.lacunarity : 2;
-    }
-
-  this.noise = function (x, y, z) {
+var
+  seed = '',
+  amplitude = 1,
+  frequency = 10,
+  octaves = 5,
+  persistence = 0.5,
+  lacunarity = 2;
+module.exports = Perlin = {
+  noise: function (x, y, z) {
     // figures out whether to get the 1, 2, or 3-dimension noise function
-    if (!y) return this.noise1d(x);
-    if (!z) return this.noise2d(x, y);
-    return this.noise3d(x, y, x);
-  }
-  this.noise1d = function (x) {
+    if (!y) return Perlin.noise1d(x);
+    if (!z) return Perlin.noise2d(x, y);
+    return Perlin.noise3d(x, y, x);
+  },
+  noise1d: function (x) {
     var X = Math.floor(x);
     x -= Math.floor(x);
     var u = fade(x);
     return lerp(u, grad(perm[X], x), grad(perm[X+1], x-1)) * 2;
-  }
-  this.noise2d = function (x, y) {
-  }
-  this.noise3d = function (x, y, z) {
-   }
+  },
+  noise2d: function (x, y) {
+    // Find unit square that contains point.
+    var X = Math.floor(x) & 255,
+        Y = Math.floor(y) & 255;
+    // Find relative x,y of point in square.
+    x -= Math.floor(x);
+    y -= Math.floor(y);
+    // Compute fade curves for each of x,y.
+    var u = fade(x),
+        v = fade(y);
+    // Hash coordinates of the corners.
+    var A = perm[X    ] + Y, AA = perm[A], AB = perm[A + 1],
+        B = perm[X + 1] + Y, BA = perm[B], BB = perm[B + 1];
+
+    // Interpolate the four results
+    return lerp(
+                v,
+                lerp(
+                    u,
+                    grad(perm[AA], x, y, 0),
+                    grad(perm[BA], x - 1, y, 0)
+                ),
+                lerp(
+                    u,
+                    grad(perm[AB], x, y - 1, 0),
+                    grad(perm[BB], x - 1, y - 1, 0)
+                )
+            );
+  },
+  noise3d: function (x, y, z) {}
 }
