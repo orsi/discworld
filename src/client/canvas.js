@@ -6,6 +6,7 @@ var ctx,
     height,
     originX,
     originY,
+    scale = 1,
     tileWidth,
     tileHeight;
 
@@ -53,8 +54,8 @@ Canvas.drawTile = function (x, y, color) {
   ctx.restore();
 }
 Canvas.drawSizedTile = function (x, y, tileWidth, tileHeight, elevation, color) {
-  tileHeight = tileHeight * scale;
   tileWidth = tileWidth * scale;
+  tileHeight = tileWidth / 2;
   ctx.save();
 
   // translate x, y coordinates to proper tile sizes
@@ -74,12 +75,13 @@ Canvas.drawSizedTile = function (x, y, tileWidth, tileHeight, elevation, color) 
   ctx.restore();
 }
 Canvas.drawSizedTileNeighbours = function (x, y, tileWidth, tileHeight, elevation, neighbours, color) {
-  tileHeight = tileHeight * scale;
   tileWidth = tileWidth * scale;
+  tileHeight = tileWidth / 2;
+  elevation = elevation * scale;
 
-  var eastElevation = (tileHeight / 2) +  -(neighbours.east.elevation);
-  var southEastElevation = tileHeight +  -(neighbours.southEast.elevation)
-  var southElevation = (tileHeight / 2) + -(neighbours.south.elevation)
+  var eastElevation = (tileHeight / 2) +  -(neighbours.east.elevation * scale);
+  var southEastElevation = tileHeight +  -(neighbours.southEast.elevation * scale);
+  var southElevation = (tileHeight / 2) + -(neighbours.south.elevation * scale);
 
   ctx.save();
 
@@ -126,16 +128,13 @@ Canvas.resize = function () {
     canvas.height = window.innerHeight;
 }
 
-var scale = 1;
 Canvas.increaseWorldScale = function () {
   scale = parseFloat((scale + 0.1).toFixed(1));
   if (scale > 12) scale = 12;
-  console.log(scale);
 }
 Canvas.decreaseWorldScale = function () {
   scale = parseFloat((scale - 0.1).toFixed(1));
-  if (scale < 0) scale = 0;
-  console.log(scale);
+  if (scale < 0.1) scale = 0.1;
 }
 
 var previousTime;
