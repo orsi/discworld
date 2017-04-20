@@ -1,11 +1,14 @@
-'use strict';
 // Reverie by Jonathon Orsi, February 25th, 2017
+
+/*
+ * Global environment variables
+ */
+global.Reverie = {
+  _root: process.cwd()
+}
 
 // extends base Javascript objects to include more functionality
 require('./utils/JSExtensions');
-
-// load config file
-var config = require('../config.json');
 
 // command-line options
 var httpServer = false;
@@ -43,7 +46,7 @@ if (httpServer) {
 
   // pass to http and socket modules
   var httpModule = require('./http/Server').start(app);
-  var sockets = require('./sockets/Events')(io);
+  var sockets = require('./sockets/Sockets')(io);
 
   // start listening
   http.listen(3000, function(){

@@ -1,10 +1,12 @@
 // dependencies
 var Random = require('../utils/Random');
 var Map = require('./Map');
+var Tile = require('./Tile');
 var Automaton = require('../utils/Automaton');
 var Perlin = require('../utils/Perlin');
 
 module.exports = World = {
+  startTime: null,
   seed: 'Reverie',
   width: 1000,
   height: 1000,
@@ -15,9 +17,14 @@ module.exports = World = {
       // Set seed in random number generate
       Random.seed(World.seed);
 
+      console.log(Tile);
+
       // pre-generate world maps
       World.maps.land = World.generateLand(World.width, World.height);
       World.maps.elevation = World.generateElevation(World.width, World.height, World.maps.land);
+      World.maps.tiles = World.generateTiles(World.width, World.height, World.maps.elevation);
+
+
   },
   generateLand: function (width, height) {
     var scale = 1/20;
@@ -50,11 +57,30 @@ module.exports = World = {
     }
     return elevation;
   },
+  generateTiles: function (width, height, elevation) {
+    var tiles = [];
+    for (var x = 0; x < width; x++) {
+      tiles.push([]);
+      for (var y = 0; y < height; y++) {
+        if(elevation[x][y] < 0) {
+            tiles[x][y] = Tile.get("water");
+        } else if (elevation[x][y] < 5) {
+            tiles[x][y] = Tile.get("grass");
+        }  else {
+            tiles[x][y] = Tile.get("mountain");
+        }
+      }
+    }
+    return tiles;
+  },
   getLocation: function(x, y) {
     // Gather all information for particular location in world
     var location = {
+      x: x,
+      y: y,
       land: World.maps.land[x][y],
-      elevation: World.maps.elevation[x][y]
+      elevation: World.maps.elevation[x][y],
+      tile: World.maps.tiles[x][y]
     };
     return location;
   },

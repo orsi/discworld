@@ -99,6 +99,42 @@ Canvas.drawSizedTileNeighbours = function (x, y, tileWidth, tileHeight, elevatio
 
   ctx.restore();
 }
+Canvas.drawLocation = function (location) {
+  var neighbours = World.getNeighbours(location.x, location.y);
+  var tileWidth = 20 * scale;
+  var tileHeight = tileWidth / 2;
+  var elevation = location.elevation * scale;
+
+  // var topVert = ;
+  // var rightVert = ;
+  // var bottomVert = ;
+  // var leftVert = ;
+  var eastElevation = (tileHeight / 2) +  -(neighbours.east.elevation * scale);
+  var southEastElevation = tileHeight +  -(neighbours.southEast.elevation * scale);
+  var southElevation = (tileHeight / 2) + -(neighbours.south.elevation * scale);
+
+  ctx.save();
+
+  // translate x, y coordinates to center of tile
+  ctx.translate((location.x + 1) * tileWidth / 2, (location.y + 1) * tileHeight / 2);
+
+  ctx.beginPath();
+  ctx.moveTo(0, elevation);
+  ctx.lineTo(tileWidth / 2, eastElevation);
+  ctx.lineTo(0, southEastElevation);
+  ctx.lineTo(-tileWidth / 2, southElevation);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  ctx.restore();
+}
+Canvas.getTileCenter = function (x, y) {
+  return {
+    x: (location.x + 1) * tileWidth / 2,
+    y: (location.y + 1) * tileHeight / 2,
+  }
+}
 Canvas.drawTileMap = function (map) {
   for (var i = 0; i < map[0].length; i++) {
     for (var j = 0; j < map.length; j++) {
@@ -114,7 +150,7 @@ Canvas.drawWorld = function (world) {
   for (var i = 0; i < world[0].length; i++) {
     for (var j = 0; j < world.length; j++) {
       if (world[j][i].land)
-        Canvas.drawSizedTileNeighbours(j + originX, i + originY, 20, 10, -(world[j][i].elevation), World.getNeighbours(j, i), 'green');
+        Canvas.drawLocation(world[j][i]);
     }
   }
 }

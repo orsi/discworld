@@ -5,7 +5,7 @@ module.exports = Automaton = function (width, height, opts) {
   this.width = width;
   this.height = height;
 
-  this.steps = 3;
+  this.steps = 4;
   this.probability = 0.7;
   this.birth = [6,7,8];
   this.survival = [5,6,7,8];

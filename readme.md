@@ -1,44 +1,112 @@
 # Reverie
 Reverie is a procedurally generated multi-user world simulation.
 
-## Notes  
-### Attempting Singletons in Node.js Modules
-#### Class Syntax
-Global variable outside of class holds instance. Class will always return the instance variable that is set on the first call to new Singleton(). Any further calls to new Singleton() will return the first instance.
+## Systems
+* Server
+  * Reverie Server Engine
+  * Communication
+  * Console
+  * Network (Socket.io)
+  * World
+    * Entities
+    * Components
+    * Environments
+    * Tiles
+  * Database
+  * Utilities
+  * Http Server (Express.io)
+* Client
+  * Reverie Client Engine
+  * Communication
+  * World
+    * Entities
+    * Components
+    * Environments
+      * Tiles
+  * Network (Socket.io)
+  * Resources
+  * Input
+    * Keyboard
+      * Terminal
+    * Mouse
+  * Output
+    * Interface
+      * Speech
+      * Thoughts
+      * Interactions
+    * Graphics
+      *
+    * Audio
+      * Environment
+      * Effects
 
-var instance = null;
-class Singleton {
-  constructor() {
-    if (!instance) instance = this;
+## Design patterns
+### Singletons  
+Node.js modules make Singletons the default for exports when using an object. `module.exports` presents a public API to other modules, with all code outside of it becoming a shared private space for only the module.
 
-    this.date = new Date();
+```
+// Private
+var entities = ['Player1', 'Enemy45', 'Item12', 'StrangeHut3'];
+function checkStatus (entity) {
+  // Do something private
+}
 
-    return instance;
+
+// Public
+module.exports = {
+	region: 'tropical forest',
+  coords: {
+    x: 567,
+    y: 123
+  },
+	getEntities: function () {
+    return entities;
   }
 }
-module.exports = Singleton;
+```  
 
-Drawbacks include using a class, when all you want is a single object. Classes are made to be extendible and created repeatedly, which a singleton seems to be the opposite.
+<em>Node.js will cache modules based on the filename, however, typos in require('./Singleton') and require('./singleton') will load two different versions of the same module.</em>
 
-### Object syntax
-Exports an object, which by nature is a reference to a single object.
+### Types  
+Constructor function can be used with Node.js modules to build Custom Types. Attaching a function to `module.exports` will allow outside modules to use the `new CustomType()` syntax to create instances. Privacy outside of the `module.exports` is shared amongst all instance, so private instance variables should be declared syntactically in side the constructor function by a preceding underscore.
 
-var Singleton = {
-  date: new Date()
-}
-module.exports = Singleton;
-
-or more concisely...
-
-module.exports = {
-  date: new Date()
+```
+var entities = [];
+function getDamageRoll(min, max) {
+  // random roll
 }
 
-Drawbacks include no constructor function contained within object. Initialization done on the object can be done in the module file outside of the object, similar to the instance variable in the Class syntax.
+module.exports = Entity
+function Entity(id) {
+    this.id = id;     // public
+    this._hitpoints = 55; // private
+}
+User.prototype.isHit = function() {
+	this._hitpoints = getDamageRoll();
+}
+```
 
-## Side Effects
-Node.js will cache modules based on the filename, which allows for most singleton patterns to exist. However, typos in the referencing, such as require('./Singleton') and require('./singleton'), will both fetch the same module, except there will always be two instances no matter which method is used.
+### Factories  
+Factories are modules which can used to create specific versions of custom types.
 
-## Random
-### Array.forEach()
-Array.forEach() only performs callback when element at index is set. Unfortunately, new Array(5) only sets the array length to 5, and every element is undefined. Therefore, Array.forEach(cb) never gets called!
+```
+/* A Factory Implemented as a Custom Type */
+var Widget = require('./lib/widget');
+
+var WidgetFactory = module.exports = function WidgetFactory(options) {
+	this.cogs = options.cogs;
+	this.bool = options.bool;
+}
+
+WidgetFactory.prototype.getRedWidget = function getRedWidget() {
+	var widget = new Widget(this.cogs, this.bool);
+	widget.paintPartA('red');
+	widget.paintPartB('red');
+	widget.paintPartC('red');
+	return widget;
+};
+
+WidgetFactory.prototype.getBlueWidget = function getBlueWidget() {
+	// ...
+};
+```
