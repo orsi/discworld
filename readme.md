@@ -41,7 +41,7 @@ Reverie is a procedurally generated multi-user world simulation.
       * Effects
 
 ## Design patterns
-### Singletons  
+#### Singletons  
 Node.js modules make Singletons the default for exports when using an object. `module.exports` presents a public API to other modules, with all code outside of it becoming a shared private space for only the module.
 
 ```
@@ -65,9 +65,9 @@ module.exports = {
 }
 ```  
 
-<em>Node.js will cache modules based on the filename, however, typos in require('./Singleton') and require('./singleton') will load two different versions of the same module.</em>
+*Node.js will cache modules based on the filename, however, typos in require('./Singleton') and require('./singleton') will load two different versions of the same module.*
 
-### Types  
+#### Types  
 Constructor function can be used with Node.js modules to build Custom Types. Attaching a function to `module.exports` will allow outside modules to use the `new CustomType()` syntax to create instances. Privacy outside of the `module.exports` is shared amongst all instance, so private instance variables should be declared syntactically in side the constructor function by a preceding underscore.
 
 ```
@@ -86,7 +86,7 @@ User.prototype.isHit = function() {
 }
 ```
 
-### Factories  
+#### Factories  
 Factories are modules which can used to create specific versions of custom types.
 
 ```
