@@ -35,7 +35,6 @@ Reverie is a procedurally generated multi-user world simulation.
       * Thoughts
       * Interactions
     * Graphics
-      *
     * Audio
       * Environment
       * Effects

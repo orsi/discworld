@@ -1,4 +1,4 @@
-module.exports = function Map (width, height, scale) {
+module.exports = Field = function (width, height, scale) {
   this.width = width;
   this.height = height;
   this.scale = scale;
