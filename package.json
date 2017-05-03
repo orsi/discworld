@@ -8,8 +8,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --ignore public/js/ --exec \"npm run build:dev\"",
-    "build:dev": "npm run build:js && npm start",
+    "dev": "npm run build:js && node ./src/index --dev",
     "build:js": "browserify ./src/client/main.js > ./public/js/reverie-client.js",
     "start": "node ./src/index",
     "test": "echo \"Error: no test specified\" && exit 1"

@@ -1,109 +1,61 @@
 // Reverie by Jonathon Orsi, February 25th, 2017
+var Network = require('./network/Network');
+var cli = require('./console/cli');
+var Log = require('./console/Log');
+var World = require('./world/world');
+var EventChannel = require('./EventChannel');
 
-// extends base Javascript objects to include more functionality
-require('./utils/JSExtensions');
-
-var World = require('./world/World');
 
 /*
- * Global environment variables
+ * command-line arguments
  */
-global.Reverie = {
-  _root: process.cwd()
+
+// set debug on if dev
+if (process.argv.indexOf('--dev') > -1) {
+  Log.set('debug');
 }
 
-// command-line options
-var httpServer = false;
-process.argv.forEach(function (arg, index, array) {
-  switch (arg) {
-    case "--debug":
-      log.setLevel('debug');
-      break;
-    case '--live':
-      httpServer = true;
-      break;
-  }
-});
+// start http/socket servers if flag hasn't been set
+var net;
+if (process.argv.indexOf('--offline') === -1) {
+  net = Network.init(3000);
+}
 
-// check database for world
-// load database into memory
-
-// or generate world
+// start a new world
 console.time('world generation');
-var world = new World();
+var world = World.create('Reverie');
 console.timeEnd('world generation');
 
-// start http server
-if (httpServer) {
-  // create express app, pass to httpServer module
-  var app = require('express')();
-  var http = require('http').Server(app);
-  var io = require('socket.io')(http);
+// start cli
+cli.init();
 
-  // pass to http and socket modules
-  var httpModule = require('./http/Server').start(app);
-  var sockets = require('./sockets/Sockets')(io);
+// server loop
+const serverInterval = 1000 / 100; // 100 ticks per second
+const reverieInterval = 1000 / 60; // 60 ticks per second
 
-  // start listening
-  http.listen(3000, function(){
-    console.log('listening on localhost:3000');
-  });
-}
-
-// create REPL
-var readline = require('readline');
-var rl = readline.createInterface(process.stdin, process.stdout);
-rl.setPrompt(`Enter command >> `);
-rl.prompt();
-rl.on('line', function(line) {
-  console.log('');
-  switch (line) {
-    case 'exit':
-      rl.close();
-      break;
-    case 'time':
-      console.log(world.getTime());
-      break;
-    case 'info':
-      console.log(world.get());
-      break;
-    case 'pause':
-      break;
-    case 'run':
-      break;
-    default:
-      break;
-  }
-  console.log('');
-  rl.prompt();
-}).on('close', function(){
-    console.log('\n\n');
-    console.log('quitting Reverie...');
-    process.exit(0);
-});
-
-
-// start logic loop
-let simulationTime = 0.0;
-const simulationInterval = 1000 / 60; // 60fps simulation
-
-var currentTime = new Date();
+var serverStartTime = new Date();
+var currentTime = new Date().getTime();
 var accumulator = 0.0;
+var serverEventLoop = function () {
+    var newTime = new Date().getTime();
+    var deltaTime = newTime - currentTime;
+    currentTime = newTime;
 
-function loop () {
-  var newTime = new Date();
-  var deltaTime = newTime - currentTime;
-  currentTime = newTime;
+    // Reverie logic loop
+    accumulator += deltaTime;
+    while ( accumulator >= reverieInterval )
+    {
+      // proccess incoming network events
 
-  accumulator += deltaTime;
+      // update world
+      // world.simulate(reverieInterval);
 
-  while ( accumulator >= simulationInterval )
-  {
-      world.simulate(simulationInterval);
-      simulationTime += simulationInterval;
-      accumulator -= simulationInterval;
-  }
+      // process outgoing network events
 
-  setTimeout(loop, 0);
+      accumulator -= reverieInterval;
+    }
+
+    // process cli events
+    // display output to server console
 }
-loop();
+var serverEventLoopInterval = setInterval(serverEventLoop, serverInterval);
