@@ -11,6 +11,7 @@ module.exports = {
 }
 function onWorldData(chunk, entities) {
   console.dir(chunk);
+  console.dir(entities[0].components.Position);
   World.set(chunk);
   World.setEntities(entities);
 }

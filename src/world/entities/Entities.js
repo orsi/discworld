@@ -21,7 +21,7 @@ module.exports = {
     entity.addComponent(new Components.Talk());
     entity.addComponent(new Components.Script());
 
-    console.dir(entity);
+    // console.dir(entity);
 
     return entity;
   }

@@ -285,6 +285,7 @@ module.exports = {
 }
 function onWorldData(chunk, entities) {
   console.dir(chunk);
+  console.dir(entities[0].components.Position);
   World.set(chunk);
   World.setEntities(entities);
 }
@@ -503,41 +504,15 @@ module.exports = {
   }
 };
 
+var BLOCKS = require('../../world/BlockTypes');
 function drawWorld (chunk) {
   for (var i = 0; i < chunk[0].length; i++) {
     for (var j = 0; j < chunk.length; j++) {
       for (var k = 0; k < chunk[0][0].length; k++) {
         var color = 'rgba(0,0,0,.1)';
         var block = chunk[j][i][k];
-
         if (block) {
-          var r = g = b = 0;
-          if (chunk[j][i][k] === 1) {
-            r = 40;
-            g = 200;
-            b = 60;
-          } else if (chunk[j][i][k] === 2) {
-            r = 101;
-            g = 67;
-            b = 33;
-          } else if (chunk[j][i][k] === 3) {
-            r = 200;
-            g = 200;
-            b = 200;
-          } else if (chunk[j][i][k] === 4) {
-            r = 100;
-            g = 100;
-            b = 255;
-          } else if (chunk[j][i][k] === 5) {
-            r = 255;
-            g = 100;
-            b = 100;
-          } else if (chunk[j][i][k] === 6) {
-            r = 255;
-            g = 215;
-            b = 0;
-          }
-          drawBlock(j + originX, i + originY, k, r, g, b, 1);
+          drawBlock(j + originX, i + originY, k, block, .97);
         }
       }
     }
@@ -555,14 +530,14 @@ function drawRect (x, y, z, width, height, color) {
   ctx.fillRect((x - y) * blockSize / 2, ((x + y) * (blockSize / 4)) - (z * blockSize / 2) - (blockSize / 4), -width, -height);
   ctx.restore();
 }
-function drawBlock(x, y, z, r, g, b, a) {
+function drawBlock(x, y, z, block, a) {
       ctx.save();
 
       // translate block to position
       ctx.translate((x - y) * blockSize / 2, ((x + y) * (blockSize / 4)) - (z * blockSize / 2));
 
       // draw left face
-      ctx.fillStyle = `rgba(${r - 75 + (z * 5)}, ${g - 75 + (z * 5)}, ${b - 75 + (z * 5)}, ${a})`;
+      ctx.fillStyle = `rgba(${block.r - 75 + (z * 5)}, ${block.g - 75 + (z * 5)}, ${block.b - 75 + (z * 5)}, ${a})`;
       ctx.beginPath();
       ctx.moveTo(0, 0);
       ctx.lineTo(0, blockSize / 2);
@@ -572,7 +547,7 @@ function drawBlock(x, y, z, r, g, b, a) {
       ctx.fill();
 
       // draw right face
-      ctx.fillStyle = `rgba(${r - 45 + (z * 5)}, ${g - 45 + (z * 5)}, ${b - 45 + (z * 5)}, ${a})`;
+      ctx.fillStyle = `rgba(${block.r - 45 + (z * 5)}, ${block.g - 45 + (z * 5)}, ${block.b - 45 + (z * 5)}, ${a})`;
       ctx.beginPath();
       ctx.moveTo(0, 0);
       ctx.lineTo(0, blockSize / 2);
@@ -582,7 +557,7 @@ function drawBlock(x, y, z, r, g, b, a) {
       ctx.fill();
 
       // draw top
-      ctx.fillStyle = `rgba(${r + (z * 5)}, ${g + (z * 5)}, ${b + (z * 5)}, ${a})`;
+      ctx.fillStyle = `rgba(${block.r + (z * 5)}, ${block.g + (z * 5)}, ${block.b + (z * 5)}, ${a})`;
       ctx.beginPath();
       ctx.moveTo(0, 0);
       ctx.lineTo(blockSize / 2, -blockSize / 4);
@@ -594,7 +569,7 @@ function drawBlock(x, y, z, r, g, b, a) {
       ctx.restore();
 }
 
-},{"../world/world":6}],6:[function(require,module,exports){
+},{"../../world/BlockTypes":7,"../world/world":6}],6:[function(require,module,exports){
 var _chunk;
 var _entities;
 
@@ -623,6 +598,35 @@ module.exports = {
       northWest: map[mapX - 1][mapY - 1],
     };
     return neighbours;
+  }
+}
+
+},{}],7:[function(require,module,exports){
+module.exports = {
+  GRASS: {
+    r:77,
+    g:158,
+    b:58
+  },
+  SOIL: {
+    r:109,
+    g:88,
+    b:74
+  },
+  ROCK: {
+    r:123,
+    g:113,
+    b:103
+  },
+  METAL: {
+    r:192,
+    g:192,
+    b:192
+  },
+  CORE: {
+    r:10,
+    g:10,
+    b:10
   }
 }
 

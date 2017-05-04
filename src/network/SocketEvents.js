@@ -41,4 +41,7 @@ function attachNetworkEvents (socket) {
   socket.on('look', (data) => {
     _events.emit('socket:look', socket, data);
   });
+  socket.on('disconnect', (data) => {
+    _events.emit('socket:disconnect', socket, data);
+  });
 }

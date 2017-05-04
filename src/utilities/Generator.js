@@ -25,6 +25,12 @@ function generateEarth(options) {
     var earth = [];
     var slice = Math.pow(3, (1 / options.regions));
     var max = min = 0;
+    var centerX = options.x / 2;
+    var centerY = options.y / 2;
+    var centerZ = options.z / 2;
+
+    // farthest point length IS centerX/Y/Z
+    var farthestPoint = Math.sqrt((centerX*centerX) + (centerY*centerY) + (centerZ*centerZ));
 
     perlin.seed(1);
 
@@ -35,19 +41,46 @@ function generateEarth(options) {
         for (var z = 0; z < options.z; z++) {
           earth[x][y].push([]);
 
+          /* goal 1: have positions closer to the border of the 3d grid
+           * have a less likely chance to become earth, i.e., allow more
+           * sky around the entire world, with a solid core
+           *
+           * goal 2: make positions closer to the center have higher values
+           * in order to simulate the core becoming 'denser'
+           */
+
+          // calculate distance from center and ratio to farthest point
+          var dX = Math.abs(x - centerX);
+          var dY = Math.abs(y - centerY);
+          var dZ = Math.abs(z - centerZ);
+          var fromCenter = Math.sqrt((dX*dX) + (dY*dY) + (dZ+dZ));
+          var ratio = fromCenter / farthestPoint;
+
           var noise = perlin.noise3d(x / (options.x / slice), y / (options.y / slice), z);
-          if (noise - (z / options.z) > 0) { // harder to have earth higher in sky
-            earth[x][y][z] = 1;
-          }
+          // convert noise from -1 to 1 to 0 to 1
+          noise = noise + 1 * (1/2);
+
+          // make it more likely to be land closer to center
+          var isEarth = noise > ratio;
+
+          // make it rare farther, denser closer to the center
+          var density = noise * (1 / 2 + (1 - ratio));
+
+          // cap density at 1
+          if (density > 1) density = 1;
+
+          // if isEarth is false, set default to zero
+          earth[x][y][z] = isEarth ? density : 0;
 
           // debug
-          if (noise > max) max = noise;
-          if (noise < min) min = noise;
+          // if (ratio > 0.997 || ratio < 0.005) console.log(ratio, noise, earth[x][y][z]);
+          if (earth[x][y][z] > max) max = earth[x][y][z];
+          if (earth[x][y][z] < min) min = earth[x][y][z];
         }
       }
     }
 
-    console.log('earth range: ', max, min);
+    console.log('min max: ', min, max);
     return earth;
 }
 function generateWind(options) {
