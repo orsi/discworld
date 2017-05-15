@@ -17,7 +17,7 @@ module.exports = Random = {
     this._seed = (this._seed * this._a + this._b) % this._m;
     return this._seed / this._m;
   },
-  randomRange: function (min, max) {
+  range: function (min, max) {
     return (this.random() * (max - min)) + min;
   }
 }

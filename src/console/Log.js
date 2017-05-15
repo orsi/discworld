@@ -12,7 +12,7 @@ module.exports = Log = {
 }
 
 function onNetworkStart() {
-  console.log('Network was started...');
+  // console.log('Network was started...');
 }
 
 function onSocketConnection(socket) {

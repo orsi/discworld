@@ -9,10 +9,11 @@ module.exports = {
     socket.on('newMessage', newMessage);
   }
 }
-function onWorldData(chunk, entities) {
-  console.dir(chunk);
-  console.dir(entities[0].components.Position);
-  World.set(chunk);
+function onWorldData(character, world, entities) {
+  console.dir(world);
+  console.dir(character);
+  World.setCharacter(character);
+  World.setWorld(world);
   World.setEntities(entities);
 }
 function newMessage(message) {

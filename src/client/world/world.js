@@ -2,17 +2,23 @@ var _chunk;
 var _entities;
 
 module.exports = {
-  set: function (chunk) {
+  setWorld: function (chunk) {
     _chunk = chunk;
+  },
+  getWorld: function () {
+    return _chunk;
   },
   setEntities: function (entities) {
     _entities = entities;
   },
-  get: function () {
-    return _chunk;
-  },
   getEntities: function () {
     return _entities;
+  },
+  setCharacter: function (character) {
+    _character = character;
+  },
+  getCharacter: function () {
+    return _character;
   },
   getNeighbours: function (mapX, mapY) {
     var neighbours = {

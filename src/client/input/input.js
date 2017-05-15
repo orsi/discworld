@@ -90,34 +90,34 @@ Input.onMouseMove = function (e) {
     Input.mouseLocation = 'bottomRight';
   }
 }
-var scrollSpeed = 1/5;
+var scrollSpeed = 1;
 Input.onMouseRight = function (e) {
   switch (Input.mouseLocation) {
     case 'topLeft':
-      Canvas.move(scrollSpeed, 0);
-      break;
-    case 'topCenter':
       Canvas.move(scrollSpeed, scrollSpeed);
       break;
-    case 'topRight':
+    case 'topCenter':
       Canvas.move(0, scrollSpeed);
       break;
+    case 'topRight':
+      Canvas.move(-scrollSpeed, scrollSpeed);
+      break;
     case 'centerLeft':
-      Canvas.move(scrollSpeed, -scrollSpeed);
+      Canvas.move(scrollSpeed, 0);
       break;
     case 'centerCenter':
       break;
     case 'centerRight':
-    Canvas.move(-scrollSpeed, scrollSpeed);
+    Canvas.move(-scrollSpeed, 0);
       break;
     case 'bottomLeft':
-      Canvas.move(0, -scrollSpeed);
+      Canvas.move(scrollSpeed, -scrollSpeed);
       break;
     case 'bottomCenter':
-      Canvas.move(-scrollSpeed, -scrollSpeed);
+      Canvas.move(0, -scrollSpeed);
       break;
     case 'bottomRight':
-      Canvas.move(-scrollSpeed, 0);
+      Canvas.move(-scrollSpeed, -scrollSpeed);
       break;
   }
 }

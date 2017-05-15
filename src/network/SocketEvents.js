@@ -16,8 +16,8 @@ module.exports =  {
       _events.emit('socket:connection', socket);
     });
 
-    _events.on('world:init', (entity, chunk, entities) => {
-      sockets[entity.socketId].emit('world:init', chunk, entities);
+    _events.on('world:init', (character, chunk, entities) => {
+      sockets[character.socketId].emit('world:init', character, chunk, entities);
     });
   }
 }
