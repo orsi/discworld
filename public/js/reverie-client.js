@@ -1,35 +1,396 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var Canvas = require('../renderer/canvas'),
-    Terminal = require('../input/terminal');
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-module.exports = Input = function () {
-  window.addEventListener('resize', Canvas.resize);
+function EventEmitter() {
+  this._events = this._events || {};
+  this._maxListeners = this._maxListeners || undefined;
+}
+module.exports = EventEmitter;
 
-  // IE9, Chrome, Safari, Opera
-  window.addEventListener("wheel", Input.onMouseWheel, false);
+// Backwards-compat with node 0.10.x
+EventEmitter.EventEmitter = EventEmitter;
 
-  // remove context menu
-  window.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+EventEmitter.prototype._events = undefined;
+EventEmitter.prototype._maxListeners = undefined;
 
-  // mouse events
-  window.addEventListener('mousedown', Input.onMouseEvent);
-  window.addEventListener('mouseup', Input.onMouseEvent);
-  window.addEventListener('mousemove', Input.onMouseEvent)
+// By default EventEmitters will print a warning if more than 10 listeners are
+// added to it. This is a useful default which helps finding memory leaks.
+EventEmitter.defaultMaxListeners = 10;
 
-  // keyboard events
-  document.addEventListener('keydown', Input.onKeyDown);
-  document.addEventListener('keyup', Input.onKeyUp);
-  document.addEventListener('keypress', Input.onKeyPress);
+// Obviously not all Emitters should be limited to 10. This function allows
+// that to be increased. Set to zero for unlimited.
+EventEmitter.prototype.setMaxListeners = function(n) {
+  if (!isNumber(n) || n < 0 || isNaN(n))
+    throw TypeError('n must be a positive number');
+  this._maxListeners = n;
+  return this;
+};
+
+EventEmitter.prototype.emit = function(type) {
+  var er, handler, len, args, i, listeners;
+
+  if (!this._events)
+    this._events = {};
+
+  // If there is no 'error' event listener then throw.
+  if (type === 'error') {
+    if (!this._events.error ||
+        (isObject(this._events.error) && !this._events.error.length)) {
+      er = arguments[1];
+      if (er instanceof Error) {
+        throw er; // Unhandled 'error' event
+      } else {
+        // At least give some kind of context to the user
+        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
+        err.context = er;
+        throw err;
+      }
+    }
+  }
+
+  handler = this._events[type];
+
+  if (isUndefined(handler))
+    return false;
+
+  if (isFunction(handler)) {
+    switch (arguments.length) {
+      // fast cases
+      case 1:
+        handler.call(this);
+        break;
+      case 2:
+        handler.call(this, arguments[1]);
+        break;
+      case 3:
+        handler.call(this, arguments[1], arguments[2]);
+        break;
+      // slower
+      default:
+        args = Array.prototype.slice.call(arguments, 1);
+        handler.apply(this, args);
+    }
+  } else if (isObject(handler)) {
+    args = Array.prototype.slice.call(arguments, 1);
+    listeners = handler.slice();
+    len = listeners.length;
+    for (i = 0; i < len; i++)
+      listeners[i].apply(this, args);
+  }
+
+  return true;
+};
+
+EventEmitter.prototype.addListener = function(type, listener) {
+  var m;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events)
+    this._events = {};
+
+  // To avoid recursion in the case that type === "newListener"! Before
+  // adding it to the listeners, first emit "newListener".
+  if (this._events.newListener)
+    this.emit('newListener', type,
+              isFunction(listener.listener) ?
+              listener.listener : listener);
+
+  if (!this._events[type])
+    // Optimize the case of one listener. Don't need the extra array object.
+    this._events[type] = listener;
+  else if (isObject(this._events[type]))
+    // If we've already got an array, just append.
+    this._events[type].push(listener);
+  else
+    // Adding the second element, need to change to array.
+    this._events[type] = [this._events[type], listener];
+
+  // Check for listener leak
+  if (isObject(this._events[type]) && !this._events[type].warned) {
+    if (!isUndefined(this._maxListeners)) {
+      m = this._maxListeners;
+    } else {
+      m = EventEmitter.defaultMaxListeners;
+    }
+
+    if (m && m > 0 && this._events[type].length > m) {
+      this._events[type].warned = true;
+      console.error('(node) warning: possible EventEmitter memory ' +
+                    'leak detected. %d listeners added. ' +
+                    'Use emitter.setMaxListeners() to increase limit.',
+                    this._events[type].length);
+      if (typeof console.trace === 'function') {
+        // not supported in IE 10
+        console.trace();
+      }
+    }
+  }
 
   return this;
+};
+
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+EventEmitter.prototype.once = function(type, listener) {
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  var fired = false;
+
+  function g() {
+    this.removeListener(type, g);
+
+    if (!fired) {
+      fired = true;
+      listener.apply(this, arguments);
+    }
+  }
+
+  g.listener = listener;
+  this.on(type, g);
+
+  return this;
+};
+
+// emits a 'removeListener' event iff the listener was removed
+EventEmitter.prototype.removeListener = function(type, listener) {
+  var list, position, length, i;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events || !this._events[type])
+    return this;
+
+  list = this._events[type];
+  length = list.length;
+  position = -1;
+
+  if (list === listener ||
+      (isFunction(list.listener) && list.listener === listener)) {
+    delete this._events[type];
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+
+  } else if (isObject(list)) {
+    for (i = length; i-- > 0;) {
+      if (list[i] === listener ||
+          (list[i].listener && list[i].listener === listener)) {
+        position = i;
+        break;
+      }
+    }
+
+    if (position < 0)
+      return this;
+
+    if (list.length === 1) {
+      list.length = 0;
+      delete this._events[type];
+    } else {
+      list.splice(position, 1);
+    }
+
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.removeAllListeners = function(type) {
+  var key, listeners;
+
+  if (!this._events)
+    return this;
+
+  // not listening for removeListener, no need to emit
+  if (!this._events.removeListener) {
+    if (arguments.length === 0)
+      this._events = {};
+    else if (this._events[type])
+      delete this._events[type];
+    return this;
+  }
+
+  // emit removeListener for all listeners on all events
+  if (arguments.length === 0) {
+    for (key in this._events) {
+      if (key === 'removeListener') continue;
+      this.removeAllListeners(key);
+    }
+    this.removeAllListeners('removeListener');
+    this._events = {};
+    return this;
+  }
+
+  listeners = this._events[type];
+
+  if (isFunction(listeners)) {
+    this.removeListener(type, listeners);
+  } else if (listeners) {
+    // LIFO order
+    while (listeners.length)
+      this.removeListener(type, listeners[listeners.length - 1]);
+  }
+  delete this._events[type];
+
+  return this;
+};
+
+EventEmitter.prototype.listeners = function(type) {
+  var ret;
+  if (!this._events || !this._events[type])
+    ret = [];
+  else if (isFunction(this._events[type]))
+    ret = [this._events[type]];
+  else
+    ret = this._events[type].slice();
+  return ret;
+};
+
+EventEmitter.prototype.listenerCount = function(type) {
+  if (this._events) {
+    var evlistener = this._events[type];
+
+    if (isFunction(evlistener))
+      return 1;
+    else if (evlistener)
+      return evlistener.length;
+  }
+  return 0;
+};
+
+EventEmitter.listenerCount = function(emitter, type) {
+  return emitter.listenerCount(type);
+};
+
+function isFunction(arg) {
+  return typeof arg === 'function';
 }
+
+function isNumber(arg) {
+  return typeof arg === 'number';
+}
+
+function isObject(arg) {
+  return typeof arg === 'object' && arg !== null;
+}
+
+function isUndefined(arg) {
+  return arg === void 0;
+}
+
+},{}],2:[function(require,module,exports){
+const EventManager = require('./EventManager');
+var Entity = require('../shared/Entity');
+var entity;
+
+module.exports = {
+    init: function () {
+        events = EventManager.register('world');
+
+        events.on('network:entity', (e) => {
+            entity = Entity.clone(e);
+        });
+    },
+    get: function () {
+        return entity;
+    }
+}
+},{"../shared/Entity":11,"./EventManager":3}],3:[function(require,module,exports){
+var events = require('events');
+var emitter = new events.EventEmitter();
+
+var systems = [];
+module.exports = {
+  register: function (name) {
+    for (var i = 0; i < systems.length; i++) {
+      if (systems[i].name === name) return systems[i];
+    }
+    var system = new System(name);
+    systems.push(system);
+
+    console.log(systems);
+    
+    return system;
+  }
+}
+
+function System (name) {
+  this.name = name;
+  this.emitter = emitter;
+}
+System.prototype.on = function (eventType, listener) {
+  emitter.on(eventType, listener);
+}
+System.prototype.emit = function (eventType, data, cb) {
+  if (eventType === 'world') console.log('world received from ' + this.name, data, cb);
+  emitter.emit(this.name + ':' + eventType, data, cb);
+}
+},{"events":1}],4:[function(require,module,exports){
+var EventManager = require('./EventManager');
+var events;
+var Renderer = require('./Renderer');
+var canvas = Renderer;
+var Terminal = require('./input/Terminal');
+var World = require('./World')
+
+var terminal; 
+module.exports = {
+  init: function () {
+    events = EventManager.register('input');
+    terminal = Terminal.create('#terminal', events);
+
+    window.addEventListener('resize', canvas.resize);
+
+    // IE9, Chrome, Safari, Opera
+    window.addEventListener("wheel", Input.onMouseWheel, false);
+
+    // remove context menu
+    window.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+    // mouse events
+    window.addEventListener('mousedown', Input.onMouseEvent);
+    window.addEventListener('mouseup', Input.onMouseEvent);
+    window.addEventListener('mousemove', Input.onMouseEvent)
+
+    // keyboard events
+    document.addEventListener('keydown', Input.onKeyDown);
+    document.addEventListener('keyup', Input.onKeyUp);
+    document.addEventListener('keypress', Input.onKeyPress);
+  },
+};
+
+var Input = {};
 
 Input.mouseInterval = null;
 Input.onMouseWheel = function (e) {
   if (e.deltaY < 0) {
-    Canvas.increaseWorldScale();
+    World.trigger('zoomIn');
   } else {
-    Canvas.decreaseWorldScale();
+    World.trigger('zoomOut');
   }
 }
 Input.onMouseEvent = function (e) {
@@ -95,30 +456,30 @@ var scrollSpeed = 1;
 Input.onMouseRight = function (e) {
   switch (Input.mouseLocation) {
     case 'topLeft':
-      Canvas.move(scrollSpeed, scrollSpeed);
+      canvas.move(scrollSpeed, scrollSpeed);
       break;
     case 'topCenter':
-      Canvas.move(0, scrollSpeed);
+      canvas.move(0, scrollSpeed);
       break;
     case 'topRight':
-      Canvas.move(-scrollSpeed, scrollSpeed);
+      canvas.move(-scrollSpeed, scrollSpeed);
       break;
     case 'centerLeft':
-      Canvas.move(scrollSpeed, 0);
+      canvas.move(scrollSpeed, 0);
       break;
     case 'centerCenter':
       break;
     case 'centerRight':
-    Canvas.move(-scrollSpeed, 0);
+    canvas.move(-scrollSpeed, 0);
       break;
     case 'bottomLeft':
-      Canvas.move(scrollSpeed, -scrollSpeed);
+      canvas.move(scrollSpeed, -scrollSpeed);
       break;
     case 'bottomCenter':
-      Canvas.move(0, -scrollSpeed);
+      canvas.move(0, -scrollSpeed);
       break;
     case 'bottomRight':
-      Canvas.move(-scrollSpeed, -scrollSpeed);
+      canvas.move(-scrollSpeed, -scrollSpeed);
       break;
   }
 }
@@ -140,280 +501,179 @@ Input.onKeyDown = function (e) {
 Input.onKeyUp = function (w) {}
 Input.onKeyPress = function (e) {}
 
-},{"../input/terminal":2,"../renderer/canvas":5}],2:[function(require,module,exports){
-// imports
-var Canvas = require('../renderer/canvas'),
-    Sockets = require('../network/sockets');
-
-var terminal;
-module.exports = Terminal = function (t) {
-  terminal = t;
-
-  return this;
-}
-Terminal.focus = function () {
-  terminal.focus();
-}
-var historyIndex = -1;
-var terminalHistory = [];
-Terminal.prevHistory = function () {
-  historyIndex++;
-  if (historyIndex > terminalHistory.length - 1) historyIndex = terminalHistory.length - 1;
-}
-Terminal.nextHistory = function () {
-  historyIndex--;
-  if (historyIndex < -1) historyIndex = -1;
-  if (historyIndex === -1) {
-    terminal.value = '';
-  } else {
-    terminal.value = terminalHistory[historyIndex];
-  }
-
-  // set caret at the end of line
-  // strange hack for chrome
-  setTimeout(function () { terminal.value = terminal.value; }, 0);
-}
-Terminal.submit = function () {
-  input = terminal.value;
-  // save input to terminal history if it's the same as last
-  console.log(terminalHistory, historyIndex);
-  if (terminalHistory[historyIndex] !== input) {
-    terminalHistory.unshift(input);
-  }
-  historyIndex = -1;
-
-  // parse input to see if it is a command or a simple message
-  var parsedInput = input.split(' ');
-  var isCommand = parsedInput[0].startsWith('/');
-
-  // if it is a command, find out which command it is, and then see if there are arguments
-  if (isCommand) {
-    var command = parsedInput.shift().substring(1); // remove forward slash
-    // send commands to server
-    switch (command) {
-      case 'create':
-        // create command takes a series of arguments
-        var args = {};
-        for (var i = 0; i < parsedInput.length; i++) {
-          var argument = parsedInput[i].split('=');
-          var key = argument[0];
-          var value = argument[1];
-          switch (key) {
-            case 'x':
-            case 'y':
-            case 'steps':
-              value = parseInt(value);
-              break;
-            case 'alivePercent':
-              value = parseFloat(value);
-              break;
-            case 'birth':
-            case 'survival':
-              value = value.split(',');
-              for (var j = 0; j < value.length; j++) {
-                value[j] = parseInt(value[j]);
-              }
-              break;
-            default:
-              break;
-          }
-          args[key] = value;
-        }
-
-        // send
-        Sockets.sendWorldCreateCommand();
-        break;
-      case 'step':
-        // send
-        Sockets.sendWorldStepCommand();
-        break;
-      default:
-        console.log('unknown command: ', command);
-        break;
-    }
-  } else { // send input to server as message
-    console.log('message: ', input);
-  }
-
-  terminal.value = '';
-}
-
-},{"../network/sockets":4,"../renderer/canvas":5}],3:[function(require,module,exports){
-// Reverie client
-// Created by Jonathon Orsi
-var Canvas = require('./renderer/canvas');
-var World = require('./world/world');
-
-module.exports = Reverie = {};
-
-Reverie.dom = {
-  terminal: document.querySelector('#terminal'),
-  cursor: document.querySelector('cursor')
-}
-Reverie.input = require('./input/input')();
-Reverie.terminal = require('./input/terminal')(Reverie.dom.terminal);
-Reverie.sockets = require('./network/sockets');
-Reverie.sockets.init(io());
-
-Reverie.canvas = Canvas;
-Reverie.canvas.moveOffsetTo(-Reverie.canvas.viewport.center.x, -Reverie.canvas.viewport.center.y);
-Reverie.container = document.querySelector('#reverie');
-Reverie.container.appendChild(Reverie.canvas.canvas);
-
-Reverie.world = require('./world/world');
-
-// start animation loop
-function canvasLoop() {
-  if (Reverie.world.getWorld()) {
-      Reverie.canvas.render({
-        character: Reverie.world.getCharacter(),
-        world: Reverie.world.getWorld(),
-        entities: Reverie.world.getEntities()
-      });
-  }
-  requestAnimationFrame(canvasLoop);
-}
-canvasLoop();
-
-},{"./input/input":1,"./input/terminal":2,"./network/sockets":4,"./renderer/canvas":5,"./world/world":6}],4:[function(require,module,exports){
-// imports
-var Canvas = require('../renderer/canvas');
-var World = require('../world/world');
-
+},{"./EventManager":3,"./Renderer":6,"./World":7,"./input/Terminal":8}],5:[function(require,module,exports){
+var server;
 module.exports = {
   init: function (socket) {
-    socket.on('world:init', onWorldData);
-    socket.on('actor connected', createActor);
-    socket.on('newMessage', newMessage);
+    var events = EventManager.register('network');
+    server = new Server(socket, events);
+  },
+  send: function (type, data) {
+    switch (type) {
+      case 'message':
+        server.sendMessage(data);
+        break;
+    }
   }
 }
-function onWorldData(character, world, entities) {
-  console.dir(world);
-  console.dir(character);
-  World.setCharacter(character);
-  World.setWorld(world);
-  World.setEntities(entities);
-}
-function newMessage(message) {
-}
-// functions
-function createActor(actor) {
-  // var $actor = document.createElement('actor');
-  // $actor.style.color = actor.color;
-  // $actor.style.position = 'absolute';
-  // $actor.style.top = actor.y;
-  // $actor.style.left = actor.x;
-  // $actor.appendChild(document.createTextNode(actor.symbol));
-  // world.appendChild($actor);
-}
-function sendWorldCreateCommand() {
-  sockets.emit('world create', args, function (response, world) {
-    if (response) Canvas.renderWorld(world);
-  });
-}
-function onMessage(response, message) {
-  console.log(response, message);
-  // if (response) {
-  //   var $actor = document.querySelector('actor');
-  //   var $speech = document.querySelector('actor > p');
-  //   console.dir($speech);
-  //   if (!$speech) {
-  //     var $speech = document.createElement('p');
-  //     $speech.style.position = 'absolute';
-  //     $speech.style.top = '-100%';
-  //     $speech.style.margin = 0;
-  //     $speech.appendChild(document.createTextNode(''));
-  //     $actor.appendChild($speech);
-  //   }
-  //   $speech.childNodes[0].nodeValue = message.text;
-  // }
-}
-function sendWorldStepCommand() {
-  sockets.emit('world step', null, function (response, world) {
-    if (response) Canvas.renderWorld(world);
-  });
+
+// imports
+var EventManager = require('./EventManager');
+// var Canvas = require('./Renderer');
+// var World = require('./World');
+
+function Server (socket, events) {
+    // register receiving events
+    this.socket = socket;
+    this.events = events;
+
+    // recieved events from server
+    this.socket.on('connect', () => {
+      console.log('connected');
+    });
+    this.socket.on('entity', (e) => {
+      this.events.emit('entity', e);
+    });
+    this.socket.on('world', (w) => {
+      this.events.emit('world', w);
+    });
+    // this.socket.on('world:created', (world) => {
+    //   this.events.emit('world', world);
+    // });
+    // this.socket.on('world:generated', (regions) => {
+    //   console.log(regions);
+    //   this.events.emit('regions', regions);
+    // });
+
+    // events from systems to server
+    this.events.on('input:message', (message) => {
+      this.socket.emit('message', message, () => {
+
+      });
+    });
+    // socket.on('network:world:initialized', (character, world, entities) => {
+    //   console.dir(world);
+    //   console.dir(character);
+    //   World.setCharacter(character);
+    //   World.setWorld(world);
+    //   World.setEntities(entities);
+    // });
 }
 
-},{"../renderer/canvas":5,"../world/world":6}],5:[function(require,module,exports){
-var Canvas = {}
-Canvas.canvas = document.createElement('canvas');
-Canvas.ctx = Canvas.canvas.getContext('2d');
-Canvas.buff = document.createElement('canvas');
-Canvas.buffer = Canvas.buff.getContext('2d');
-Canvas.width = Canvas.buff.width = Canvas.canvas.width = window.innerWidth;
-Canvas.height = Canvas.buff.height = Canvas.canvas.height = window.innerHeight;
-Canvas.minSize = 12;
-Canvas.blockSize = 12;
-Canvas.offset = {
-  x: 0,
-  y: 0
+Server.prototype.newMessage = function (message) {}
+Server.prototype.sendMessage = function (message) {
+}
+},{"./EventManager":3}],6:[function(require,module,exports){
+var view, canvas, buffer;
+var lastRender = new Date();
+var delta = 0;
+var worldLoaded = false;
+module.exports = {
+  init: function (container) {
+    view = new View(window.innerWidth, window.innerHeight);
+    canvas = new Canvas(view.width, view.height);
+    buffer = new Canvas(view.width, view.height);
+
+    container.appendChild(canvas.element);
+    view.moveToCenter();
+  },
+  move: function (x, y) {
+    // move offset relative to scale size
+    // so that it doesn't become slow when
+    // zoomed in
+    view.offset.x -= Math.floor(x * view.zoom * view.minSize / 2);
+    view.offset.y -= Math.floor(y * view.zoom * view.minSize / 2);
+  },
+  resize: function () {
+    view.width = buffer.element.width = canvas.element.width = window.innerWidth;
+    view.height = buffer.element.height = canvas.element.height = window.innerHeight;
+
+    view.center.x = Math.floor(view.width / 2);
+    view.center.y = Math.floor(view.height / 2);
+  },
+  render: function (state) {
+    var now = new Date();
+    delta = now.getTime() - lastRender.getTime();
+    lastRender = now;
+
+    // clear buffer and canvas
+    buffer.clear();
+    canvas.clear();
+
+    // draw to buffer
+    if (state.world) {
+      world.render(buffer);
+    }
+    if (state.regions) {
+      for (let region of state.regions) {
+        region.render(buffer);
+      }
+    }
+    if (state.entity) {
+      state.entity.components[render](buffer);
+    }
+    if (state.entities) {
+      state.entities.forEach(function (entity) {
+        entity.components[render](buffer);
+      });
+    }
+    if (state.debug) {
+      drawDebugToBuffer(state.debug);
+    }
+
+    // switch to canvas
+    swap();
+  }
 };
-Canvas.scale = 1;
-Canvas.viewport = {
-  top: 0,
-  left: 0,
-  width: Canvas.width,
-  height: Canvas.height,
-  center: {
-    x: Math.floor(Canvas.width / 2),
-    y: Math.floor(Canvas.height / 2)
+
+function Canvas () {
+  this.element = document.createElement('canvas');
+  this.ctx = this.element.getContext('2d');
+  this.width = this.element.width = window.innerWidth;
+  this.height = this.element.height = window.innerHeight;
+}
+Canvas.prototype.clear = function () {
+  this.ctx.clearRect(0,0, this.element.width, this.element.height);
+}
+
+function View (width, height) {
+  this.top = 0;
+  this.left = 0;
+  this.width = width;
+  this.height = height;
+  this.center = {
+    x: Math.floor(width / 2),
+    y: Math.floor(height /2)
   }
+  this.offset = {
+    x: 0,
+    y: 0
+  };
+  this.zoom = 1;
+  this.minSize = 12;
+  this.blockSize = 12;
 }
-Canvas.worldLoaded = false;
-module.exports = Canvas;
-
-Canvas.move = function (x, y) {
-  // move offset relative to scale size
-  // so that it doesn't become slow when
-  // zoomed in
-  Canvas.offset.x -= Math.floor(x * Canvas.scale * Canvas.minSize / 2);
-  Canvas.offset.y -= Math.floor(y * Canvas.scale * Canvas.minSize / 2);
+View.prototype.moveToCenter = function () {
+  this.offset.x = -this.center.x;
+  this.offset.y = -this.center.y;
 }
-Canvas.moveOffsetTo = function (x, y) {
-  Canvas.offset.x = x;
-  Canvas.offset.y = y;
-}
-Canvas.resize = function () {
-  Canvas.viewport.width = Canvas.buff.width = Canvas.canvas.width = window.innerWidth;
-  Canvas.viewport.height = Canvas.buff.height = Canvas.canvas.height = window.innerHeight;
-
-  Canvas.viewport.center.x = Math.floor(Canvas.viewport.width / 2);
-  Canvas.viewport.center.y = Math.floor(Canvas.viewport.height / 2);
-}
-Canvas.increaseWorldScale = function () {
-  Canvas.scale = parseFloat((Canvas.scale + 0.1).toFixed(1));
-  if (Canvas.scale > 15) Canvas.scale = 15;
-
-  Canvas.blockSize = Math.floor(Canvas.minSize * Canvas.scale);
-}
-Canvas.decreaseWorldScale = function () {
-  Canvas.scale = parseFloat((Canvas.scale - 0.1).toFixed(1));
-  if (Canvas.scale < 1) Canvas.scale = 1;
-  
-  Canvas.blockSize = Math.floor(Canvas.minSize * Canvas.scale);
-}
-Canvas.render = function (state) {
-  Canvas.previousTime = Canvas.currentTime;
-  Canvas.currentTime = Date.now();
-  Canvas.delta = Canvas.currentTime - Canvas.previousTime;
-
-  Canvas.updateViewport(state.character);
-  Canvas.clearBuffer();
-  Canvas.drawWorldToBuffer(state.world);
-  Canvas.drawEntitiesToBuffer(state.entities);
-  Canvas.clearCanvas();
-  Canvas.drawBufferToCanvas();
-  Canvas.drawDevUI();
+View.prototype.isVisible = function (x, y) {
+  return  x + view.blockSize >= view.left 
+          && x - view.blockSize <= view.left + view.width
+          && y + view.blockSize >= view.top 
+          && y - view.blockSize <= view.top + view.height;
 }
 
-Canvas.updateViewport = function (character) {
-  // Canvas.viewport.left = character.components.Position.x;
-  // Canvas.viewport.top = character.components.Position.y;
+function swap () {
+  // cut the drawn rectangle
+  var image = buffer.ctx.getImageData(view.left, view.top, view.width, view.height);
+  // copy into visual canvas at different position
+  canvas.ctx.putImageData(image, 0, 0);
 }
-Canvas.worldToCanvas = function (worldPosition) {
-  var x = ((worldPosition.x - worldPosition.y) * Canvas.blockSize / 2);
-  var y = ((worldPosition.y + worldPosition.x) * Canvas.blockSize / 4);
-  var z = worldPosition.z * Canvas.blockSize / 2;
+function worldToCanvas (worldPosition) {
+  var x = ((worldPosition.x - worldPosition.y) * view.blockSize / 2);
+  var y = ((worldPosition.y + worldPosition.x) * view.blockSize / 4);
+  var z = worldPosition.z * view.blockSize / 2;
   
   // if (position.x % 10 === 0 && position.y % 10 === 0) console.log(position, blockX, blockY, blockZ);
   return {
@@ -422,10 +682,10 @@ Canvas.worldToCanvas = function (worldPosition) {
     z: z
   }
 }
-Canvas.canvasToWorld = function (canvasPosition) {
+function canvasToWorld (canvasPosition) {
   // return world position in center of viewport
-  var x = ((canvasPosition.x + canvasPosition.y) * 2 / Canvas.blockSize);
-  var y = ((canvasPosition.y - canvasPosition.x) * 4 / Canvas.blockSize);
+  var x = ((canvasPosition.x + canvasPosition.y) * 2 / view.blockSize);
+  var y = ((canvasPosition.y - canvasPosition.x) * 4 / view.blockSize);
   
   // if (canvasPosition.x % 10 === 0 && canvasPosition.y % 10 === 0) console.log(x, y);
   return {
@@ -433,13 +693,7 @@ Canvas.canvasToWorld = function (canvasPosition) {
     y: Math.floor(y),
   }
 }
-Canvas.inViewport = function (x, y) {
-  return  x + Canvas.blockSize >= Canvas.viewport.left &&
-          x - Canvas.blockSize <= Canvas.viewport.left + Canvas.viewport.width &&
-          y + Canvas.blockSize >= Canvas.viewport.top &&
-          y - Canvas.blockSize <= Canvas.viewport.top + Canvas.viewport.height;
-}
-Canvas.isBlockVisible = function (bx, by, bz, maxX, maxY, maxZ, position) {
+function isBlockVisible (bx, by, bz, maxX, maxY, maxZ, position) {
   // check if there are any blocks directly
   // infront of this from the viewport perspective
   var offsetX = bx + 1;
@@ -478,16 +732,7 @@ Canvas.isBlockVisible = function (bx, by, bz, maxX, maxY, maxZ, position) {
   return viewportVisible && faceVisible;
 }
 
-
-Canvas.drawEntitiesToBuffer = function (entities) {
-
-}
-Canvas.drawEntityToBuffer = function (x, y, z, width, height, color) {
-  Canvas.buffer.fillStyle = color;
-  Canvas.buffer.fillRect((x - y) * blockSize / 2, ((x + y) * (blockSize / 4)) - (z * blockSize / 2) - (blockSize / 4), -width, -height);
-}
-Canvas.drawWorldToBuffer = function (world) {
-  Canvas.world = world;
+function drawWorldToBufferOLD (world) {
   // have to do translations
   // canvas x, y will be relative to blockSize, scale, center of screen x,y
   for (var x = 0; x < world.x; x++) {
@@ -495,123 +740,136 @@ Canvas.drawWorldToBuffer = function (world) {
       for (var z = 0; z < world.z; z++) {
         var block = world.regions[x][y][z].block;
         if (block) {
-          var canvasPosition = Canvas.worldToCanvas(world.regions[x][y][z].position);
+          var canvasPosition = worldToCanvas(world.regions[x][y][z].position);
 
           // adjust offset of viewport
-          canvasPosition.x -= Canvas.offset.x;
-          canvasPosition.y -= Canvas.offset.y;
+          canvasPosition.x -= view.offset.x;
+          canvasPosition.y -= view.offset.y;
 
-          // if (x % 10 === 0 && y % 10 === 0) console.log(position, world.regions[x][y][z], Canvas.viewport, Canvas.viewport.center);
-          if (Canvas.inViewport(canvasPosition.x, canvasPosition.y - canvasPosition.z) && Canvas.isBlockVisible(x, y, z, world.x, world.y, world.z, world.regions))
-            Canvas.drawBlock(canvasPosition.x, canvasPosition.y - canvasPosition.z, z, block, .99);
+          // if (x % 10 === 0 && y % 10 === 0) console.log(position, world.regions[x][y][z], view, view.center);
+          if (
+              inViewport(canvasPosition.x, canvasPosition.y - canvasPosition.z) 
+              && isBlockVisible(x, y, z, world.x, world.y, world.z, world.regions)
+            )
+            drawBlock(canvasPosition.x, canvasPosition.y - canvasPosition.z, z, block, .99);
         }
       }
     }
   }
-  if (!Canvas.worldLoaded) Canvas.worldLoaded = true;
+  if (!worldLoaded) worldLoaded = true;
 }
-Canvas.drawBlock = function (x, y, z, block, a) {
-  // draw left face
-  Canvas.buffer.fillStyle = `rgba(${block.r - 75 + (z * 5)}, ${block.g - 75 + (z * 5)}, ${block.b - 75 + (z * 5)}, ${a})`;
-  Canvas.buffer.beginPath();
-  Canvas.buffer.moveTo(x, y);
-  Canvas.buffer.lineTo(x, y + Canvas.blockSize / 2);
-  Canvas.buffer.lineTo(x - Canvas.blockSize / 2, y + (Canvas.blockSize / 2) - (Canvas.blockSize / 4));
-  Canvas.buffer.lineTo(x - Canvas.blockSize / 2, y - Canvas.blockSize / 4);
-  Canvas.buffer.closePath();
-  Canvas.buffer.fill();
 
-  // draw right face
-  Canvas.buffer.fillStyle = `rgba(${block.r - 45 + (z * 5)}, ${block.g - 45 + (z * 5)}, ${block.b - 45 + (z * 5)}, ${a})`;
-  Canvas.buffer.beginPath();
-  Canvas.buffer.moveTo(x, y);
-  Canvas.buffer.lineTo(x, y + Canvas.blockSize / 2);
-  Canvas.buffer.lineTo(x + Canvas.blockSize / 2, y + (Canvas.blockSize / 2) - (Canvas.blockSize / 4));
-  Canvas.buffer.lineTo(x + Canvas.blockSize / 2, y - Canvas.blockSize / 4);
-  Canvas.buffer.closePath();
-  Canvas.buffer.fill();
-
-  // draw top
-  Canvas.buffer.fillStyle = `rgba(${block.r + (z * 5)}, ${block.g + (z * 5)}, ${block.b + (z * 5)}, ${a})`;
-  Canvas.buffer.beginPath();
-  Canvas.buffer.moveTo(x, y);
-  Canvas.buffer.lineTo(x + Canvas.blockSize / 2, y - Canvas.blockSize / 4);
-  Canvas.buffer.lineTo(x, y - Canvas.blockSize / 2);
-  Canvas.buffer.lineTo(x - Canvas.blockSize / 2, y - Canvas.blockSize / 4);
-  Canvas.buffer.closePath();
-  Canvas.buffer.fill();
-}
-Canvas.drawBufferToCanvas = function () {
-  // cut the drawn rectangle
-  var image = Canvas.buffer.getImageData(Canvas.viewport.left, Canvas.viewport.top, Canvas.viewport.width, Canvas.viewport.height);
-  // copy into visual canvas at different position
-  Canvas.ctx.putImageData(image, 0, 0);
-}
-Canvas.drawDevUI = function () {
-    Canvas.ctx.font = '14px Courier';
-    Canvas.ctx.fillStyle = 'white';
+function drawDebug (debug) {
+    buffer.ctx.font = '14px Courier';
+    buffer.ctx.fillStyle = 'white';
 
     // canvas info
-    Canvas.ctx.fillText(Math.floor((1000 / Canvas.delta)) + 'fps', 10, 20);
-    Canvas.ctx.fillText('viewport', 10, 40);
-    Canvas.ctx.fillText('left: ' + Canvas.viewport.left, 20, 60);
-    Canvas.ctx.fillText('top: ' + Canvas.viewport.top, 20, 80);
-    Canvas.ctx.fillText('width: ' + Canvas.viewport.width, 20, 100);
-    Canvas.ctx.fillText('height: ' + Canvas.viewport.height, 20, 120);
-    Canvas.ctx.fillText('centerX: ' + Canvas.viewport.center.x, 20, 140);
-    Canvas.ctx.fillText('centerY: ' + Canvas.viewport.center.y, 20, 160);
-    Canvas.ctx.fillText('offsetX: ' + Canvas.offset.x + ', offsetY: ' + Canvas.offset.y, 20, 180);
-    Canvas.ctx.fillText('blockSize: ' + Canvas.blockSize, 20, 200);
-    Canvas.ctx.fillText('scale: ' + Canvas.scale, 20, 220);
+    buffer.ctx.fillText(Math.floor((1000 / delta)) + 'fps', 10, 20);
+    buffer.ctx.fillText('viewport', 10, 40);
+    buffer.ctx.fillText('left: ' + view.left, 20, 60);
+    buffer.ctx.fillText('top: ' + view.top, 20, 80);
+    buffer.ctx.fillText('width: ' + view.width, 20, 100);
+    buffer.ctx.fillText('height: ' + view.height, 20, 120);
+    buffer.ctx.fillText('centerX: ' + view.center.x, 20, 140);
+    buffer.ctx.fillText('centerY: ' + view.center.y, 20, 160);
+    buffer.ctx.fillText('offsetX: ' + view.offset.x + ', offsetY: ' + view.offset.y, 20, 180);
+    buffer.ctx.fillText('blockSize: ' + view.blockSize, 20, 200);
+
     // world info
-    if (Canvas.world) {
+    if (debug.world) {
+      buffer.ctx.fillText('world', 10, 320);
+      buffer.ctx.fillText('x: ' + debug.world.x, 20, 340);
+      buffer.ctx.fillText('y: ' + debug.world.y, 20, 360);
+      buffer.ctx.fillText('z: ' + debug.world.z, 20, 380);
+      buffer.ctx.fillText('centerX: ' + Math.round(debug.world.x / 2), 20, 400);
+      buffer.ctx.fillText('centerY: ' + Math.round(debug.world.y / 2), 20, 420);
+      buffer.ctx.fillText('regions: ' + debug.world.regions.length, 20, 440);
       var currentCenter = {
-        x: Canvas.offset.x + Canvas.viewport.center.x,
-        y: Canvas.offset.y + Canvas.viewport.center.y
+        x: view.offset.x + view.center.x,
+        y: view.offset.y + view.center.y
       };
-      var worldLocation = Canvas.canvasToWorld(currentCenter);
-      Canvas.ctx.fillText('overworld x: ' + worldLocation.x, 20, 240);
-      Canvas.ctx.fillText('overworld y: ' + worldLocation.y, 20, 260);
-      Canvas.ctx.fillText('world', 10, 300);
-      Canvas.ctx.fillText('sample: ' + Canvas.world.sample, 20, 320);
-      Canvas.ctx.fillText('x: ' + Canvas.world.x, 20, 340);
-      Canvas.ctx.fillText('y: ' + Canvas.world.y, 20, 360);
-      Canvas.ctx.fillText('z: ' + Canvas.world.z, 20, 380);
-      Canvas.ctx.fillText('centerX: ' + Canvas.world.center.x, 20, 400);
-      Canvas.ctx.fillText('centerY: ' + Canvas.world.center.y, 20, 420);
-      Canvas.ctx.fillText('regions: ' + Canvas.world.regions.length, 20, 440);
+      var worldLocation = canvasToWorld(currentCenter);
+      buffer.ctx.fillText('overworld x: ' + worldLocation.x, 20, 460);
+      buffer.ctx.fillText('overworld y: ' + worldLocation.y, 20, 480);
+    }
+
+    // entity info
+    if (debug.entity) {
+      var entity = debug.entity;
+      buffer.ctx.fillText('entity', view.width - 300, 20);
+      buffer.ctx.fillText('zoom: ' + entity.get('position').zoom,  view.width - 300, 40);
+      // buffer.ctx.fillText('x: ' + debug.world.x, 20, 340);
+      // buffer.ctx.fillText('y: ' + debug.world.y, 20, 360);
+      // buffer.ctx.fillText('z: ' + debug.world.z, 20, 380);
+      // buffer.ctx.fillText('centerX: ' + Math.round(debug.world.x / 2), 20, 400);
+      // buffer.ctx.fillText('centerY: ' + Math.round(debug.world.y / 2), 20, 420);
+      // buffer.ctx.fillText('regions: ' + debug.world.regions.length, 20, 440);
+      // var currentCenter = {
+      //   x: view.offset.x + view.center.x,
+      //   y: view.offset.y + view.center.y
+      // };
+      // var worldLocation = canvasToWorld(currentCenter);
+      // buffer.ctx.fillText('overworld x: ' + worldLocation.x, 20, 460);
+      // buffer.ctx.fillText('overworld y: ' + worldLocation.y, 20, 480);
+      // buffer.ctx.fillText('scale: ' + debug.world.scale, 20, 500);
     }
 }
 
-Canvas.clearBuffer = function () {
-  Canvas.buffer.clearRect(0,0, Canvas.buff.width, Canvas.buff.height);
-}
-Canvas.clearCanvas = function () {
-  Canvas.ctx.clearRect(0,0, Canvas.canvas.width, Canvas.canvas.height);
-}
 
-},{}],6:[function(require,module,exports){
-var _chunk;
-var _entities;
+},{}],7:[function(require,module,exports){
+var EventManager = require('./EventManager');
+var events;
 
+var world;
+var lastEvent = Date.now();
 module.exports = {
-  setWorld: function (chunk) {
-    _chunk = chunk;
+  init: function () {
+    events = EventManager.register('world');
+
+    // register events
+    events.on('network:world', (w) => {
+      world = new World(w);
+    });
   },
-  getWorld: function () {
-    return _chunk;
+  exists: function () {
+    return (world !== null);
   },
-  setEntities: function (entities) {
-    _entities = entities;
+  get: function (type) {
+    var data = null;
+    switch (type) {
+      case 'world':
+        data = world;
+        break;
+      case 'entity':
+        data = entity;
+        break;
+    }
+    return data;
   },
-  getEntities: function () {
-    return _entities;
-  },
-  setCharacter: function (character) {
-    _character = character;
-  },
-  getCharacter: function () {
-    return _character;
+  trigger: function (event) {
+    var currentTime = Date.now();
+    if (currentTime - lastEvent > 100) {
+      switch (event) {
+        case 'zoomIn':
+          var originalScale = world.scale;
+          world.scale = parseFloat((world.scale + 0.1).toFixed(1));
+          if (world.scale > 15) world.scale = 15;
+          Network.send('world:scale', world.scale, (err) => {
+            if (err) world.scale = originalScale;
+          });
+          break;
+        case 'zoomOut':
+          var originalScale = world.scale;
+          world.scale = parseFloat((world.scale - 0.1).toFixed(1));
+          if (world.scale < 1) world.scale = 1;
+          Network.send('world:scale', world.scale, (err) => {
+            if (err) world.scale = originalScale;
+          });
+          break;
+      }
+
+      lastEvent = currentTime;
+    }
   },
   getNeighbours: function (mapX, mapY) {
     var neighbours = {
@@ -628,4 +886,270 @@ module.exports = {
   }
 }
 
-},{}]},{},[3]);
+// imports
+var Network = require('./Network');
+
+var _chunk;
+var _entities;
+var world = null;
+
+
+
+function World (world) {
+  this.createdAt = world.createdAt;
+  this.cycle = world.cycle;
+  this.scale = world.scale;
+  this.seed = world.seed;
+  this.x = world.x;
+  this.y = world.y;
+  this.z = world.z;
+  this.center = world.center;
+  this.regionSize = world.regionSize;
+  this.chunkSize = world.chunkSize;
+
+  // world data
+  this.entities = world.entities;
+  this.regions = world.regions;
+}
+
+World.prototype.cache = function (type, data) {
+  switch (type) {
+    case 'regions':
+      this.regions = data;
+      break;
+  }
+}
+},{"./EventManager":3,"./Network":5}],8:[function(require,module,exports){
+module.exports = {
+  create: function (id, events) {
+    return new Terminal(id, events);
+  }
+};
+
+function Terminal (id, events) {
+  this.element = document.querySelector(id);
+  this.events = events;
+}
+Terminal.prototype.focus = function () {
+  this.element.focus();
+}
+var historyIndex = -1;
+var terminalHistory = [];
+Terminal.prototype.prevHistory = function () {
+  if (terminalHistory.length > 0 && historyIndex < terminalHistory.length - 1) {
+    historyIndex++;
+    this.element.value = terminalHistory[historyIndex];
+  }
+}
+Terminal.prototype.nextHistory = function () {
+  if (terminalHistory.length > 0 && historyIndex > -1) {
+    historyIndex--;
+    if (historyIndex === -1) {
+      this.element.value = '';
+    } else {
+      this.element.value = terminalHistory[historyIndex];
+    }
+
+    // set caret at the end of line
+    // strange hack for chrome
+    var that = this;
+    setTimeout(function () { that.element.value = that.element.value; }, 0);
+  }
+}
+Terminal.prototype.submit = function () {
+  input = this.element.value;
+  
+  // check if input is not empty
+  if (input !== '') {
+    // update terminal history if it's not the same
+    // as last input
+    if (terminalHistory[0] !== input) {
+      terminalHistory.unshift(input);
+    }
+    // console.log(terminalHistory, historyIndex);
+    historyIndex = -1;
+
+    this.events.emit('message', input);
+
+    this.element.value = '';
+  }
+}
+
+},{}],9:[function(require,module,exports){
+// Reverie client
+// Created by Jonathon Orsi
+const Renderer = require('./Renderer');
+const World = require('./World');
+const Entity = require('./Entity');
+const Input = require('./Input');
+const Network = require('./Network');
+
+// init socket.io
+Network.init(io());
+
+// init Input
+Input.init();
+
+// init Renderer
+Renderer.init(document.querySelector('#reverie'));
+
+// init World
+World.init();
+
+// init Entity
+Entity.init();
+
+// start update loop
+function update() {
+  Renderer.render({
+    entity: Entity.get('entity'),
+    world: World.get('world'),
+    debug: {
+      world: World.get('world'),
+      entity: Entity.get('entity')
+    },
+  });
+  requestAnimationFrame(update);
+}
+update();
+
+},{"./Entity":2,"./Input":4,"./Network":5,"./Renderer":6,"./World":7}],10:[function(require,module,exports){
+let components = {};
+module.exports = {
+  register: function (componentName, component) {
+    // registers a new named component
+    // and can provide an object or function as
+    // the component
+
+    // check if component name already exists
+    if (components[componentName] !== undefined) {
+      return;
+    }
+
+    // create component entry with properties,
+    // and an array of entities registered to that
+    // component
+    components[componentName] = {
+      component: component,
+      entities: []
+    };
+  },
+  add: function (componentName, entity) {
+    // make sure component is registered first
+    if (components[componentName] === undefined) {
+      return;
+    }
+
+    let component = components[componentName];
+    
+    // make sure entity doesn't already have component
+    if (entity.has(componentName)) {
+      return;
+    }
+    // create component on entity
+    entity.components[componentName] = new Component(component.component);
+
+    // add entity to component entity list
+    if (component.entities.indexOf(entity) > -1) {
+      return;
+    }
+    component.entities.push(entity);
+
+    return entity;
+  },
+  getEntitiesWith: function (componentName) {
+    // check if component exists
+    if (!components[componentName]) return;
+    return components[componentName].entities;
+  }
+}
+
+function Component (component) {
+  if (typeof component === 'function') {
+    return component;
+  } else if (typeof component === 'object') {
+    var obj = {};
+    for (let property in component) {
+      obj[property] = component[property];
+    }
+    return obj;
+  }
+}
+},{}],11:[function(require,module,exports){
+var Component = require('../shared/Component');
+
+let types = {};
+let entities = [];
+module.exports = {
+  register: function (entityName, components) {
+    // registers a new type of entity
+    // with an array of components to add
+    // to it when created
+
+    if (types[entityName] !== undefined) {
+      // already registered
+      return;
+    }
+
+    types[entityName] = components;
+  },
+  create: function (type) {
+    // check if entity type exists
+    let components = types[type];
+    if (!components) return;
+    
+    // creates a new entity of the type
+    // and adds all of its components
+    let entity = new Entity(type);
+
+    components.forEach(function (componentName) {
+      entity.add(componentName);
+    });
+
+    // add to entities list
+    entities.push(entity);
+    
+    return entity;
+  },
+  remove: function (entity) {
+    for (var i = 0; i < entities.length; i++) {
+      if (entity === entities[i]) {
+        entities.splice(i, 1);
+        break;
+      }
+    }
+  },
+  clone: function (e) {
+    // recreate entity from data
+    let entity = new Entity(e.type);
+    entity.id = e.id;
+    
+    // add each component to entity
+    for (let component in e.components) {
+      entity.components[component] = e.components[component];
+    }
+    
+    return entity;
+  }
+}
+
+var id = 0;
+function Entity (type) {
+  this.type = type;
+  this.id = ++id;
+	this.components = {};
+}
+Entity.prototype.has = function (componentName) {
+  return this.components[componentName] !== undefined;
+}
+Entity.prototype.get = function (componentName) {
+  return this.components[componentName];
+}
+Entity.prototype.add = function (componentName) {
+  Component.add(componentName, this);
+}
+Entity.prototype.remove = function (componentName) {
+  delete this.components[componentName];
+}
+
+},{"../shared/Component":10}]},{},[9]);

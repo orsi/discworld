@@ -1,35 +1,36 @@
 // Reverie client
 // Created by Jonathon Orsi
-var Canvas = require('./renderer/canvas');
-var World = require('./world/world');
+const Renderer = require('./Renderer');
+const World = require('./World');
+const Entity = require('./Entity');
+const Input = require('./Input');
+const Network = require('./Network');
 
-module.exports = Reverie = {};
+// init socket.io
+Network.init(io());
 
-Reverie.dom = {
-  terminal: document.querySelector('#terminal'),
-  cursor: document.querySelector('cursor')
+// init Input
+Input.init();
+
+// init Renderer
+Renderer.init(document.querySelector('#reverie'));
+
+// init World
+World.init();
+
+// init Entity
+Entity.init();
+
+// start update loop
+function update() {
+  Renderer.render({
+    entity: Entity.get('entity'),
+    world: World.get('world'),
+    debug: {
+      world: World.get('world'),
+      entity: Entity.get('entity')
+    },
+  });
+  requestAnimationFrame(update);
 }
-Reverie.input = require('./input/input')();
-Reverie.terminal = require('./input/terminal')(Reverie.dom.terminal);
-Reverie.sockets = require('./network/sockets');
-Reverie.sockets.init(io());
-
-Reverie.canvas = Canvas;
-Reverie.canvas.moveOffsetTo(-Reverie.canvas.viewport.center.x, -Reverie.canvas.viewport.center.y);
-Reverie.container = document.querySelector('#reverie');
-Reverie.container.appendChild(Reverie.canvas.canvas);
-
-Reverie.world = require('./world/world');
-
-// start animation loop
-function canvasLoop() {
-  if (Reverie.world.getWorld()) {
-      Reverie.canvas.render({
-        character: Reverie.world.getCharacter(),
-        world: Reverie.world.getWorld(),
-        entities: Reverie.world.getEntities()
-      });
-  }
-  requestAnimationFrame(canvasLoop);
-}
-canvasLoop();
+update();

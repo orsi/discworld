@@ -1,34 +1,44 @@
-var Canvas = require('../renderer/canvas'),
-    Terminal = require('../input/terminal');
+var EventManager = require('./EventManager');
+var events;
+var Renderer = require('./Renderer');
+var canvas = Renderer;
+var Terminal = require('./input/Terminal');
+var World = require('./World')
 
-module.exports = Input = function () {
-  window.addEventListener('resize', Canvas.resize);
+var terminal; 
+module.exports = {
+  init: function () {
+    events = EventManager.register('input');
+    terminal = Terminal.create('#terminal', events);
 
-  // IE9, Chrome, Safari, Opera
-  window.addEventListener("wheel", Input.onMouseWheel, false);
+    window.addEventListener('resize', canvas.resize);
 
-  // remove context menu
-  window.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    // IE9, Chrome, Safari, Opera
+    window.addEventListener("wheel", Input.onMouseWheel, false);
 
-  // mouse events
-  window.addEventListener('mousedown', Input.onMouseEvent);
-  window.addEventListener('mouseup', Input.onMouseEvent);
-  window.addEventListener('mousemove', Input.onMouseEvent)
+    // remove context menu
+    window.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  // keyboard events
-  document.addEventListener('keydown', Input.onKeyDown);
-  document.addEventListener('keyup', Input.onKeyUp);
-  document.addEventListener('keypress', Input.onKeyPress);
+    // mouse events
+    window.addEventListener('mousedown', Input.onMouseEvent);
+    window.addEventListener('mouseup', Input.onMouseEvent);
+    window.addEventListener('mousemove', Input.onMouseEvent)
 
-  return this;
-}
+    // keyboard events
+    document.addEventListener('keydown', Input.onKeyDown);
+    document.addEventListener('keyup', Input.onKeyUp);
+    document.addEventListener('keypress', Input.onKeyPress);
+  },
+};
+
+var Input = {};
 
 Input.mouseInterval = null;
 Input.onMouseWheel = function (e) {
   if (e.deltaY < 0) {
-    Canvas.increaseWorldScale();
+    World.trigger('zoomIn');
   } else {
-    Canvas.decreaseWorldScale();
+    World.trigger('zoomOut');
   }
 }
 Input.onMouseEvent = function (e) {
@@ -94,30 +104,30 @@ var scrollSpeed = 1;
 Input.onMouseRight = function (e) {
   switch (Input.mouseLocation) {
     case 'topLeft':
-      Canvas.move(scrollSpeed, scrollSpeed);
+      canvas.move(scrollSpeed, scrollSpeed);
       break;
     case 'topCenter':
-      Canvas.move(0, scrollSpeed);
+      canvas.move(0, scrollSpeed);
       break;
     case 'topRight':
-      Canvas.move(-scrollSpeed, scrollSpeed);
+      canvas.move(-scrollSpeed, scrollSpeed);
       break;
     case 'centerLeft':
-      Canvas.move(scrollSpeed, 0);
+      canvas.move(scrollSpeed, 0);
       break;
     case 'centerCenter':
       break;
     case 'centerRight':
-    Canvas.move(-scrollSpeed, 0);
+    canvas.move(-scrollSpeed, 0);
       break;
     case 'bottomLeft':
-      Canvas.move(scrollSpeed, -scrollSpeed);
+      canvas.move(scrollSpeed, -scrollSpeed);
       break;
     case 'bottomCenter':
-      Canvas.move(0, -scrollSpeed);
+      canvas.move(0, -scrollSpeed);
       break;
     case 'bottomRight':
-      Canvas.move(-scrollSpeed, -scrollSpeed);
+      canvas.move(-scrollSpeed, -scrollSpeed);
       break;
   }
 }

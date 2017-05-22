@@ -1,4 +1,4 @@
-var utils = require('../utilities/Utilities');
+var utils = require('../Utilities');
 var perlin = utils.perlin;
 var rand = utils.random;
 var automaton = utils.automaton;
@@ -7,16 +7,16 @@ module.exports = {
   generate: function (generatorName, options) {
     switch (generatorName) {
       case 'earth':
-        return generateEarth(options);
+        generateEarth(options);
         break;
       case 'wind':
-        return generateWind(options);
+        generateWind(options);
        break;
       case 'water':
-        return generateWater(options);
+        generateWater(options);
         break;
       case 'fire':
-        return generateFire(options);
+        generateFire(options);
         break;
     }
   }
