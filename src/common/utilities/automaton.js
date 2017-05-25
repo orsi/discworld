@@ -1,14 +1,9 @@
-var Random = require('./random');
-
-module.exports = {
-  create: function (x, y, options) {
-    return new Automaton(x, y, options);
-  }
-}
-
-function Automaton (x, y, options) {
+module.exports = Automaton;
+function Automaton (x, y, rand, options) {
   this.x = x || 50;
   this.y = y || 50;
+
+  this.rand = rand;
 
   options = options || {};
   this.steps = options.steps || 4;
@@ -18,17 +13,17 @@ function Automaton (x, y, options) {
   this.map = [];
 
   // create automaton map
-  for (var x = 0; x < this.x; x++) {
+  for (let x = 0; x < this.x; x++) {
     this.map.push([]);
-    for (var y = 0; y < this.y; y++) {
+    for (let y = 0; y < this.y; y++) {
       // randomly choose alive/dead
-      var alive = Random.random() < this.probability;
+      let alive = this.rand.next() < this.probability;
       this.map[x][y] = alive;
     }
   }
 
   // do iterations
-  for (var i = 0; i < this.steps; i++) {
+  for (let i = 0; i < this.steps; i++) {
     this.next();
   }
 
@@ -36,13 +31,13 @@ function Automaton (x, y, options) {
 }
 
 Automaton.prototype.next = function () {
-  var nextMap = [];
+  let nextMap = [];
 
   //Loop over each row and column of the map
-  for(var x = 0; x < this.x; x++) {
+  for(let x = 0; x < this.x; x++) {
     nextMap.push([]);
-    for(var y = 0; y < this.y; y++){
-        var neighboursCount = this.countNeighbours(x, y);
+    for(let y = 0; y < this.y; y++){
+        let neighboursCount = this.countNeighbours(x, y);
 
         // If the cell is alive, see if it is NOT surrounded by any of the integers in the survival list
         if (x === 0 || y === 0 || x === this.x - 1 || y === this.y - 1) {
@@ -66,11 +61,11 @@ Automaton.prototype.next = function () {
   this.map = nextMap;
 }
 Automaton.prototype.countNeighbours = function (cellX, cellY) {
-  var count = 0;
-  for(var x = -1; x < 2; x++) {
-    for(var y = -1; y < 2; y++) {
-        var neighbourX = cellX + x;
-        var neighbourY = cellY + y;
+  let count = 0;
+  for(let x = -1; x < 2; x++) {
+    for(let y = -1; y < 2; y++) {
+        let neighbourX = cellX + x;
+        let neighbourY = cellY + y;
         if(x == 0 && y == 0) {
           // this is the current cell
         } else if (neighbourX < 0 || neighbourY < 0 || neighbourX >= this.x - 1 || neighbourY >= this.y - 1) {

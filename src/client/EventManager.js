@@ -9,9 +9,6 @@ module.exports = {
     }
     var system = new System(name);
     systems.push(system);
-
-    console.log(systems);
-    
     return system;
   }
 }
@@ -24,6 +21,5 @@ System.prototype.on = function (eventType, listener) {
   emitter.on(eventType, listener);
 }
 System.prototype.emit = function (eventType, data, cb) {
-  if (eventType === 'world') console.log('world received from ' + this.name, data, cb);
-  emitter.emit(this.name + ':' + eventType, data, cb);
+  emitter.emit(eventType, data, cb);
 }

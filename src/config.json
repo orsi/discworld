@@ -1,0 +1,12 @@
+{
+    "debug": true,
+    "console": {
+        "logLevel": 2
+    },
+    "world": {
+
+    },
+    "network": {
+        "port": 3000
+    }
+}

@@ -14,7 +14,7 @@ function Random (seed) {
     }
     seed = values.join('') + 0;
   }
-  this._seed = seed;
+  this.seed = seed;
   this.a = 9301;
   this.b = 49297;
   this.m = 233280;
@@ -24,5 +24,5 @@ Random.prototype.next = function () {
   return this.seed / this.m;
 }
 Random.prototype.range = function (min, max) {
-  return (this.random() * (max - min)) + min;
+  return (this.next() * (max - min)) + min;
 }

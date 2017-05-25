@@ -1,15 +1,16 @@
-var events = require('events');
-var log = require('./Logger').log;
-var emitter = new events.EventEmitter();
+const events = require('events');
+const emitter = new events.EventEmitter();
 
-var systems = [];
+const log = require('./Log').log;
+console.log(log);
+let systems = [];
 module.exports = {
   register: function (name) {
     log.debug('"' + name + '" system registered to event channel');
-    for (var i = 0; i < systems.length; i++) {
+    for (let i = 0; i < systems.length; i++) {
       if (systems[i].name === name) return systems[i];
     }
-    var system = new System(name);
+    let system = new SystemEvent(name);
     systems.push(system);
 
     log.info(systems);
@@ -23,14 +24,15 @@ module.exports = {
 // since each world attaches a new event listener, instead of using
 // the old one
 
-function System (name) {
+function SystemEvent (name) {
   this.name = name;
   this.emitter = emitter;
 }
-System.prototype.on = function (eventName, listener) {
+SystemEvent.prototype.on = function (eventName, listener) {
   emitter.on(eventName, listener);
 }
-System.prototype.emit = function (eventName, data, cb) {
+SystemEvent.prototype.emit = function (eventName, data, cb) {
   log.debug('"' + this.name + '" system emitted event "' + eventName + '"');
   emitter.emit(eventName, data, cb);
 }
+SystemEvent.prototype.request = function () {}

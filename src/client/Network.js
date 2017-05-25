@@ -1,61 +1,25 @@
-var server;
-module.exports = {
-  init: function (socket) {
-    var events = EventManager.register('network');
-    server = new Server(socket, events);
-  },
-  send: function (type, data) {
-    switch (type) {
-      case 'message':
-        server.sendMessage(data);
-        break;
-    }
-  }
-}
+const EventManager = require('./EventManager');
 
-// imports
-var EventManager = require('./EventManager');
-// var Canvas = require('./Renderer');
-// var World = require('./World');
-
-function Server (socket, events) {
+module.exports = Server;
+function Server (socket) {
     // register receiving events
     this.socket = socket;
-    this.events = events;
 
-    // recieved events from server
-    this.socket.on('connect', () => {
-      console.log('connected');
-    });
-    this.socket.on('entity', (e) => {
-      this.events.emit('entity', e);
-    });
-    this.socket.on('world', (w) => {
-      this.events.emit('world', w);
-    });
-    // this.socket.on('world:created', (world) => {
-    //   this.events.emit('world', world);
-    // });
-    // this.socket.on('world:generated', (regions) => {
-    //   console.log(regions);
-    //   this.events.emit('regions', regions);
-    // });
+    // register network to events
+    this.events = EventManager.register('server');
 
-    // events from systems to server
-    this.events.on('input:message', (message) => {
-      this.socket.emit('message', message, () => {
+    // receiving events
+    this.socket.on('connect', () => this.events.emit('server/connected', this));
 
-      });
-    });
-    // socket.on('network:world:initialized', (character, world, entities) => {
-    //   console.dir(world);
-    //   console.dir(character);
-    //   World.setCharacter(character);
-    //   World.setWorld(world);
-    //   World.setEntities(entities);
-    // });
-}
+    this.socket.on('player/init', (e) => this.events.emit('player/init', e));
+    this.socket.on('player/update', (playerEntity) => this.events.emit('player/update', playerEntity));
 
-Server.prototype.newMessage = function (message) {}
-Server.prototype.sendMessage = function (message) {
+    this.socket.on('world/init', (world) => this.events.emit('world/init', world));
+    this.socket.on('world/world', (wm) => this.events.emit('world/world', wm));
+    this.socket.on('world/update', (world) => this.events.emit('world/update', world));
+
+    this.socket.on('debug/maps', (maps) => this.events.emit('debug/maps', maps));
+
+    // outgoing events
+    this.events.on('network/send', (event, data) => this.socket.emit(event, data));
 }

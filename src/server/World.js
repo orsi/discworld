@@ -1,32 +1,27 @@
-const SystemEvents = require('./SystemEvents');
+const ServerEvents = require('./ServerEvents');
 let events;
-const utils = require('./Utilities');
+const log = require('./Log').log;
+
+const utils = require('../common/Utilities');
 const perlin = utils.perlin;
 const random = utils.random;
-const log = require('./Logger').log;
 
-const Region = require('./world/Region');
-const Area = require('./world/Area');
-const Location = require('./world/Location');
+const WorldMap = require('../common/world/WorldMap');
+const Region = require('../common/world/RegionMap');
+const Area = require('../common/world/AreaMap');
+const Location = require('../common/world/LocationMap');
 
-const Entity = require('../shared/Entity');
+const Entity = require('../common/Entity');
 
-var Generator = require('./world/Generator');
-var RegionGenerator = require('./world/RegionGenerator');
+// var Generator = require('./world/Generator');
+// var RegionGenerator = require('./world/RegionGenerator');
 
-let world;
-module.exports = {
-  create: function (options) {
-    if (world) world.destroy();
-    world = new World(options);
-    world.run();
-    return world;
-  },
-  get: function () {
-    return world;
-  }
-};
+module.exports = World;
 
+/*
+ *  World Object
+ * 
+ */
 function World (options) {
   // set default options
   options = options || {};
@@ -73,14 +68,20 @@ function World (options) {
   // world data
   this.entities = [];
   this.maps = {};
+  this.biomes = [];
   this.regions = [];
 
   // register events from other systems
-  events = SystemEvents.register('world');
+  events = ServerEvents.register('world');
   events.on('client/connection', (client) => this.onClientConnection(client));
   events.on('client/disconnect', (client) => this.onClientDisconnect(client));
   events.on('client/message', (client, message) => this.onClientMessage(client, message));
   events.on('client/move', (client, movement) => this.onClientMove(client, movement));
+  events.on('player/levitate', (client, levitate) => this.onPlayerLevitate(client, levitate));
+
+  // generate world data
+  this.fields = {};
+  this.generateWorldMap();
 
   events.emit('world/update', this.get('world'));
 }
@@ -95,26 +96,27 @@ World.prototype.destroy = function () {
 
 World.prototype.onClientConnection = function (client) {
   // create entity for client
-  let entity = Entity.create('spirit');
+  let entity = new Entity('spirit');
 
-  // add socket.id to entity for identification
-  entity.clientId = client.id;
+  // add entity to client
+  client.entity = entity;
 
-  let position = entity.get('position');
-  position.x = Math.floor(Math.random() * this.x);
-  position.y = Math.floor(Math.random() * this.y);
-  position.z = Math.floor(Math.random() * this.z);
+  let position = entity.getComponent('position');
+  position.x = 0; //Math.floor(Math.random() * this.x);
+  position.y = 0; //Math.floor(Math.random() * this.y);
+  position.z = 0;//Math.floor(Math.random() * this.z);
   
   // add to entity list
   this.entities.push(entity);
 
-  client.send('entity', entity);
-  client.send('world', this.get('regions'));
+  // send back client information
+  client.send('player/init', entity);
+  client.send('world/init', this.get('world'));
 }
 World.prototype.onClientDisconnect = function (client) {
   for (var i = 0; i < this.entities.length; i++) {
       var entity = this.entities[i];
-      if (entity.socketId === socket.id) {
+      if (client.entity === entity) {
         this.entities.splice(i, 1);
         break;
       }
@@ -122,10 +124,7 @@ World.prototype.onClientDisconnect = function (client) {
 }
 World.prototype.onClientMessage = function (client, message) {
   // find entity associated with client
-  let entity;
-  this.entities.forEach((e) => {
-    if (e.clientId === client.id) entity = e;
-  });
+  let entity = client.entity;
 
   if (entity) {
     log.debug('received message "' + message + '" from entity with id #' + entity.id)
@@ -133,10 +132,62 @@ World.prototype.onClientMessage = function (client, message) {
 }
 World.prototype.onClientMove = function (client, movement) {
   // find entity associated with client
-  let entity = this.get('entity', client.id);
+  let entity = client.entity;
   
-  if (entity) {
-    log.debug('received move "' + movement + '" from entity with id #' + entity.id)
+  if (entity && entity['position']) {
+    log.debug('received move "' + movement.dir + '" from entity with id #' + entity.id);
+    switch (movement.dir) {
+      case 'north':
+        if (entity['position'].y > 0)
+          entity['position'].y--
+        break;
+      case 'northEast':
+        if (entity['position'].y > 0)
+          entity['position'].y--;
+        if (entity['position'].x < this.x)
+          entity['position'].x++;
+        break;
+      case 'east':
+        if (entity['position'].x < this.x)
+          entity['position'].x++;
+        break;
+      case 'southEast':
+        if (entity['position'].y < this.y)
+          entity['position'].y++;
+        if (entity['position'].x < this.x)
+          entity['position'].x++;
+        break;
+      case 'south':
+        if (entity['position'].y < this.y)
+          entity['position'].y++;
+        break;
+      case 'southWest':
+        if (entity['position'].y < this.y)
+          entity['position'].y++;
+        if (entity['position'].x > 0)
+          entity['position'].x--;
+        break;
+      case 'west':
+        if (entity['position'].x > 0)
+          entity['position'].x--;
+        break;
+      case 'northWest':
+        if (entity['position'].y > 0)
+          entity['position'].y--;
+        if (entity['position'].x > 0)
+          entity['position'].x--;
+        break;
+    }
+
+    client.send('player/update', entity);
+  }
+}
+World.prototype.onPlayerLevitate = function (client, levitate) {
+  // find entity associated with client
+  let entity = client.entity;
+
+  if (entity.type === 'spirit') {
+    log.debug('received levitate "' + levitate + '" from entity with id #' + entity.id)
   }
 }
 
@@ -217,6 +268,7 @@ World.prototype.getWorldData = function () {
     cycle: this.cycle,
     regions: this.regions.length,
   };
+  return world;
 }
 World.prototype.getRegionData = function () {
   let regions = [];
@@ -228,7 +280,35 @@ World.prototype.getRegionData = function () {
   return regions;
 }
 
+World.prototype.generateWorldMap = function () {
+  let sample = 32 / 2;
+  perlin.seed(this.random.next());
+  let temp = this.maps.temperature = [];
+  for (let x = 0; x < 32; x++) {
+    temp.push([]);
+    for (let y = 0; y < 32; y++) {
+      temp[x].push([]);
+      for (let z = 0; z < 32; z++) {
+        value = perlin.noise3d(x / sample, y / sample, z);
+        value = value * 50;
+        temp[x][y][z] = value;
+      }
+    }
+  }
 
+  
+  this.maps.cells = [];
+  for (let i = 0; i < 5; i++) {
+    let cells = new utils.automaton(32, 32, this.random);
+    let cz = Math.floor(this.random.range(0, 32));
+    let map = {
+      z: cz,
+      values: cells
+    }
+    this.maps.cells.push(map);
+  }
+  events.emit('network/broadcast', 'debug/maps', this.maps);
+}
 
 
 // OLD STUFF

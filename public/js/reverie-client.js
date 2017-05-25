@@ -303,23 +303,85 @@ function isUndefined(arg) {
 }
 
 },{}],2:[function(require,module,exports){
-const EventManager = require('./EventManager');
-var Entity = require('../shared/Entity');
-var entity;
-
+let debug;
 module.exports = {
     init: function () {
-        events = EventManager.register('world');
+        element = document.createElement('div');
+        element.id = 'debug';
+        element.style.position = 'fixed';
+        element.style.zIndex = 9999;
+        element.style.top = 0;
+        element.style.left = 0;
+        element.style.right = 0;
+        element.style.fontSize = '.7em';
 
-        events.on('network:entity', (e) => {
-            entity = Entity.clone(e);
-        });
+        debug = document.createElement('pre');
+        element.appendChild(debug);
+
+        document.body.appendChild(element);
+        return this;
     },
-    get: function () {
-        return entity;
+    output: function (debug) {
+        let delta = debug.delta;
+        let view = debug.view;
+        let world = debug.world;
+        let entity = debug.entity;
+
+        clear();
+
+        write(Math.floor((1000 / delta)) + 'fps');
+
+        // canvas info
+        if (view) {
+            write('viewport');
+            write(JSON.stringify(view, function replacer(key, value) {
+                // Filtering out properties
+                if (typeof value === 'function' || typeof value === undefined) {
+                    return value.toString();
+                }
+                return value;
+            }, 2));
+        }
+
+        // world info
+        if (world) {
+            write('world');
+            write(JSON.stringify(world, function replacer(key, value) {
+                // Filtering out properties
+                if (typeof value === 'function' || typeof value === undefined) {
+                    return value.toString();
+                } else if (Array.isArray(value)) {
+                    return 'array';
+                }
+                return value;
+            }, 2));
+        }
+
+        // entity info
+        if (entity) {
+            write('entity');
+            write(JSON.stringify(entity, function replacer(key, value) {
+                // Filtering out properties
+                if (typeof value === 'function' || typeof value === undefined) {
+                    return value.toString();
+                }
+                return value;
+            }, 2));
+        }
     }
 }
-},{"../shared/Entity":11,"./EventManager":3}],3:[function(require,module,exports){
+
+function write(text) {
+    let node = document.createTextNode(text + '\n');
+    debug.appendChild(node);
+}
+
+function clear () {
+    while (debug.hasChildNodes()) {
+        debug.removeChild(debug.lastChild);
+    }
+}
+},{}],3:[function(require,module,exports){
 var events = require('events');
 var emitter = new events.EventEmitter();
 
@@ -331,9 +393,6 @@ module.exports = {
     }
     var system = new System(name);
     systems.push(system);
-
-    console.log(systems);
-    
     return system;
   }
 }
@@ -346,70 +405,63 @@ System.prototype.on = function (eventType, listener) {
   emitter.on(eventType, listener);
 }
 System.prototype.emit = function (eventType, data, cb) {
-  if (eventType === 'world') console.log('world received from ' + this.name, data, cb);
-  emitter.emit(this.name + ':' + eventType, data, cb);
+  emitter.emit(eventType, data, cb);
 }
 },{"events":1}],4:[function(require,module,exports){
-var EventManager = require('./EventManager');
-var events;
-var Renderer = require('./Renderer');
-var canvas = Renderer;
-var Terminal = require('./input/Terminal');
-var World = require('./World')
+let EventManager = require('./EventManager');
+let Terminal = require('./input/Terminal');
 
-var terminal; 
-module.exports = {
-  init: function () {
-    events = EventManager.register('input');
-    terminal = Terminal.create('#terminal', events);
+module.exports = InputManager;
 
-    window.addEventListener('resize', canvas.resize);
+function InputManager () {
+  this.mouseInterval = null;
+  this.mouseLocation = '';
+  this.mouseEvent = null;
+  
+  // remove context menu
+  window.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-    // IE9, Chrome, Safari, Opera
-    window.addEventListener("wheel", Input.onMouseWheel, false);
+  // browser based events
+  window.addEventListener('resize', () => this.onWindowResize());
 
-    // remove context menu
-    window.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  // mouse events
+  window.addEventListener('wheel', (e) => this.onMouseWheel(e), false); // IE9, Chrome, Safari, Opera
+  window.addEventListener('mousedown', (e) => this.onMouseDown(e));
+  window.addEventListener('mouseup', (e) => this.onMouseUp(e));
+  window.addEventListener('mousemove', (e) => this.onMouseMove(e));
+  window.addEventListener('dblclick', (e) => this.onMouseDoubleClick(e));
+  window.addEventListener('click', (e) => this.onMouseClick(e));
 
-    // mouse events
-    window.addEventListener('mousedown', Input.onMouseEvent);
-    window.addEventListener('mouseup', Input.onMouseEvent);
-    window.addEventListener('mousemove', Input.onMouseEvent)
+  // keyboard events
+  document.addEventListener('keydown', (e) => this.onKeyDown(e));
+  document.addEventListener('keyup', (e) => this.onKeyUp(e));
+  document.addEventListener('keypress', (e) => this.onKeyPress(e));
 
-    // keyboard events
-    document.addEventListener('keydown', Input.onKeyDown);
-    document.addEventListener('keyup', Input.onKeyUp);
-    document.addEventListener('keypress', Input.onKeyPress);
-  },
-};
+  // register system to events
+  this.events = EventManager.register('input');
+  this.terminal = new Terminal('#terminal', this.events);
+}
 
-var Input = {};
+InputManager.prototype.onWindowResize = function () {
 
-Input.mouseInterval = null;
-Input.onMouseWheel = function (e) {
+}
+InputManager.prototype.onMouseWheel = function (e) {
   if (e.deltaY < 0) {
-    World.trigger('zoomIn');
+    this.events.emit('network/send', 'player/levitate', 'in');
   } else {
-    World.trigger('zoomOut');
+    this.events.emit('network/send', 'player/levitate', 'out');
   }
 }
-Input.onMouseEvent = function (e) {
-  // call function for which buttons and movement
-  switch (e.type) {
-    case 'mousemove':
-      Input.onMouseMove(e);
-      break;
-    case 'mouseup':
-      clearInterval(Input.mouseInterval);
-      break;
-    case 'mousedown':
-      if(e.button === 2) Input.mouseInterval = setInterval(function () { Input.onMouseRight(e) }, 25);
-      break;
+InputManager.prototype.onMouseDown = function (e) {
+  if (e) {
+    this.mouseEvent = e;
   }
+  this.mouseInterval = setInterval(() => this.onMouseClick(this.mouseEvent), 1000 / 4);
 }
-
-Input.mouseLocation = '';
-Input.onMouseMove = function (e) {
+InputManager.prototype.onMouseUp = function (e) {
+  clearInterval(this.mouseInterval);
+}
+InputManager.prototype.onMouseMove = function (e) {
   // break up area into 6
   // topLeft, topCenter, topRight, centerLeft, centerCenter, centerRight, bottomLeft, bottomCenter, and bottomRight
   var xLeft = e.clientX > 0 && e.clientX < window.innerWidth / 3;
@@ -433,137 +485,155 @@ Input.onMouseMove = function (e) {
   var bottomRight = xRight && yBottom;
 
   if (topLeft) {
-    Input.mouseLocation = 'topLeft';
+    this.mouseLocation = 'topLeft';
   } else if (topCenter) {
-    Input.mouseLocation = 'topCenter';
+    this.mouseLocation = 'topCenter';
   } else if (topRight) {
-    Input.mouseLocation = 'topRight';
+    this.mouseLocation = 'topRight';
   } else if (centerLeft) {
-    Input.mouseLocation = 'centerLeft';
+    this.mouseLocation = 'centerLeft';
   } else if (centerCenter) {
-    Input.mouseLocation = 'centerCenter';
+    this.mouseLocation = 'centerCenter';
   } else if (centerRight) {
-    Input.mouseLocation = 'centerRight';
+    this.mouseLocation = 'centerRight';
   } else if (bottomLeft) {
-    Input.mouseLocation = 'bottomLeft';
+    this.mouseLocation = 'bottomLeft';
   } else if (bottomCenter) {
-    Input.mouseLocation = 'bottomCenter';
+    this.mouseLocation = 'bottomCenter';
   } else if (bottomRight) {
-    Input.mouseLocation = 'bottomRight';
+    this.mouseLocation = 'bottomRight';
   }
 }
-var scrollSpeed = 1;
-Input.onMouseRight = function (e) {
-  switch (Input.mouseLocation) {
-    case 'topLeft':
-      canvas.move(scrollSpeed, scrollSpeed);
-      break;
-    case 'topCenter':
-      canvas.move(0, scrollSpeed);
-      break;
-    case 'topRight':
-      canvas.move(-scrollSpeed, scrollSpeed);
-      break;
-    case 'centerLeft':
-      canvas.move(scrollSpeed, 0);
-      break;
-    case 'centerCenter':
-      break;
-    case 'centerRight':
-    canvas.move(-scrollSpeed, 0);
-      break;
-    case 'bottomLeft':
-      canvas.move(scrollSpeed, -scrollSpeed);
-      break;
-    case 'bottomCenter':
-      canvas.move(0, -scrollSpeed);
-      break;
-    case 'bottomRight':
-      canvas.move(-scrollSpeed, -scrollSpeed);
-      break;
-  }
+InputManager.prototype.onMouseRight = function (e) {
+  
 }
-
-Input.onKeyDown = function (e) {
-  terminal.focus();
-  switch (e.key) {
-    case 'ArrowUp':
-      terminal.prevHistory();
-      break;
-    case 'ArrowDown':
-      terminal.nextHistory();
-      break;
-    case 'Enter':
-      terminal.submit();
-      break;
-  }
+InputManager.prototype.onMouseDoubleClick = function (e) {
+  // todo, figure out where double click is on canvas
+  // console.log(e);
+   if(e.button === 0) this.events.emit('network/send', 'player/interact', e);
 }
-Input.onKeyUp = function (w) {}
-Input.onKeyPress = function (e) {}
-
-},{"./EventManager":3,"./Renderer":6,"./World":7,"./input/Terminal":8}],5:[function(require,module,exports){
-var server;
-module.exports = {
-  init: function (socket) {
-    var events = EventManager.register('network');
-    server = new Server(socket, events);
-  },
-  send: function (type, data) {
-    switch (type) {
-      case 'message':
-        server.sendMessage(data);
+InputManager.prototype.onMouseClick = function (e) {
+  if(e.button === 0) this.events.emit('network/send', 'player/inspect', e);
+  else if (e.button === 2) {
+    switch (this.mouseLocation) {
+      case 'topLeft':
+        this.events.emit('network/send', 'player/move', {
+          dir: 'west'
+        });
+        break;
+      case 'topCenter':
+        this.events.emit('network/send', 'player/move', {
+          dir: 'northWest'
+        });
+        break;
+      case 'topRight':
+        this.events.emit('network/send', 'player/move', {
+          dir: 'north'
+        });
+        break;
+      case 'centerLeft':
+        this.events.emit('network/send', 'player/move', {
+          dir: 'southWest'
+        });
+        break;
+      case 'centerCenter':
+        break;
+      case 'centerRight':
+        this.events.emit('network/send', 'player/move', {
+          dir: 'northEast'
+        });
+        break;
+      case 'bottomLeft':
+        this.events.emit('network/send', 'player/move', {
+          dir: 'south'
+        });
+        break;
+      case 'bottomCenter':
+        this.events.emit('network/send', 'player/move', {
+          dir: 'southEast'
+        });
+        break;
+      case 'bottomRight':
+        this.events.emit('network/send', 'player/move', {
+          dir: 'east'
+        });
         break;
     }
   }
 }
+InputManager.prototype.onKeyDown = function (e) {
+  this.terminal.focus();
+  switch (e.key) {
+    case 'ArrowUp':
+      this.terminal.prevHistory();
+      break;
+    case 'ArrowDown':
+      this.terminal.nextHistory();
+      break;
+    case 'Enter':
+      this.terminal.submit();
+      break;
+  }
+}
+InputManager.prototype.onKeyUp = function (w) {}
+InputManager.prototype.onKeyPress = function (e) {}
 
-// imports
-var EventManager = require('./EventManager');
-// var Canvas = require('./Renderer');
-// var World = require('./World');
+},{"./EventManager":3,"./input/Terminal":10}],5:[function(require,module,exports){
+const EventManager = require('./EventManager');
 
-function Server (socket, events) {
+module.exports = Server;
+function Server (socket) {
     // register receiving events
     this.socket = socket;
-    this.events = events;
 
-    // recieved events from server
-    this.socket.on('connect', () => {
-      console.log('connected');
-    });
-    this.socket.on('entity', (e) => {
-      this.events.emit('entity', e);
-    });
-    this.socket.on('world', (w) => {
-      this.events.emit('world', w);
-    });
-    // this.socket.on('world:created', (world) => {
-    //   this.events.emit('world', world);
-    // });
-    // this.socket.on('world:generated', (regions) => {
-    //   console.log(regions);
-    //   this.events.emit('regions', regions);
-    // });
+    // register network to events
+    this.events = EventManager.register('server');
 
-    // events from systems to server
-    this.events.on('input:message', (message) => {
-      this.socket.emit('message', message, () => {
+    // receiving events
+    this.socket.on('connect', () => this.events.emit('server/connected', this));
 
-      });
-    });
-    // socket.on('network:world:initialized', (character, world, entities) => {
-    //   console.dir(world);
-    //   console.dir(character);
-    //   World.setCharacter(character);
-    //   World.setWorld(world);
-    //   World.setEntities(entities);
-    // });
-}
+    this.socket.on('player/init', (e) => this.events.emit('player/init', e));
+    this.socket.on('player/update', (playerEntity) => this.events.emit('player/update', playerEntity));
 
-Server.prototype.newMessage = function (message) {}
-Server.prototype.sendMessage = function (message) {
+    this.socket.on('world/init', (world) => this.events.emit('world/init', world));
+    this.socket.on('world/world', (wm) => this.events.emit('world/world', wm));
+    this.socket.on('world/update', (world) => this.events.emit('world/update', world));
+
+    this.socket.on('debug/maps', (maps) => this.events.emit('debug/maps', maps));
+
+    // outgoing events
+    this.events.on('network/send', (event, data) => this.socket.emit(event, data));
 }
 },{"./EventManager":3}],6:[function(require,module,exports){
+const EventManager = require('./EventManager');
+const Entity = require('../common/Entity');
+
+module.exports = Player;
+function Player () {  
+    this.entity;
+    // register events
+    this.events = EventManager.register('player');
+    this.events.on('player/init', (e) => this.onReceivePlayerEntity(e));
+    this.events.on('player/update', (e) => this.onReceivePlayerUpdate(e));
+}
+Player.prototype.get = function (name) {
+  switch (name) {
+    case 'entity':
+      return this.entity;
+    case 'regions':
+      break;
+  }
+}
+Player.prototype.onReceivePlayerEntity = function (e) {
+    console.log(e);
+    this.entity = new Entity(e);
+}
+Player.prototype.onReceivePlayerUpdate = function (e) {
+    for (let prop in e) {
+      this.entity[prop] = e[prop];
+    }
+}
+},{"../common/Entity":13,"./EventManager":3}],7:[function(require,module,exports){
 var view, canvas, buffer;
 var lastRender = new Date();
 var delta = 0;
@@ -575,7 +645,19 @@ module.exports = {
     buffer = new Canvas(view.width, view.height);
 
     container.appendChild(canvas.element);
-    view.moveToCenter();
+    return this;
+  },
+  get: function (type) {
+    switch (type) {
+      case 'view':
+        return view;
+      case 'canvas':
+        return canvas;
+      case 'buffer':
+        return buffer;
+      case 'delta':
+        return delta;
+    }
   },
   move: function (x, y) {
     // move offset relative to scale size
@@ -602,23 +684,25 @@ module.exports = {
 
     // draw to buffer
     if (state.world) {
-      world.render(buffer);
+      buffer.drawWorldMap(state.world);
     }
     if (state.regions) {
       for (let region of state.regions) {
-        region.render(buffer);
+        region.render(buffer.ctx, view);
       }
     }
     if (state.entity) {
-      state.entity.components[render](buffer);
+      view.follow(state.entity['position'].x, state.entity['position'].y, state.entity['position'].z);
+      buffer.drawPlayerEntity(state.entity);
     }
     if (state.entities) {
       state.entities.forEach(function (entity) {
-        entity.components[render](buffer);
+        entity.render(buffer.ctx, view);
       });
     }
     if (state.debug) {
-      drawDebugToBuffer(state.debug);
+      // console.log(state.debug.cells)
+      if (state.debug) buffer.drawDebugMaps(state.debug)
     }
 
     // switch to canvas
@@ -635,6 +719,132 @@ function Canvas () {
 Canvas.prototype.clear = function () {
   this.ctx.clearRect(0,0, this.element.width, this.element.height);
 }
+Canvas.prototype.drawPlayerEntity = function (entity) {
+  let canvasPosition = view.worldToCanvas(
+    entity['position'].x,
+    entity['position'].y,
+    entity['position'].z
+  );
+  let widthOffset = entity['transform'].width / 2;
+  this.ctx.fillStyle = 'rgba(150,150,200,.8)';
+  this.ctx.fillRect(
+    canvasPosition.x - view.offset.x - widthOffset, 
+    canvasPosition.y - view.offset.y - entity['transform'].height, 
+    entity['transform'].width, 
+    entity['transform'].height
+  );
+}
+Canvas.prototype.drawEntities = function (entities) {
+  for (let e of entities) {
+    let canvasPosition = view.worldToCanvas(
+      e['position'].x,
+      e['position'].y,
+      e['position'].z
+    );
+    let widthOffset = e['transform'].width / 2;
+    this.ctx.fillStyle = 'rgba(150,150,200,.8)';
+    this.ctx.fillRect(
+      canvasPosition.x - view.offset.x - widthOffset, 
+      canvasPosition.y - view.offset.y - e['transform'].height, 
+      e['transform'].width, 
+      e['transform'].height
+    );
+  }
+}
+Canvas.prototype.drawDebugMaps = function (maps) {
+  let mx = my = mz = 32;
+  for (let x = 0; x < 32; x++) {
+    for (let y = 0; y < 32; y++) {
+      for (let z = 0; z < 32; z++) {
+        let canvasPosition = view.worldToCanvas(x, y, z);
+        canvasPosition.x -= view.offset.x;
+        canvasPosition.y -= view.offset.y;
+
+        let cellMap;
+        for (let i = 0; i < maps.cells.length; i++) {
+          if (maps.cells[i].z === z) cellMap = maps.cells[i];
+        }
+        if (view.isOnScreen(canvasPosition.x, canvasPosition.y) && cellMap && cellMap.values[x][y]) {
+            let val = maps.temperature[x][y][z];
+            let color;
+            if (val < 0) color = 'rgba(0, 0, 255, ' + Math.abs(val) / 50 + ')';
+            if (val >= 0) color = 'rgba(255, 0, 0, ' + val / 50 + ')';
+            this.ctx.fillStyle = color;
+
+            // console.log(color);
+            // console.log(x, y, z);
+            // draw bottom face
+            this.ctx.beginPath();
+            this.ctx.moveTo(canvasPosition.x, canvasPosition.y);
+            this.ctx.lineTo(canvasPosition.x - view.blockSize / 2, canvasPosition.y - view.blockSize / 4);
+            this.ctx.lineTo(canvasPosition.x, canvasPosition.y - (view.blockSize / 2));
+            this.ctx.lineTo(canvasPosition.x + view.blockSize / 2, canvasPosition.y - view.blockSize / 4);
+            this.ctx.closePath();
+            this.ctx.fill();
+        }
+      }
+    }
+  }
+}
+Canvas.prototype.drawCellMap = function (cells) {
+  let mx = my = mz = 32;
+  for (let i = 0; i < 10; i++) {
+    for (let x = 0; x < mx; x++) {
+      for (let y = 0; y < my; y++) {
+        let canvasPosition = view.worldToCanvas(x, y, cells[i].z);
+        canvasPosition.x -= view.offset.x;
+        canvasPosition.y -= view.offset.y;
+        if (view.isOnScreen(canvasPosition.x, canvasPosition.y) && cells[i].values[x][y]) {
+            this.ctx.fillStyle = 'rgba(255,255,255,.5)';
+
+            // console.log(color);
+            // console.log(x, y, z);
+            // draw bottom face
+            this.ctx.beginPath();
+            this.ctx.moveTo(canvasPosition.x, canvasPosition.y);
+            this.ctx.lineTo(canvasPosition.x - view.blockSize / 2, canvasPosition.y - view.blockSize / 4);
+            this.ctx.lineTo(canvasPosition.x, canvasPosition.y - (view.blockSize / 2));
+            this.ctx.lineTo(canvasPosition.x + view.blockSize / 2, canvasPosition.y - view.blockSize / 4);
+            this.ctx.closePath();
+            this.ctx.fill();
+        }
+      }
+    }
+  }
+}
+Canvas.prototype.drawWorldMap = function (wm) {
+  let mx = my = mz = wm.length;
+  for (let x = 0; x < mx; x++) {
+    for (let y = 0; y < my; y++) {
+      for (let z = 0; z < mz; z++) {
+          let canvasPosition = view.worldToCanvas(x, y, z);
+          canvasPosition.x -= view.offset.x;
+          canvasPosition.y -= view.offset.y;
+        if (
+          view.isOnScreen(canvasPosition.x, canvasPosition.y)
+          && (z == mx - 1 || y == mx - 1 || x == mx - 1) // if any position is toward cam
+          ) {
+            let val = wm[x][y][z];
+            let color;
+            if (val < 0) color = 'rgba(0, 0, 255, ' + Math.abs(val) / 50 + ')';
+            if (val >= 0) color = 'rgba(255, 0, 0, ' + val / 50 + ')';
+            this.ctx.fillStyle = color;
+
+            // console.log(color);
+            // console.log(x, y, z);
+            // draw bottom face
+            this.ctx.beginPath();
+            this.ctx.moveTo(canvasPosition.x, canvasPosition.y);
+            this.ctx.lineTo(canvasPosition.x - view.blockSize / 2, canvasPosition.y - view.blockSize / 4);
+            this.ctx.lineTo(canvasPosition.x, canvasPosition.y - (view.blockSize / 2));
+            this.ctx.lineTo(canvasPosition.x + view.blockSize / 2, canvasPosition.y - view.blockSize / 4);
+            this.ctx.closePath();
+            this.ctx.fill();
+        }
+      }
+    }
+  }
+}
 
 function View (width, height) {
   this.top = 0;
@@ -642,8 +852,8 @@ function View (width, height) {
   this.width = width;
   this.height = height;
   this.center = {
-    x: Math.floor(width / 2),
-    y: Math.floor(height /2)
+    x: Math.floor(this.width / 2),
+    y: Math.floor(this.height /2)
   }
   this.offset = {
     x: 0,
@@ -651,49 +861,24 @@ function View (width, height) {
   };
   this.zoom = 1;
   this.minSize = 12;
-  this.blockSize = 12;
+  this.blockSize = 32;
 }
-View.prototype.moveToCenter = function () {
-  this.offset.x = -this.center.x;
-  this.offset.y = -this.center.y;
+View.prototype.follow = function(x, y, z) {
+  let position = view.worldToCanvas(x, y, z);
+  this.centerOn(position.x, position.y);
 }
-View.prototype.isVisible = function (x, y) {
+View.prototype.centerOn = function (x, y) {
+  this.offset.x = x - this.center.x;
+  this.offset.y = y - this.center.y;
+}
+View.prototype.isOnScreen = function (x, y) {
+  // takes canvas positions and sees whether it's in view
   return  x + view.blockSize >= view.left 
           && x - view.blockSize <= view.left + view.width
           && y + view.blockSize >= view.top 
           && y - view.blockSize <= view.top + view.height;
 }
-
-function swap () {
-  // cut the drawn rectangle
-  var image = buffer.ctx.getImageData(view.left, view.top, view.width, view.height);
-  // copy into visual canvas at different position
-  canvas.ctx.putImageData(image, 0, 0);
-}
-function worldToCanvas (worldPosition) {
-  var x = ((worldPosition.x - worldPosition.y) * view.blockSize / 2);
-  var y = ((worldPosition.y + worldPosition.x) * view.blockSize / 4);
-  var z = worldPosition.z * view.blockSize / 2;
-  
-  // if (position.x % 10 === 0 && position.y % 10 === 0) console.log(position, blockX, blockY, blockZ);
-  return {
-    x: x,
-    y: y,
-    z: z
-  }
-}
-function canvasToWorld (canvasPosition) {
-  // return world position in center of viewport
-  var x = ((canvasPosition.x + canvasPosition.y) * 2 / view.blockSize);
-  var y = ((canvasPosition.y - canvasPosition.x) * 4 / view.blockSize);
-  
-  // if (canvasPosition.x % 10 === 0 && canvasPosition.y % 10 === 0) console.log(x, y);
-  return {
-    x: Math.floor(x),
-    y: Math.floor(y),
-  }
-}
-function isBlockVisible (bx, by, bz, maxX, maxY, maxZ, position) {
+View.prototype.isObscured = function (bx, by, bz, maxX, maxY, maxZ, position) {
   // check if there are any blocks directly
   // infront of this from the viewport perspective
   var offsetX = bx + 1;
@@ -731,16 +916,44 @@ function isBlockVisible (bx, by, bz, maxX, maxY, maxZ, position) {
   // if (bx % 10 === 0 && by % 10 === 0 ) console.log(viewportVisible, faceVisible);
   return viewportVisible && faceVisible;
 }
+View.prototype.worldToCanvas = function (wx, wy, wz) {
+  var cx = ((wx - wy) * view.blockSize / 2);
+  var cy = ((wy + wx) * view.blockSize / 4) - (wz * view.blockSize / 2);
+  
+  // if (position.x % 10 === 0 && position.y % 10 === 0) console.log(position, blockX, blockY, blockZ);
+  return {
+    x: cx,
+    y: cy
+  }
+}
+View.prototype.canvasToWorld = function (canvasPosition) {
+  // return world position in center of viewport
+  var x = ((canvasPosition.x + canvasPosition.y) * 2 / view.blockSize);
+  var y = ((canvasPosition.y - canvasPosition.x) * 4 / view.blockSize);
+  
+  // if (canvasPosition.x % 10 === 0 && canvasPosition.y % 10 === 0) console.log(x, y);
+  return {
+    x: Math.floor(x),
+    y: Math.floor(y),
+  }
+}
 
-function drawWorldToBufferOLD (world) {
+function swap () {
+  // cut the drawn rectangle
+  var image = buffer.ctx.getImageData(view.left, view.top, view.width, view.height);
+  // copy into visual canvas at different position
+  canvas.ctx.putImageData(image, 0, 0);
+}
+
+function OLD (world) {
   // have to do translations
   // canvas x, y will be relative to blockSize, scale, center of screen x,y
   for (var x = 0; x < world.x; x++) {
     for (var y = 0; y < world.y; y++) {
       for (var z = 0; z < world.z; z++) {
-        var block = world.regions[x][y][z].block;
-        if (block) {
-          var canvasPosition = worldToCanvas(world.regions[x][y][z].position);
+        // var block = world.regions[x][y][z].block;
+        // if (block) {
+          var canvasPosition = view.worldToCanvas(world.regions[x][y][z].position);
 
           // adjust offset of viewport
           canvasPosition.x -= view.offset.x;
@@ -752,164 +965,118 @@ function drawWorldToBufferOLD (world) {
               && isBlockVisible(x, y, z, world.x, world.y, world.z, world.regions)
             )
             drawBlock(canvasPosition.x, canvasPosition.y - canvasPosition.z, z, block, .99);
-        }
+        // }
       }
     }
   }
-  if (!worldLoaded) worldLoaded = true;
+  // if (!worldLoaded) worldLoaded = true;
 }
 
-function drawDebug (debug) {
-    buffer.ctx.font = '14px Courier';
-    buffer.ctx.fillStyle = 'white';
+},{}],8:[function(require,module,exports){
+// Reverie client
+// Created by Jonathon Orsi
+const EventManager = require('./EventManager');
+const InputManager = require('./InputManager');
 
-    // canvas info
-    buffer.ctx.fillText(Math.floor((1000 / delta)) + 'fps', 10, 20);
-    buffer.ctx.fillText('viewport', 10, 40);
-    buffer.ctx.fillText('left: ' + view.left, 20, 60);
-    buffer.ctx.fillText('top: ' + view.top, 20, 80);
-    buffer.ctx.fillText('width: ' + view.width, 20, 100);
-    buffer.ctx.fillText('height: ' + view.height, 20, 120);
-    buffer.ctx.fillText('centerX: ' + view.center.x, 20, 140);
-    buffer.ctx.fillText('centerY: ' + view.center.y, 20, 160);
-    buffer.ctx.fillText('offsetX: ' + view.offset.x + ', offsetY: ' + view.offset.y, 20, 180);
-    buffer.ctx.fillText('blockSize: ' + view.blockSize, 20, 200);
+const Player = require('./Player');
+const World = require('./World');
+const Network = require('./Network');
+const Renderer = require('./Renderer');
+const Debug = require('./Debug');
 
-    // world info
-    if (debug.world) {
-      buffer.ctx.fillText('world', 10, 320);
-      buffer.ctx.fillText('x: ' + debug.world.x, 20, 340);
-      buffer.ctx.fillText('y: ' + debug.world.y, 20, 360);
-      buffer.ctx.fillText('z: ' + debug.world.z, 20, 380);
-      buffer.ctx.fillText('centerX: ' + Math.round(debug.world.x / 2), 20, 400);
-      buffer.ctx.fillText('centerY: ' + Math.round(debug.world.y / 2), 20, 420);
-      buffer.ctx.fillText('regions: ' + debug.world.regions.length, 20, 440);
-      var currentCenter = {
-        x: view.offset.x + view.center.x,
-        y: view.offset.y + view.center.y
-      };
-      var worldLocation = canvasToWorld(currentCenter);
-      buffer.ctx.fillText('overworld x: ' + worldLocation.x, 20, 460);
-      buffer.ctx.fillText('overworld y: ' + worldLocation.y, 20, 480);
-    }
+debug = true;
+function ReverieClient (env) {
+  this.env = env || {};
+  this.world;
+  this.server;
+  this.player = new Player();
 
-    // entity info
-    if (debug.entity) {
-      var entity = debug.entity;
-      buffer.ctx.fillText('entity', view.width - 300, 20);
-      buffer.ctx.fillText('zoom: ' + entity.get('position').zoom,  view.width - 300, 40);
-      // buffer.ctx.fillText('x: ' + debug.world.x, 20, 340);
-      // buffer.ctx.fillText('y: ' + debug.world.y, 20, 360);
-      // buffer.ctx.fillText('z: ' + debug.world.z, 20, 380);
-      // buffer.ctx.fillText('centerX: ' + Math.round(debug.world.x / 2), 20, 400);
-      // buffer.ctx.fillText('centerY: ' + Math.round(debug.world.y / 2), 20, 420);
-      // buffer.ctx.fillText('regions: ' + debug.world.regions.length, 20, 440);
-      // var currentCenter = {
-      //   x: view.offset.x + view.center.x,
-      //   y: view.offset.y + view.center.y
-      // };
-      // var worldLocation = canvasToWorld(currentCenter);
-      // buffer.ctx.fillText('overworld x: ' + worldLocation.x, 20, 460);
-      // buffer.ctx.fillText('overworld y: ' + worldLocation.y, 20, 480);
-      // buffer.ctx.fillText('scale: ' + debug.world.scale, 20, 500);
-    }
+  // init socket.io and network
+  let socket = io();
+  this.Network = new Network(socket);
+
+  // init Input
+  this.InputManager = new InputManager();
+
+  // init Renderer
+  this.Renderer = Renderer.init(document.querySelector('#reverie'));
+
+  // debugger
+  if (debug) this.Debug = Debug.init();
+
+  // register events
+  this.events = EventManager.register('reverie');
+  this.events.on('server/connect', (server) => {
+    this.server = server;
+  });
+  this.events.on('world/init', (world) => {
+    this.world = new World(world);
+  });
+
+
+  this.update();
 }
-
-
-},{}],7:[function(require,module,exports){
-var EventManager = require('./EventManager');
-var events;
-
-var world;
-var lastEvent = Date.now();
-module.exports = {
-  init: function () {
-    events = EventManager.register('world');
-
-    // register events
-    events.on('network:world', (w) => {
-      world = new World(w);
+ReverieClient.prototype.update = function () {
+  if(this.player && this.world) {
+    this.Renderer.render({
+      entity: this.player.get('entity'),
+      world: this.world.get('world'),
+      debug: this.world.get('debug')
     });
-  },
-  exists: function () {
-    return (world !== null);
-  },
-  get: function (type) {
-    var data = null;
-    switch (type) {
-      case 'world':
-        data = world;
-        break;
-      case 'entity':
-        data = entity;
-        break;
+    if (this.Debug) {
+      this.Debug.output({
+        delta: this.Renderer.get('delta'),
+        view: this.Renderer.get('view'),
+        world: this.world.get('world'),
+        entity: this.player.get('entity')
+      })
     }
-    return data;
-  },
-  trigger: function (event) {
-    var currentTime = Date.now();
-    if (currentTime - lastEvent > 100) {
-      switch (event) {
-        case 'zoomIn':
-          var originalScale = world.scale;
-          world.scale = parseFloat((world.scale + 0.1).toFixed(1));
-          if (world.scale > 15) world.scale = 15;
-          Network.send('world:scale', world.scale, (err) => {
-            if (err) world.scale = originalScale;
-          });
-          break;
-        case 'zoomOut':
-          var originalScale = world.scale;
-          world.scale = parseFloat((world.scale - 0.1).toFixed(1));
-          if (world.scale < 1) world.scale = 1;
-          Network.send('world:scale', world.scale, (err) => {
-            if (err) world.scale = originalScale;
-          });
-          break;
-      }
-
-      lastEvent = currentTime;
-    }
-  },
-  getNeighbours: function (mapX, mapY) {
-    var neighbours = {
-      north: map[mapX][mapY - 1],
-      northEast: map[mapX + 1][mapY - 1],
-      east: map[mapX + 1][mapY],
-      southEast: map[mapX + 1][mapY + 1],
-      south: map[mapX][mapY + 1],
-      southWest: map[mapX - 1][mapY + 1],
-      west: map[mapX - 1][mapY],
-      northWest: map[mapX - 1][mapY - 1],
-    };
-    return neighbours;
   }
+  requestAnimationFrame(() => this.update());
 }
 
-// imports
-var Network = require('./Network');
+// init ReverieClient
+let reverie = new ReverieClient();
 
-var _chunk;
-var _entities;
-var world = null;
+},{"./Debug":2,"./EventManager":3,"./InputManager":4,"./Network":5,"./Player":6,"./Renderer":7,"./World":9}],9:[function(require,module,exports){
+const EventManager = require('./EventManager');
 
-
-
-function World (world) {
-  this.createdAt = world.createdAt;
-  this.cycle = world.cycle;
-  this.scale = world.scale;
-  this.seed = world.seed;
-  this.x = world.x;
-  this.y = world.y;
-  this.z = world.z;
-  this.center = world.center;
-  this.regionSize = world.regionSize;
-  this.chunkSize = world.chunkSize;
+module.exports = World;
+function World (w) {
+  this.createdAt = w.createdAt;
+  this.cycle = w.cycle;
+  this.scale = w.scale;
+  this.seed = w.seed;
+  this.x = w.x;
+  this.y = w.y;
+  this.z = w.z;
+  this.center = w.center;
+  this.regions = w.regions;
+  this.regionSize = w.regionSize;
+  this.chunkSize = w.chunkSize;
+  this.lastEvent = Date.now();
 
   // world data
-  this.entities = world.entities;
-  this.regions = world.regions;
+  this.entities = w.entities;
+  this.debug = {
+    cells: [],
+    temperature: []
+  };
+  this.maps = {
+    world: [],
+    region: [],
+    area: [],
+    location: []
+  };
+  this.regions = w.regions;
+
+  // register events
+  this.events = EventManager.register('world');
+  this.events.on('world/world', (wm) => this.onReceiveWorld(wm));
+  this.events.on('world/region', (region) => this.onReceiveRegion(region));
+  this.events.on('world/area', (area) => this.onReceiveArea(area));
+  this.events.on('world/location', (location) => this.onReceiveLocation(location));
+  this.events.on('debug/maps', (maps) => this.onReceiveDebugMaps(maps));
 }
 
 World.prototype.cache = function (type, data) {
@@ -919,41 +1086,54 @@ World.prototype.cache = function (type, data) {
       break;
   }
 }
-},{"./EventManager":3,"./Network":5}],8:[function(require,module,exports){
-module.exports = {
-  create: function (id, events) {
-    return new Terminal(id, events);
+World.prototype.get = function (name) {
+  switch (name) {
+    case 'world':
+      return this.maps.world;
+    case 'debug':
+      return this.debug.maps;
   }
-};
-
+}
+World.prototype.onReceiveDebugMaps = function (maps) {
+  this.debug.maps = maps;
+}
+World.prototype.onReceiveWorld = function (wm) {
+  this.maps.world = wm;
+}
+World.prototype.onReceiveRegion = function (region) {}
+World.prototype.onReceiveArea = function (area) {}
+World.prototype.onReceiveLocation = function (location) {}
+},{"./EventManager":3}],10:[function(require,module,exports){
+module.exports = Terminal;
 function Terminal (id, events) {
   this.element = document.querySelector(id);
+  this.historyIndex = -1;
+  this.history = [];
+
+  // hook into input events
   this.events = events;
 }
 Terminal.prototype.focus = function () {
   this.element.focus();
 }
-var historyIndex = -1;
-var terminalHistory = [];
 Terminal.prototype.prevHistory = function () {
-  if (terminalHistory.length > 0 && historyIndex < terminalHistory.length - 1) {
-    historyIndex++;
-    this.element.value = terminalHistory[historyIndex];
+  if (this.history.length > 0 && this.historyIndex < this.history.length - 1) {
+    this.historyIndex++;
+    this.element.value = this.history[this.historyIndex];
   }
 }
 Terminal.prototype.nextHistory = function () {
-  if (terminalHistory.length > 0 && historyIndex > -1) {
-    historyIndex--;
-    if (historyIndex === -1) {
+  if (this.history.length > 0 && this.historyIndex > -1) {
+    this.historyIndex--;
+    if (this.historyIndex === -1) {
       this.element.value = '';
     } else {
-      this.element.value = terminalHistory[historyIndex];
+      this.element.value = this.history[this.historyIndex];
     }
 
     // set caret at the end of line
     // strange hack for chrome
-    var that = this;
-    setTimeout(function () { that.element.value = that.element.value; }, 0);
+    setTimeout(() => { this.element.value = this.element.value; }, 0);
   }
 }
 Terminal.prototype.submit = function () {
@@ -963,91 +1143,55 @@ Terminal.prototype.submit = function () {
   if (input !== '') {
     // update terminal history if it's not the same
     // as last input
-    if (terminalHistory[0] !== input) {
-      terminalHistory.unshift(input);
+    if (this.history[0] !== input) {
+      this.history.unshift(input);
     }
     // console.log(terminalHistory, historyIndex);
-    historyIndex = -1;
+    this.historyIndex = -1;
 
-    this.events.emit('message', input);
+    this.events.emit('network/send', 'player/message', input);
 
     this.element.value = '';
   }
 }
 
-},{}],9:[function(require,module,exports){
-// Reverie client
-// Created by Jonathon Orsi
-const Renderer = require('./Renderer');
-const World = require('./World');
-const Entity = require('./Entity');
-const Input = require('./Input');
-const Network = require('./Network');
-
-// init socket.io
-Network.init(io());
-
-// init Input
-Input.init();
-
-// init Renderer
-Renderer.init(document.querySelector('#reverie'));
-
-// init World
-World.init();
-
-// init Entity
-Entity.init();
-
-// start update loop
-function update() {
-  Renderer.render({
-    entity: Entity.get('entity'),
-    world: World.get('world'),
-    debug: {
-      world: World.get('world'),
-      entity: Entity.get('entity')
-    },
-  });
-  requestAnimationFrame(update);
-}
-update();
-
-},{"./Entity":2,"./Input":4,"./Network":5,"./Renderer":6,"./World":7}],10:[function(require,module,exports){
-let components = {};
+},{}],11:[function(require,module,exports){
+let ComponentTypes = require('./ComponentTypes');
 module.exports = {
-  register: function (componentName, component) {
+  register: function (componentName, extension) {
     // registers a new named component
     // and can provide an object or function as
     // the component
 
     // check if component name already exists
-    if (components[componentName] !== undefined) {
+    if (ComponentTypes[componentName] !== undefined) {
       return;
     }
 
-    // create component entry with properties,
+    // create component type with component,
     // and an array of entities registered to that
     // component
-    components[componentName] = {
-      component: component,
-      entities: []
-    };
+    ComponentTypes[componentName] = new Component(componentName, extension);
   },
   add: function (componentName, entity) {
     // make sure component is registered first
-    if (components[componentName] === undefined) {
+    if (ComponentTypes[componentName] === undefined) {
       return;
     }
 
-    let component = components[componentName];
+    let component = new Component(componentName, ComponentTypes[componentName]);
     
     // make sure entity doesn't already have component
-    if (entity.has(componentName)) {
+    if (entity.hasComponent(componentName)) {
       return;
     }
+
+    // add componentName to list of components 
+    // entity has
+    entity.components.push(componentName);
+
     // create component on entity
-    entity.components[componentName] = new Component(component.component);
+    component.extend(entity);
 
     // add entity to component entity list
     if (component.entities.indexOf(entity) > -1) {
@@ -1059,97 +1203,111 @@ module.exports = {
   },
   getEntitiesWith: function (componentName) {
     // check if component exists
-    if (!components[componentName]) return;
-    return components[componentName].entities;
+    if (!ComponentTypes[componentName]) return;
+    return ComponentTypes[componentName].entities;
   }
 }
 
-function Component (component) {
-  if (typeof component === 'function') {
-    return component;
-  } else if (typeof component === 'object') {
-    var obj = {};
-    for (let property in component) {
-      obj[property] = component[property];
-    }
-    return obj;
-  }
-}
-},{}],11:[function(require,module,exports){
-var Component = require('../shared/Component');
-
-let types = {};
-let entities = [];
-module.exports = {
-  register: function (entityName, components) {
-    // registers a new type of entity
-    // with an array of components to add
-    // to it when created
-
-    if (types[entityName] !== undefined) {
-      // already registered
-      return;
-    }
-
-    types[entityName] = components;
-  },
-  create: function (type) {
-    // check if entity type exists
-    let components = types[type];
-    if (!components) return;
-    
-    // creates a new entity of the type
-    // and adds all of its components
-    let entity = new Entity(type);
-
-    components.forEach(function (componentName) {
-      entity.add(componentName);
-    });
-
-    // add to entities list
-    entities.push(entity);
-    
-    return entity;
-  },
-  remove: function (entity) {
-    for (var i = 0; i < entities.length; i++) {
-      if (entity === entities[i]) {
-        entities.splice(i, 1);
-        break;
-      }
-    }
-  },
-  clone: function (e) {
-    // recreate entity from data
-    let entity = new Entity(e.type);
-    entity.id = e.id;
-    
-    // add each component to entity
-    for (let component in e.components) {
-      entity.components[component] = e.components[component];
-    }
-    
-    return entity;
-  }
-}
-
-var id = 0;
-function Entity (type) {
-  this.type = type;
+let id = 0;
+function Component (name, extension) {
   this.id = ++id;
-	this.components = {};
+  this.name = name;
+  this.extension = extension;
+  this.entities = [];
 }
-Entity.prototype.has = function (componentName) {
-  return this.components[componentName] !== undefined;
+Component.prototype.extend = function (entity) {
+  if (entity[this.name] !== undefined) return;
+
+  if (typeof this.extension === 'function') {
+    entity[this.name] = this.extension;
+  } else {
+    let obj = {};
+    for (let property in this.extension) {
+      obj[property] = this.extension[property];
+    }
+    entity[this.name] = obj;
+  }
+
+  this.entities.push(entity);
 }
-Entity.prototype.get = function (componentName) {
-  return this.components[componentName];
+
+},{"./ComponentTypes":12}],12:[function(require,module,exports){
+module.exports = {
+  health: {
+    max: 100,
+    limit: 100,
+    current: 100
+  },
+  position: {
+    x: 0,
+    y: 0,
+    z: 0
+  },
+  transform: {
+    width: 15,
+    height: 45
+  },
 }
-Entity.prototype.add = function (componentName) {
+
+},{}],13:[function(require,module,exports){
+const Component = require('./Component');
+let EntityTypes = require('./EntityTypes');
+
+let id = 0;
+module.exports = Entity;
+function Entity (e) {
+  this.id = ++id;
+
+  if (typeof e === 'object') {
+    // recreate entity
+    this.type = e.type;
+    attachComponents(this);
+
+    for (let c in this.components) {
+      this[c] = e[c];
+    }
+  } else {
+    this.type = e || 'spirit';
+    attachComponents(this);
+  }
+}
+Entity.prototype.hasComponent = function (componentName) {
+  return this[componentName] !== undefined;
+}
+Entity.prototype.getComponent = function (componentName) {
+  return this[componentName];
+}
+Entity.prototype.addComponent = function (componentName) {
   Component.add(componentName, this);
 }
-Entity.prototype.remove = function (componentName) {
-  delete this.components[componentName];
+Entity.prototype.removeComponent = function (componentName) {
+  delete this[componentName];
 }
 
-},{"../shared/Component":10}]},{},[9]);
+function attachComponents(e) {
+  if (EntityTypes[e.type]) {
+    e.components = EntityTypes[e.type];
+    e.components.forEach((componentName) => {
+      e.addComponent(componentName);
+    });
+  }
+}
+
+},{"./Component":11,"./EntityTypes":14}],14:[function(require,module,exports){
+module.exports = {
+    spirit: [
+        'position',
+        'render',
+        'move',
+        'transform',
+        'possess'
+    ]
+};
+
+//test
+// var spirits = [];
+// for (var i = 0; i < 25; i++) {
+//     spirits.push(Entity.create('spirit'));
+//     console.dir(spirits[i]);
+// }
+},{}]},{},[8]);

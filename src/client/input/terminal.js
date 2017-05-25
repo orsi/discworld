@@ -1,37 +1,33 @@
-module.exports = {
-  create: function (id, events) {
-    return new Terminal(id, events);
-  }
-};
-
+module.exports = Terminal;
 function Terminal (id, events) {
   this.element = document.querySelector(id);
+  this.historyIndex = -1;
+  this.history = [];
+
+  // hook into input events
   this.events = events;
 }
 Terminal.prototype.focus = function () {
   this.element.focus();
 }
-var historyIndex = -1;
-var terminalHistory = [];
 Terminal.prototype.prevHistory = function () {
-  if (terminalHistory.length > 0 && historyIndex < terminalHistory.length - 1) {
-    historyIndex++;
-    this.element.value = terminalHistory[historyIndex];
+  if (this.history.length > 0 && this.historyIndex < this.history.length - 1) {
+    this.historyIndex++;
+    this.element.value = this.history[this.historyIndex];
   }
 }
 Terminal.prototype.nextHistory = function () {
-  if (terminalHistory.length > 0 && historyIndex > -1) {
-    historyIndex--;
-    if (historyIndex === -1) {
+  if (this.history.length > 0 && this.historyIndex > -1) {
+    this.historyIndex--;
+    if (this.historyIndex === -1) {
       this.element.value = '';
     } else {
-      this.element.value = terminalHistory[historyIndex];
+      this.element.value = this.history[this.historyIndex];
     }
 
     // set caret at the end of line
     // strange hack for chrome
-    var that = this;
-    setTimeout(function () { that.element.value = that.element.value; }, 0);
+    setTimeout(() => { this.element.value = this.element.value; }, 0);
   }
 }
 Terminal.prototype.submit = function () {
@@ -41,13 +37,13 @@ Terminal.prototype.submit = function () {
   if (input !== '') {
     // update terminal history if it's not the same
     // as last input
-    if (terminalHistory[0] !== input) {
-      terminalHistory.unshift(input);
+    if (this.history[0] !== input) {
+      this.history.unshift(input);
     }
     // console.log(terminalHistory, historyIndex);
-    historyIndex = -1;
+    this.historyIndex = -1;
 
-    this.events.emit('message', input);
+    this.events.emit('network/send', 'player/message', input);
 
     this.element.value = '';
   }
