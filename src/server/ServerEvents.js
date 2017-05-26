@@ -2,7 +2,7 @@ const events = require('events');
 const emitter = new events.EventEmitter();
 
 const log = require('./Log').log;
-console.log(log);
+
 let systems = [];
 module.exports = {
   register: function (name) {

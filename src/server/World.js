@@ -2,16 +2,16 @@ const ServerEvents = require('./ServerEvents');
 let events;
 const log = require('./Log').log;
 
-const utils = require('../common/Utilities');
+const utils = require('../common/utils/Utilities');
 const perlin = utils.perlin;
-const random = utils.random;
+const Random = utils.random;
 
 const WorldMap = require('../common/world/WorldMap');
 const Region = require('../common/world/RegionMap');
 const Area = require('../common/world/AreaMap');
 const Location = require('../common/world/LocationMap');
 
-const Entity = require('../common/Entity');
+const Entity = require('../common/entities/Entity');
 
 // var Generator = require('./world/Generator');
 // var RegionGenerator = require('./world/RegionGenerator');
@@ -37,7 +37,7 @@ function World (options) {
 
   // create world random number generator
   // from seed
-  this.random = random.create(this.seed);
+  this.random = new Random(this.seed);
 
   // World state properties
   this.state = {
@@ -98,20 +98,24 @@ World.prototype.onClientConnection = function (client) {
   // create entity for client
   let entity = new Entity('spirit');
 
-  // add entity to client
-  client.entity = entity;
+  if (entity) {
+    // add entity to client
+    client.entity = entity;
 
-  let position = entity.getComponent('position');
-  position.x = 0; //Math.floor(Math.random() * this.x);
-  position.y = 0; //Math.floor(Math.random() * this.y);
-  position.z = 0;//Math.floor(Math.random() * this.z);
-  
-  // add to entity list
-  this.entities.push(entity);
+    let position = entity.getComponent('position');
+    position.x = 0; //Math.floor(Math.random() * this.x);
+    position.y = 0; //Math.floor(Math.random() * this.y);
+    position.z = 0;//Math.floor(Math.random() * this.z);
+    
+    // add to entity list
+    this.entities.push(entity);
 
-  // send back client information
-  client.send('player/init', entity);
-  client.send('world/init', this.get('world'));
+    // send back client information
+    client.send('player/init', entity);
+    client.send('world/init', this.get('world'));
+  } else {
+    client.send('reverie/error', 'error creating entity for player');
+  }
 }
 World.prototype.onClientDisconnect = function (client) {
   for (var i = 0; i < this.entities.length; i++) {

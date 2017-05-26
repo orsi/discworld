@@ -23,7 +23,7 @@ Command.prototype.execute = function (args) {
 // Compile scripts in the ./scripts folder
 const fs = require('fs');
 const path = require('path');
-new Command('compile', function () {
+new Command('recompile', function () {
     // make sure compiled scripts are empty first
     // to avoid recompiling not happening
     scripts.splice(0, scripts.length);

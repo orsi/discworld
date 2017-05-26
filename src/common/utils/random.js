@@ -1,10 +1,4 @@
-module.exports = {
-  create: function (seed) {
-    let rand = new Random (seed);
-    return rand;
-  }
-}
-
+module.exports = Random;
 function Random (seed) {
   if (!seed) seed = new Date().getTime();
   if (typeof seed === 'string') {
@@ -14,14 +8,14 @@ function Random (seed) {
     }
     seed = values.join('') + 0;
   }
-  this.seed = seed;
-  this.a = 9301;
-  this.b = 49297;
-  this.m = 233280;
+  this._seed = seed;
+  this._a = 9301;
+  this._b = 49297;
+  this._m = 233280;
 }
 Random.prototype.next = function () {
-  this.seed = (this.seed * this.a + this.b) % this.m;
-  return this.seed / this.m;
+  this._seed = (this._seed * this._a + this._b) % this._m;
+  return this._seed / this._m;
 }
 Random.prototype.range = function (min, max) {
   return (this.next() * (max - min)) + min;

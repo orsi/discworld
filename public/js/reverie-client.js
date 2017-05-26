@@ -606,7 +606,7 @@ function Server (socket) {
 }
 },{"./EventManager":3}],6:[function(require,module,exports){
 const EventManager = require('./EventManager');
-const Entity = require('../common/Entity');
+const Entity = require('../common/entities/Entity');
 
 module.exports = Player;
 function Player () {  
@@ -633,7 +633,7 @@ Player.prototype.onReceivePlayerUpdate = function (e) {
       this.entity[prop] = e[prop];
     }
 }
-},{"../common/Entity":13,"./EventManager":3}],7:[function(require,module,exports){
+},{"../common/entities/Entity":12,"./EventManager":3}],7:[function(require,module,exports){
 var view, canvas, buffer;
 var lastRender = new Date();
 var delta = 0;
@@ -1156,158 +1156,125 @@ Terminal.prototype.submit = function () {
 }
 
 },{}],11:[function(require,module,exports){
-let ComponentTypes = require('./ComponentTypes');
-module.exports = {
-  register: function (componentName, extension) {
-    // registers a new named component
-    // and can provide an object or function as
-    // the component
+function Component (component) {
+  Component.init.call(this, component);
+}
+module.exports = Component;
 
-    // check if component name already exists
-    if (ComponentTypes[componentName] !== undefined) {
-      return;
-    }
+/*
+ * Component module static functions
+ */
 
-    // create component type with component,
-    // and an array of entities registered to that
-    // component
-    ComponentTypes[componentName] = new Component(componentName, extension);
-  },
-  add: function (componentName, entity) {
-    // make sure component is registered first
-    if (ComponentTypes[componentName] === undefined) {
-      return;
-    }
+let id = 0;
+Component.init = function (component) {
+  this._id = ++id;
 
-    let component = new Component(componentName, ComponentTypes[componentName]);
-    
-    // make sure entity doesn't already have component
-    if (entity.hasComponent(componentName)) {
-      return;
-    }
+  // check if component is a string
+  if (typeof component === 'string') {
+    component = ComponentRegistry[component];
+  }
 
-    // add componentName to list of components 
-    // entity has
-    entity.components.push(componentName);
+  // no component registered
+  if (!component) return;
 
-    // create component on entity
-    component.extend(entity);
-
-    // add entity to component entity list
-    if (component.entities.indexOf(entity) > -1) {
-      return;
-    }
-    component.entities.push(entity);
-
-    return entity;
-  },
-  getEntitiesWith: function (componentName) {
-    // check if component exists
-    if (!ComponentTypes[componentName]) return;
-    return ComponentTypes[componentName].entities;
+  // shallow clone component properties
+  for (let prop in component) {
+    this[prop] = component[prop];
   }
 }
 
-let id = 0;
-function Component (name, extension) {
-  this.id = ++id;
-  this.name = name;
-  this.extension = extension;
-  this.entities = [];
-}
-Component.prototype.extend = function (entity) {
-  if (entity[this.name] !== undefined) return;
+// registers a new named component with properties
+let ComponentRegistry = {};
+Component.register = function (componentName, properties) {
+  // check if component name already exists
+  if (ComponentRegistry[componentName]) return;
 
-  if (typeof this.extension === 'function') {
-    entity[this.name] = this.extension;
-  } else {
-    let obj = {};
-    for (let property in this.extension) {
-      obj[property] = this.extension[property];
-    }
-    entity[this.name] = obj;
-  }
-
-  this.entities.push(entity);
+  // attach to registered components
+  ComponentRegistry[componentName] = properties;
 }
 
-},{"./ComponentTypes":12}],12:[function(require,module,exports){
-module.exports = {
-  health: {
-    max: 100,
-    limit: 100,
-    current: 100
-  },
-  position: {
-    x: 0,
-    y: 0,
-    z: 0
-  },
-  transform: {
-    width: 15,
-    height: 45
-  },
+},{}],12:[function(require,module,exports){
+const Component = require('../components/Component');
+
+function Entity (entity) {
+  Entity.init.call(this, entity);
 }
-
-},{}],13:[function(require,module,exports){
-const Component = require('./Component');
-let EntityTypes = require('./EntityTypes');
-
-let id = 0;
 module.exports = Entity;
-function Entity (e) {
-  this.id = ++id;
 
-  if (typeof e === 'object') {
-    // recreate entity
-    this.type = e.type;
-    attachComponents(this);
-
-    for (let c in this.components) {
-      this[c] = e[c];
-    }
-  } else {
-    this.type = e || 'spirit';
-    attachComponents(this);
-  }
-}
 Entity.prototype.hasComponent = function (componentName) {
-  return this[componentName] !== undefined;
-}
-Entity.prototype.getComponent = function (componentName) {
-  return this[componentName];
-}
-Entity.prototype.addComponent = function (componentName) {
-  Component.add(componentName, this);
-}
-Entity.prototype.removeComponent = function (componentName) {
-  delete this[componentName];
+  return this._components[componentName] !== undefined;
 }
 
-function attachComponents(e) {
-  if (EntityTypes[e.type]) {
-    e.components = EntityTypes[e.type];
-    e.components.forEach((componentName) => {
-      e.addComponent(componentName);
-    });
+Entity.prototype.getComponent = function (componentName) {
+  return this._components[componentName];
+}
+
+Entity.prototype.getComponents = function (componentName) {
+  return this._components;
+}
+
+Entity.prototype.addComponent = function (component) {
+  // create component if string
+  if (typeof component === 'string') component = Component.get(component);
+
+  // check if component exists on entity
+  if (this._components[component.name]) return;
+
+  // add component to entity
+  this._components[component.name] = component;
+}
+
+Entity.prototype.removeComponent = function (componentName) {
+  delete this._components[componentName];
+}
+
+
+/*
+ * Entity module static functions
+ */
+
+let id = 0;
+Entity.init = function (entity) {
+  this._id = ++id;
+  this._components = {};
+
+  // see if entity type exists
+  if (typeof entity === 'string') {
+    entity = EntityRegistry[entity];
+  }
+  
+  if (entity) {
+    // recreate entity from object
+    this._name = entity._name;
+    for (let componentName in entity._components) {
+      this._components[componentName] = new Component(entity._components[componentName]);
+    };
+    this._components['position'].x = 50;
+  } else {
+    // create a dummy entity
+    this._name = 'unknown';
   }
 }
 
-},{"./Component":11,"./EntityTypes":14}],14:[function(require,module,exports){
-module.exports = {
-    spirit: [
-        'position',
-        'render',
-        'move',
-        'transform',
-        'possess'
-    ]
-};
+// registers an Entity type to create defaults
+let EntityRegistry = {};
+Entity.register = function (name, components) {
+  // check if an Entity is aready registered with that name
+  if (EntityRegistry[name]) return;
 
-//test
-// var spirits = [];
-// for (var i = 0; i < 25; i++) {
-//     spirits.push(Entity.create('spirit'));
-//     console.dir(spirits[i]);
-// }
-},{}]},{},[8]);
+  // create default template for entity
+  let entityType = {
+    _name: name,
+    _components: {}
+  }
+
+  // creating template components with strings will
+  // make created entities inherit default component
+  // values
+  components.forEach((componentName) => {
+    entityType._components[componentName] = componentName;
+  });
+  EntityRegistry[entityType._name] = entityType;
+}
+
+},{"../components/Component":11}]},{},[8]);
