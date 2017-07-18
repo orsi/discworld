@@ -22,6 +22,7 @@ module.exports = World;
  *  World Object
  * 
  */
+export function configure(cfg: Object) {}
 function World (options) {
   // set default options
   options = options || {};

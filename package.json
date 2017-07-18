@@ -8,20 +8,27 @@
   },
   "main": "index.js",
   "scripts": {
-    "dev": "npm run build:js && node ./src/index --dev",
-    "build:js": "browserify ./src/client/ReverieClient.js > ./public/js/reverie-client.js",
-    "start": "node ./src/index",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm run build && npm run watch",
+    "build": "npm run build-ts && npm run tslint",
+    "serve": "node dist/index.js",
+    "watch": "\"npm run watch-ts\" \"nodemon dist/reverie.js\"",
+    "build-ts": "tsc",
+    "watch-ts": "tsc -w",
+    "tslint": "tslint -c tslint.json -p tsconfig.json",
+    "copy-static-assets": "node copyStaticAssets.js"
   },
   "author": "Jonathon Orsi",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "express": "^4.14.1",
+    "express": "^4.15.3",
     "socket.io": "^1.7.3"
   },
   "devDependencies": {
-    "browserify": "^14.1.0",
-    "uglifyify": "^3.0.4",
-    "nodemon": "^1.11.0"
+    "@types/express": "^4.0.36",
+    "@types/node": "^8.0.13",
+    "@types/socket.io": "^1.4.29",
+    "nodemon": "^1.11.0",
+    "tslint": "^5.5.0",
+    "typescript": "^2.4.1"
   }
 }

@@ -1,5 +1,37 @@
-# ignore node modules folder
-node_modules/
+lib-cov
+*.seed
+*.log
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+*.swp
+
+pids
+logs
+results
+tmp
+
+#Build
+public/css/main.css
+
+# API keys and secrets
+.env
+
+# Dependency directory
+node_modules
 
 # ignore npm debug files
 npm-debug.log
+
+# Editors
+.idea
+*.iml
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Ignore built ts files
+dist/**/*
