@@ -1,6 +1,5 @@
-const ServerEvents = require('./ServerEvents');
-let events;
-const log = require('./Log').log;
+import * as EventChannel from "./eventChannel";
+import log from './decorators';
 
 const utils = require('../common/utils/Utilities');
 const perlin = utils.perlin;

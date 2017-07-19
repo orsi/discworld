@@ -1,23 +1,23 @@
-import * as io from "socket.io";
+import * as io from 'socket.io';
 import * as express from 'express';
 import * as http from 'http';
 
-// const ServerEvents = require('./ServerEvents');
+import * as EventChannel from './eventChannel';
 
 // configure express and socket.io
 // let express = express();
 // let express.use(express.static('./public'));
 
-let webServer  = http.createServer();
-let socketIO = io(webServer);
+const webServer  = http.createServer();
+const socketIO = io(webServer);
 
 // register system to SystemEvents
 // let events = ServerEvents.register('network');
 
-let clients: Array<SocketClient> = [];
+const clients: Array<SocketClient> = [];
 // listen for new client socket connections
 socketIO.on('connection', (socket) => {
-  let client = new SocketClient(socket);
+  const client = new SocketClient(socket);
   clients.push(client);
 });
 
@@ -41,7 +41,7 @@ socketIO.on('connection', (socket) => {
 /*
  * SocketClient Object
  * Created when a new client connects to Reverie socket server.
- * 
+ *
  *  */
 
 class SocketClient {
@@ -61,7 +61,7 @@ class SocketClient {
     // this.socket.on('player/inspect', () => this.onInspect());
     // this.socket.on('player/interact', () => this.onInteract());
     // this.socket.on('player/levitate', (levitate) => this.onPlayerLevitate(levitate));
-    
+
     // this.socket.on('world/world', (wm) => this.onReceiveWorldMap(wm));
   }
   send (event: string, data: any) {

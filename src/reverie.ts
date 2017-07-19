@@ -3,25 +3,20 @@
  * an online browser-based simulation
  * created by Jonathon Orsi
  * July 17th, 2017
- * 
+ *
  * */
-
-/**
- * Configuration
- */
-let config = require('../reverie.json');
 
  /**
   * Modules
   */
+  // config file
+const config = require('../reverie.json');
 import * as fs from 'fs';
 import * as path from 'path';
 
-/**
- * Server-side modules
- */
+// server-side modules
 import * as terminal from './server/terminal';
-import * as server from './server/server';
+import * as network from './server/network';
 // import * as universe from './server/universe';
 
 /**
@@ -48,33 +43,35 @@ if (config.universe) {
 /**
  * Load Scripts
  */
-let scripts: Array<string> = [];
+const scripts: Array<ScriptFile> = [];
 
 // require components first scripts
-let dir = path.resolve(__dirname, './scripts/components');
-let files = fs.readdirSync(dir);
-for (let i = 0; i < files.length; i++) {
-    let script = path.resolve(dir, files[i]);
-
-    if (scripts.indexOf(files[i]) === -1) {
-        console.log('compiling component script: ' + files[i]);
-        scripts.push(files[i]);
-        require(script);
-    } else {
-        console.log('script "' + files[i] + '" already exists. skipping.');
-    }
+function loadModules (dir: string) {
+    fs.lstat(dir, function(err, stat) {
+        if (stat.isDirectory()) {
+            // we have a directory: do a tree walk
+            fs.readdir(dir, function(err, files) {
+                for (let i = 0; i < files.length; i++) {
+                    loadModules(path.join(dir, files[i]));
+                }
+            });
+        } else {
+            const script: ScriptFile = new ScriptFile(dir);
+            scripts.push(script);
+            require(dir);
+        }
+    });
 }
-// require entity scripts
-dir = path.resolve(__dirname, './scripts/entities');
-files = fs.readdirSync(dir);
-for (let i = 0; i < files.length; i++) {
-    let script = path.resolve(dir, files[i]);
+loadModules(path.resolve(__dirname, './scripts'));
 
-    if (scripts.indexOf(files[i]) === -1) {
-        console.log('compiling component script: ' + files[i]);
-        scripts.push(files[i]);
-        require(script);
-    } else {
-        console.log('script "' + files[i] + '" already exists. skipping.');
-    }
+function reverieLoop() {
+
+}
+
+/**
+ * Interfaces and Classes
+ */
+class ScriptFile {
+    public id: number;
+    constructor(public fileName: string) {}
 }

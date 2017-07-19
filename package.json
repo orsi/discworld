@@ -11,7 +11,7 @@
     "start": "npm run build && npm run watch",
     "build": "npm run build-ts && npm run tslint",
     "serve": "node dist/index.js",
-    "watch": "\"npm run watch-ts\" \"nodemon dist/reverie.js\"",
+    "watch": "npm run watch-ts",
     "build-ts": "tsc",
     "watch-ts": "tsc -w",
     "tslint": "tslint -c tslint.json -p tsconfig.json",

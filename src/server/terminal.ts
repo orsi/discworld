@@ -1,11 +1,21 @@
+/**
+ * Modules
+ */
+import * as EventChannel from './eventChannel';
+import log from './decorators';
+// Node
 import * as readline from 'readline';
+
+/**
+ * Inits
+ */
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
 let closing = false;
-process.on("SIGINT", function () {
-  //graceful shutdown
+process.on('SIGINT', function () {
+  // graceful shutdown
   closing = true;
   console.log('\n\n...now exiting Reverie');
   process.exit();
@@ -13,7 +23,7 @@ process.on("SIGINT", function () {
 
 // graceful exiting on windows requires listening
 // for SIGINT on rl and emitting event to process
-if (process.platform === "win32") {
+if (process.platform === 'win32') {
   rl.on('SIGINT', function () {
     process.emit('SIGINT');
   });
@@ -30,20 +40,20 @@ if (process.platform === "win32") {
 //     }
 // };
 
-let scripts = [];
-let serverStartTime = new Date();
+const scripts = [];
+const serverStartTime = new Date();
 let lastUpdate = new Date();
 
 // register system to SystemEvents
 // this.events = ServerEvents.register('console');
 
 // require commands
-let commands = require('./commands/CommandList');
+const commands = require('./commands/CommandList');
 
 // start command line input
 rl.on('line', (line) => {
-    var cmd = line.split(' ')[0];
-    var args = line.split(' ').slice(1);
+    const cmd = line.split(' ')[0];
+    const args = line.split(' ').slice(1);
     if (commands[cmd]) {
         commands[cmd].execute(args);
     } else {
@@ -58,8 +68,8 @@ export function getUptime () {
     return new Date().getTime() - serverStartTime.getTime();
 }
 function loop () {
-    let now = new Date();
-    let delta = now.getTime() - lastUpdate.getTime();
+    const now = new Date();
+    const delta = now.getTime() - lastUpdate.getTime();
     if (delta >= 1000 * 15) {
         console.log('Server has been up for ' + getUptime() / 1000 / 60 + ' minutes');
         lastUpdate = now;
