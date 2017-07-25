@@ -1,89 +1,49 @@
-/**
- * Modules
- */
 import * as EventChannel from './eventChannel';
-import log from './decorators';
-// Node
+import Module from './module';
 import * as readline from 'readline';
 
 /**
- * Inits
+ * Terminal process for Reverie
  */
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
-let closing = false;
-process.on('SIGINT', function () {
-  // graceful shutdown
-  closing = true;
-  console.log('\n\n...now exiting Reverie');
-  process.exit();
-});
+export default class Terminal extends Module {
+    public commands: Array<Command>;
+    public serverStartTime = new Date();
+    public lastUpdate = new Date();
+    constructor() {
+        super('terminal');
 
-// graceful exiting on windows requires listening
-// for SIGINT on rl and emitting event to process
-if (process.platform === 'win32') {
-  rl.on('SIGINT', function () {
-    process.emit('SIGINT');
-  });
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+        // start command line input
+        // rl.on('line', (line) => {
+        //     const cmd = line.split(' ')[0];
+        //     const args = line.split(' ').slice(1);
+        //     if (this.commands[cmd]) {
+        //         this.commands[cmd].execute(args);
+        //     } else {
+        //         console.log(cmd + ' is not a command');
+        //         console.log(this.commands);
+        //     }
+        // });
+    }
+    update (delta: number) {
+        // output to console
+        // const output = log.output();
+        // if (output !== '') {
+        //     rl.output.clearLine();
+        //     rl.output.cursorTo(0);
+        //     rl.output.write(output);
+        //     rl.output.write('reverie >> ');
+        // }
+    }
+    getUptime () {
+        return Date.now() - this.serverStartTime.getTime();
+    }
 }
 
-// const ServerEvents = require('./ServerEvents');
-// const log = require('./Log').log;
-
-// let serverConsole;
-// module.exports = {
-//     init: function (config) {
-//         serverConsole = new ServerConsole(config);
-//         return serverConsole;
-//     }
-// };
-
-const scripts = [];
-const serverStartTime = new Date();
-let lastUpdate = new Date();
-
-// register system to SystemEvents
-// this.events = ServerEvents.register('console');
-
-// require commands
-const commands = require('./commands/CommandList');
-
-// start command line input
-rl.on('line', (line) => {
-    const cmd = line.split(' ')[0];
-    const args = line.split(' ').slice(1);
-    if (commands[cmd]) {
-        commands[cmd].execute(args);
-    } else {
-        console.log(cmd + ' is not a command');
-        console.log(commands);
-    }
-});
-
-loop();
-
-export function getUptime () {
-    return new Date().getTime() - serverStartTime.getTime();
-}
-function loop () {
-    const now = new Date();
-    const delta = now.getTime() - lastUpdate.getTime();
-    if (delta >= 1000 * 15) {
-        console.log('Server has been up for ' + getUptime() / 1000 / 60 + ' minutes');
-        lastUpdate = now;
-    }
-
-    // output to console
-    // var output = log.output();
-    // if (output !== '') {
-    //     rl.output.clearLine();
-    //     rl.output.cursorTo(0);
-    //     rl.output.write(output);
-    //     rl.output.write('reverie >> ');
-    // }
-
-    // loop
-    if (!closing) setTimeout(() => loop(), 1000.0 / 100.0); // ~100 ticks a second
+interface Command {
+    name: string;
+    execute: (args?: Array<string>) => void;
 }

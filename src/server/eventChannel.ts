@@ -1,32 +1,44 @@
 import * as events from 'events';
-import log from './decorators';
+import * as logger from './log';
 const globalEmitter = new events.EventEmitter();
 
+export default class EventChannel {
+  private static registeredModules: Array<EventModule> = [];
+  private static messageQueue: Array<EventMessage> = [];
+  constructor () {}
 
-const registeredModules: Array<EventModule> = [];
-const messageQueue: Array<EventMessage> = [];
+  static register (name: string) {
+    const em = new EventModule(name);
+    this.registeredModules.push(em);
 
-export function register (name: string) {
-  const em = new EventModule(name);
-  registeredModules.push(em);
+    return em;
+  }
+  static getEventModule (name: string): EventModule | void {
+    return this.registeredModules.forEach((em: EventModule) => name == em.name ? em : undefined);
+  }
+  static processMessages (): void {
+    this.messageQueue.forEach(message => {
+      const module: EventModule = this.getEventModule(message.to) as EventModule;
+      if (module) {
+        module.action(message.action, message.data);
+      }
 
-  return em;
+    });
+  }
 }
-export function getEventModule (name: string) {
-  return registeredModules.forEach((em: EventModule) => name == em.name ? em : undefined);
-}
+
 
 // current issue:
 // event emitter becomes massive after so many worlds are created
 // since each world attaches a new event listener, instead of using
 // the old one
 
-class EventModule {
+export class EventModule {
   private eventListeners: Array<EventListener>;
   constructor (public name: string) {}
 
-  @log
-  emit (eventName: string, data: any, cb: () => void) {
+  @logger.log(logger.LEVELS.DEBUG)
+  emit (eventName: string, data?: any, cb?: () => void) {
     globalEmitter.emit(eventName, data, cb);
   }
   on (name: string, listener: () => void) {
@@ -36,6 +48,7 @@ class EventModule {
     });
     globalEmitter.on(name, listener);
   }
+  action (action: string, data?: any) {}
   push() {
 
   }
@@ -51,4 +64,9 @@ interface EventListener {
   listener: () => void;
 }
 
-class EventMessage {}
+class EventMessage {
+  to: string;
+  from: string;
+  action: string;
+  data: any;
+}

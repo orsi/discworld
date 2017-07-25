@@ -1,11 +1,9 @@
 {
     "debug": true,
-    "console": {
+    "terminal": {
         "logLevel": 2
     },
-    "world": {
-
-    },
+    "universe": {},
     "network": {
         "port": 3000
     }

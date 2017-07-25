@@ -8,14 +8,11 @@
   },
   "main": "index.js",
   "scripts": {
-    "start": "npm run build && npm run watch",
+    "start": "nodemon --watch ./src -e ts --exec \"npm run build && npm run serve\"",
     "build": "npm run build-ts && npm run tslint",
     "serve": "node dist/index.js",
-    "watch": "npm run watch-ts",
     "build-ts": "tsc",
-    "watch-ts": "tsc -w",
-    "tslint": "tslint -c tslint.json -p tsconfig.json",
-    "copy-static-assets": "node copyStaticAssets.js"
+    "tslint": "tslint -c tslint.json -p tsconfig.json"
   },
   "author": "Jonathon Orsi",
   "license": "MIT",
