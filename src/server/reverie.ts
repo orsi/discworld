@@ -13,7 +13,7 @@ import universe from './universe';
  */
 export default class Reverie {
     EventModule: EventModule;
-    scripts: any;
+    scripts: Array<ScriptFile> = [];
     public exiting: boolean = false;
     public serverTicks = 0;
     public startTime: Date = new Date();
@@ -23,33 +23,11 @@ export default class Reverie {
     private updateRate: number = 100;
     private updateTimer: NodeJS.Timer;
     private Modules: Array<Module> = [];
+    public EventChannel: EventChannel;
 
     constructor (config?: ReverieConfig) {
-        // Setup graceful shutdown
-        if (process.platform === 'win32') {
-            // if windows, force SIGINT event
-            const rl = require('readline').createInterface({
-                input: process.stdin,
-                output: process.stdout
-            });
-
-            rl.on('close', () => {
-                console.log('Win32 close event issued');
-                process.emit('SIGINT');
-            });
-        }
-
-        process.on('SIGINT', () => {
-            this.exiting = true;
-            console.log('\nExiting Reverie\n');
-            process.exit();
-        });
-
         // log
         log.configure(log.LEVELS.DEBUG);
-
-        // eventing channel for modules
-        const ev = new EventChannel();
 
         // register main reverie
         this.EventModule = EventChannel.register('reverie');
@@ -60,23 +38,26 @@ export default class Reverie {
         this.Modules.push(terminal);
 
         // load scripts
-        this.loadModules(path.resolve(__dirname, './scripts'));
+        const scriptsDirectory = path.resolve(__dirname, '../scripts');
+        console.log(`loading all scripts in ${scriptsDirectory}`);
+        this.loadScripts(scriptsDirectory, 0);
+        console.log(`finished loading ${this.scripts.length} scripts`);
 
-        if (config) {
-            // database
-            if (config.database) {
-                //
-            }
-            // socket and http server
-            if (config.network) {
-            //     server.configure(config.server);
-            }
+        // if (config) {
+        //     // database
+        //     if (config.database) {
+        //         //
+        //     }
+        //     // socket and http server
+        //     if (config.network) {
+        //     //     server.configure(config.server);
+        //     }
 
-            // universe
-            if (config.universe) {
-                // Universe.configure(config.universe);
-            }
-        }
+        //     // universe
+        //     if (config.universe) {
+        //         // Universe.configure(config.universe);
+        //     }
+        // }
     }
 
     tick() {
@@ -90,6 +71,10 @@ export default class Reverie {
             console.log(`server ticks ${this.serverTicks}`);
         }
 
+        // process queued events
+        EventChannel.flush();
+
+        // update each module
         this.Modules.forEach(module => {
             module.update(delta);
         });
@@ -108,25 +93,34 @@ export default class Reverie {
     stop() {
         this.running = false;
     }
-    loadModules (dir: string): void {
-        console.log(dir);
-        fs.lstat(dir, (err, stat) => {
-            if (err) return;
+    loadScripts (dir: string, level: number): void {
+        // indentation for subdirectories
+        let indent = '  ';
+        for (let i = 0; i < level; i++) {
+            indent += indent;
+        }
 
-            if (stat.isDirectory()) {
-                // we have a directory: do a tree walk
-                fs.readdir(dir, (err, files) => {
-                    for (let i = 0; i < files.length; i++) {
-                        this.loadModules(path.join(dir, files[i]));
-                    }
-                });
-            } else {
-                const script: ScriptFile = new ScriptFile(dir);
+        const base = path.basename(dir);
+        const stat = fs.lstatSync(dir);
+        if (stat.isDirectory()) {
+            // increase indent and read new sub dir
+            console.log(`${indent}/${base}`);
+
+            ++level;
+            const files = fs.readdirSync(dir);
+            for (let i = 0; i < files.length; i++) {
+                this.loadScripts(path.join(dir, files[i]), level);
+            }
+        } else {
+            // file found, check if javascript file
+            if (path.extname(dir) === '.js') {
+                console.log(`${indent}|- ${base}`);
+
+                const script = new ScriptFile(base);
                 this.scripts.push(script);
                 require(dir);
-                console.log(`loading script file ${script.fileName}`);
             }
-        });
+        }
     }
 }
 

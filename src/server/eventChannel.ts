@@ -16,7 +16,7 @@ export default class EventChannel {
   static getEventModule (name: string): EventModule | void {
     return this.registeredModules.forEach((em: EventModule) => name == em.name ? em : undefined);
   }
-  static processMessages (): void {
+  static flush (): void {
     this.messageQueue.forEach(message => {
       const module: EventModule = this.getEventModule(message.to) as EventModule;
       if (module) {
@@ -24,6 +24,7 @@ export default class EventChannel {
       }
 
     });
+    this.messageQueue.length = 0;
   }
 }
 
