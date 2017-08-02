@@ -1,4 +1,4 @@
-import {default as EventChannel, EventModule } from './eventChannel';
+import Module from '../Module';
 
 // const utils = require('../common/utils/Utilities');
 // const perlin = utils.perlin;
@@ -18,7 +18,7 @@ import {default as EventChannel, EventModule } from './eventChannel';
  *  World Object
  *
  */
-export default class Universe {
+export default class Universe extends Module {
   public id: number;
   public seed: string;
   public x: number = 256;
@@ -30,16 +30,16 @@ export default class Universe {
   public tickTimes: Array<number> = [];
   public startTime: Date = new Date();
   public lastUpdate: Date = new Date();
-  public event: EventModule;
-  constructor (model?: UniverseModel) {
-    if (model) {
-      this.seed = model.seed;
-      this.x = model.x;
-      this.y = model.y;
-      this.z = model.z;
-    }
+  constructor (eventChannel: IEventChannel) {
+    super('universe', eventChannel);
 
-    this.event = EventChannel.register('universe');
+    // if (model) {
+    //   this.seed = model.seed;
+    //   this.x = model.x;
+    //   this.y = model.y;
+    //   this.z = model.z;
+    // }
+
   }
 
   destroy () {
@@ -60,7 +60,7 @@ export default class Universe {
     }
     this.tickTimes.push(Math.round(now.getTime() - this.lastUpdate.getTime()));
 
-    this.event.emit('update');
+    this.eventChannel.emit('update');
 
     this.ticks++;
     this.updating = false;

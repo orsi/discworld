@@ -1,25 +1,30 @@
 import * as io from 'socket.io';
 import * as express from 'express';
 import * as http from 'http';
-
-import * as EventChannel from './eventChannel';
+import Module from '../Module';
 
 // configure express and socket.io
 // let express = express();
 // let express.use(express.static('./public'));
+export default class Network extends Module {
+  constructor (eventChannel: IEventChannel) {
+    super('network', eventChannel);
 
-const webServer  = http.createServer();
-const socketIO = io(webServer);
+    const webServer  = http.createServer();
+    const socketIO = io(webServer);
 
-// register system to SystemEvents
-// let events = ServerEvents.register('network');
+    // register system to SystemEvents
+    // let events = ServerEvents.register('network');
 
-const clients: Array<SocketClient> = [];
-// listen for new client socket connections
-socketIO.on('connection', (socket) => {
-  const client = new SocketClient(socket);
-  clients.push(client);
-});
+    const clients: Array<SocketClient> = [];
+    // listen for new client socket connections
+    socketIO.on('connection', (socket) => {
+      const client = new SocketClient(socket);
+      clients.push(client);
+    });
+  }
+}
+
 
 // events for all systems to use
 // let events.on('network/broadcast', (event, data) => {

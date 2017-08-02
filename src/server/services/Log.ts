@@ -1,4 +1,4 @@
-export enum LEVELS {
+enum LEVEL {
     TRACE = 0,
     DEBUG = 1,
     INFO = 2,
@@ -6,24 +6,28 @@ export enum LEVELS {
     ERROR = 4,
     FATAL = 5
 }
+export default class Log {
+    LEVEL = LEVEL;
+    private logLevel: LEVEL = LEVEL.DEBUG;
+    log (level: LEVEL) {
+        const logLevel = this.logLevel; // for access inside descriptor
 
-let logLevel: LEVELS = LEVELS.DEBUG;
-export function log (level: LEVELS) {
-    return function (target: Object, key: string, descriptor: TypedPropertyDescriptor<any>) {
-        const originalMethod = descriptor.value;
+        return function (target: Object, key: string, descriptor: TypedPropertyDescriptor<any>) {
+            const originalMethod = descriptor.value;
 
-        descriptor.value = function (...args: any[]) {
-            if (level < logLevel) {
-                console.log(`${key} called with args: ${JSON.stringify(args)}`);
-                const result = originalMethod.apply(this, args);
-                console.log(`${key} returned with result: ${JSON.stringify(result)}`);
-            }
+            descriptor.value = function (...args: any[]) {
+                if (level < logLevel) {
+                    console.log(`${key} called with args: ${JSON.stringify(args)}`);
+                    const result = originalMethod.apply(this, args);
+                    console.log(`${key} returned with result: ${JSON.stringify(result)}`);
+                }
+            };
         };
-    };
+    }
+    configure(level: LEVEL) {
+    }
 }
-export function configure(level: LEVELS) {
 
-}
 // let LogLevel;
 // let output = '';
 

@@ -1,7 +1,7 @@
-import Entity from './entity';
-import System from './system';
+import Entity from './Entity';
+import System from './System';
 
-export default class Engine {
+export default class SystemsEngine {
     private entities: Array<Entity>;
     private systems: Array<System>;
 

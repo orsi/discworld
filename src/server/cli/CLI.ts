@@ -1,24 +1,21 @@
-import * as EventChannel from './eventChannel';
-import Module from './module';
 import * as readline from 'readline';
-
+import Module from '../Module';
 /**
  * Terminal process for Reverie
  */
-export default class Terminal extends Module {
+export default class CLI extends Module {
     public SIGINT = false;
     public commands: { [index: string]: Command } = {};
     public serverStartTime = new Date();
     public lastUpdate = new Date();
     public rl: readline.ReadLine;
-    constructor() {
-        super('terminal');
+    constructor(eventChannel: IEventChannel) {
+        super('cli', eventChannel);
 
         const rl = this.rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout
         });
-
 
         // Setup graceful shutdown
         if (process.platform === 'win32') {

@@ -1,19 +1,18 @@
-import Module from './module';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as log from './log';
-import {default as EventChannel, EventModule } from './eventChannel';
-import Terminal from './terminal';
-import * as network from './network';
-import universe from './universe';
+import EventChannel from './EventChannel';
+import Log from './services/Log';
+import CLI from './cli/CLI';
+import Network from './network/Network';
+import Universe from './universe/Universe';
+import Module from './Module';
 // import * as database from ./server/database
 
 /**
  * Reverie server engine
  */
 export default class Reverie {
-    EventModule: EventModule;
-    scripts: Array<ScriptFile> = [];
+    scripts: Array<Script> = [];
     public exiting: boolean = false;
     public serverTicks = 0;
     public startTime: Date = new Date();
@@ -23,25 +22,14 @@ export default class Reverie {
     private updateRate: number = 100;
     private updateTimer: NodeJS.Timer;
     private Modules: Array<Module> = [];
-    public EventChannel: EventChannel;
+    private log: Log;
+    /**
+     * Global Event Channel for Reverie
+     */
+    private EventChannel: EventChannel;
 
     constructor (config?: ReverieConfig) {
-        // log
-        log.configure(log.LEVELS.DEBUG);
-
-        // register main reverie
-        this.EventModule = EventChannel.register('reverie');
-
-        // load base modules
-        // terminal
-        const terminal = new Terminal();
-        this.Modules.push(terminal);
-
-        // load scripts
-        const scriptsDirectory = path.resolve(__dirname, '../scripts');
-        console.log(`loading all scripts in ${scriptsDirectory}`);
-        this.loadScripts(scriptsDirectory, 0);
-        console.log(`finished loading ${this.scripts.length} scripts`);
+        // setup configuration
 
         // if (config) {
         //     // database
@@ -58,6 +46,28 @@ export default class Reverie {
         //         // Universe.configure(config.universe);
         //     }
         // }
+
+        // setup services
+        // setup logger
+        this.log = new Log();
+        this.log.configure(this.log.LEVEL.DEBUG);
+
+        // register reverie in EventChannel
+        this.EventChannel = new EventChannel();
+
+        // create modules
+        this.Modules.push(new CLI(this.EventChannel));
+        this.Modules.push(new Network(this.EventChannel));
+        this.Modules.push(new Universe(this.EventChannel));
+
+        // load scripts
+        const scriptsDirectory = path.resolve(__dirname, '../scripts');
+        console.log(`loading all scripts in ${scriptsDirectory}`);
+        this.loadScripts(scriptsDirectory, 0);
+        console.log(`finished loading ${this.scripts.length} scripts`);
+
+        console.log(`\n\nReverie is now running...\n\n`);
+        this.start();
     }
 
     tick() {
@@ -71,8 +81,10 @@ export default class Reverie {
             console.log(`server ticks ${this.serverTicks}`);
         }
 
+        // process timer events
+
         // process queued events
-        EventChannel.flush();
+        this.EventChannel.flush();
 
         // update each module
         this.Modules.forEach(module => {
@@ -104,7 +116,7 @@ export default class Reverie {
         const stat = fs.lstatSync(dir);
         if (stat.isDirectory()) {
             // increase indent and read new sub dir
-            console.log(`${indent}/${base}`);
+            console.log(`${indent}${base}/`);
 
             ++level;
             const files = fs.readdirSync(dir);
@@ -114,26 +126,14 @@ export default class Reverie {
         } else {
             // file found, check if javascript file
             if (path.extname(dir) === '.js') {
-                console.log(`${indent}|- ${base}`);
+                console.log(`${indent}─ ${base}`);
 
-                const script = new ScriptFile(base);
+                const script: Script = {
+                    file: base
+                };
                 this.scripts.push(script);
                 require(dir);
             }
         }
     }
-}
-
-/**
- * Interfaces and Classes
- */
-
-interface ReverieConfig {
-    database?: any;
-    universe?: any;
-    network?: any;
-}
-class ScriptFile {
-    public id: number;
-    constructor(public fileName: string) {}
 }
