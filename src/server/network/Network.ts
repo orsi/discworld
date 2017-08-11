@@ -1,20 +1,23 @@
 import * as io from 'socket.io';
 import * as express from 'express';
 import * as http from 'http';
+import * as path from 'path';
 import Module from '../Module';
 
-// configure express and socket.io
-// let express = express();
-// let express.use(express.static('./public'));
 export default class Network extends Module {
   constructor (eventChannel: IEventChannel) {
     super('network', eventChannel);
 
-    const webServer  = http.createServer();
+    let exp = express();
+    const webServer = http.createServer(exp);
     const socketIO = io(webServer);
 
-    // register system to SystemEvents
-    // let events = ServerEvents.register('network');
+    // configure express and socket.io
+    exp.use(express.static('../../client/public'));
+    exp.get('/', (req, res) => {
+      res.sendFile(path.join(__dirname, '../../client/public/index.html'));
+    });
+    webServer.listen(3000);
 
     const clients: Array<SocketClient> = [];
     // listen for new client socket connections

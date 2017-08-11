@@ -28,3 +28,15 @@ interface IEventMessage {
     data?: any,
     cb?: () => void
 }
+interface IEntity {
+    name: string;
+    components: Array<IComponent>;
+    hasComponent(componentName: string): boolean;
+    getComponent(componentName: string): IComponent | undefined;
+    getComponents(): Array<IComponent>;
+    addComponent(component: IComponent): void;
+    removeComponent(componentName: string): void;
+}
+interface IComponent {
+
+}

@@ -1,7 +1,8 @@
 import Entity from './Entity';
-import System from './System';
+import System from './EntitySystem';
 
-export default class SystemsEngine {
+export default class ECS {
+    private EntityTypes: { [name: string]: Entity } = {};
     private entities: Array<Entity>;
     private systems: Array<System>;
 
@@ -11,7 +12,7 @@ export default class SystemsEngine {
     public updating: boolean;
 
     constructor () {
-
+        // load all entity types
     }
 
     /**
@@ -31,4 +32,17 @@ export default class SystemsEngine {
         //     family.newEntity( entity );
         // }
     }
+    // loadEntity(entityModel: IEntity): IEntity {
+    //     return entity;
+    // }
+    // createEntity(entityName: string): IEntity {
+    //     let newEntity: IEntity;
+    //     for (let entityTypeName in this.EntityTypes) {
+    //         if (entityName === entityTypeName) {
+    //             let entityClass = this.EntityTypes[entityTypeName];
+    //             newEntity = new entityClass();
+    //         }
+    //     }
+    //     return newEntity;
+    // }
 }

@@ -1,4 +1,6 @@
 import Module from '../Module';
+import Entity from './Entity';
+import Component from './Component';
 
 // const utils = require('../common/utils/Utilities');
 // const perlin = utils.perlin;
@@ -19,17 +21,19 @@ import Module from '../Module';
  *
  */
 export default class Universe extends Module {
-  public id: number;
   public seed: string;
-  public x: number = 256;
-  public y: number = 256;
-  public z: number = 16;
   public updating: boolean = false;
   public tps: number;
   public ticks: number = 0;
   public tickTimes: Array<number> = [];
   public startTime: Date = new Date();
   public lastUpdate: Date = new Date();
+
+  public Entities: Array<Entity>;
+  private x = 256;
+  private y = 256;
+  private z = 256;
+
   constructor (eventChannel: IEventChannel) {
     super('universe', eventChannel);
 
@@ -62,6 +66,8 @@ export default class Universe extends Module {
 
     this.eventChannel.emit('update');
 
+    // update systems in universe
+
     this.ticks++;
     this.updating = false;
     this.lastUpdate = now;
@@ -71,52 +77,31 @@ export default class Universe extends Module {
     return JSON.stringify(this);
   }
 
+  createEntity () {
+    let universeComponent = new UniverseComponent('universe');
+    universeComponent.x = Math.floor(Math.random() * this.x);
+    universeComponent.y = Math.floor(Math.random() * this.y);
+    universeComponent.z = Math.floor(Math.random() * this.z);
+
+    let entity = new Entity('spirit');
+    entity.addComponent(universeComponent);
+
+    // add to entity list
+    this.Entities.push(entity);
+    return entity;
+  }
+  removeEntity (entity: Entity) {
+    this.Entities.forEach((e, i) => {
+      if (e.id === entity.id) this.Entities.splice(i, 1);
+    });
+  }
 }
 
-/**
- * Interfaces and Classes
- */
-
-interface UniverseModel {
-  id: number;
-  seed: string;
-  x: number;
-  y: number;
-  z: number;
+class UniverseComponent extends Component {
+  public x: number;
+  public y: number;
+  public z: number;
 }
-
-// Universe.prototype.onClientConnection = function (client) {
-//   // create entity for client
-//   let entity = new Entity('spirit');
-
-//   if (entity) {
-//     // add entity to client
-//     client.entity = entity;
-
-//     let position = entity.getComponent('position');
-//     position.x = 0; //Math.floor(Math.random() * this.x);
-//     position.y = 0; //Math.floor(Math.random() * this.y);
-//     position.z = 0;//Math.floor(Math.random() * this.z);
-
-//     // add to entity list
-//     this.entities.push(entity);
-
-//     // send back client information
-//     client.send('player/init', entity);
-//     client.send('world/init', this.get('world'));
-//   } else {
-//     client.send('reverie/error', 'error creating entity for player');
-//   }
-// }
-// Universe.prototype.onClientDisconnect = function (client) {
-//   for (var i = 0; i < this.entities.length; i++) {
-//       var entity = this.entities[i];
-//       if (client.entity === entity) {
-//         this.entities.splice(i, 1);
-//         break;
-//       }
-//   }
-// }
 // Universe.prototype.onClientMessage = function (client, message) {
 //   // find entity associated with client
 //   let entity = client.entity;

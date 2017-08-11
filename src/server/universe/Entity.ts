@@ -1,17 +1,19 @@
 import Component from './Component';
-export default abstract class Entity {
+export default class Entity {
+    public id: number;
     public name: string;
     public components: Array<Component> = [];
-    constructor () {}
+    constructor (name: string) {
+    }
 
     hasComponent (componentName: string) {
         return this.getComponent(componentName) !== undefined;
     }
 
     getComponent (componentName: string) {
-        this.components.forEach((component: Component) => {
+        for (let component of this.components) {
             if (component.name === componentName) return component;
-        });
+        }
     }
 
     getComponents () {

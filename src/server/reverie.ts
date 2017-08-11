@@ -61,10 +61,10 @@ export default class Reverie {
         this.Modules.push(new Universe(this.EventChannel));
 
         // load scripts
-        const scriptsDirectory = path.resolve(__dirname, '../scripts');
-        console.log(`loading all scripts in ${scriptsDirectory}`);
-        this.loadScripts(scriptsDirectory, 0);
-        console.log(`finished loading ${this.scripts.length} scripts`);
+        // const scriptsDirectory = path.resolve(__dirname, '../scripts');
+        // console.log(`loading all scripts in ${scriptsDirectory}`);
+        // this.loadScripts(scriptsDirectory, 0);
+        // console.log(`finished loading ${this.scripts.length} scripts`);
 
         console.log(`\n\nReverie is now running...\n\n`);
         this.start();
