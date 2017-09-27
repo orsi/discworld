@@ -1,139 +1,251 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import EventChannel from './EventChannel';
-import Log from './services/Log';
-import CLI from './cli/CLI';
-import Network from './network/Network';
-import Universe from './universe/Universe';
-import Module from './Module';
-// import * as database from ./server/database
+
+import { Eventer } from './core/eventer';
 
 /**
- * Reverie server engine
+ * Abstract module class for Reverie application.
+ * All Reverie modules must derive from this base class
  */
-export default class Reverie {
-    scripts: Array<Script> = [];
-    public exiting: boolean = false;
-    public serverTicks = 0;
-    public startTime: Date = new Date();
-    public lastUpdate: Date = new Date();
-    public lastOutputTime: Date = new Date();
-    private running: boolean = false;
-    private updateRate: number = 100;
-    private updateTimer: NodeJS.Timer;
-    private Modules: Array<Module> = [];
-    private log: Log;
+export abstract class ReverieModule implements IReverieModule {
+    private _eventer: Eventer;
+    get eventer() { return this._eventer; }
+    constructor(public moduleName: string, protected reverie: Reverie) {
+        this._eventer = new Eventer(moduleName);
+    }
+    abstract update (delta: number): void;
+}
+interface IReverieModule {
+    update (delta: number): void;
+}
+/**
+ * Timer class for executing functions on the server in set
+ * intervals.
+ */
+export class ServerTimer {
+    public isActive = true;
+    public start = new Date();
+    private lastTime = new Date().getTime();
+    private cycles = 0;
+    private timeRemaining = 0;
+    private isOnce = false;
+    constructor(private delay: number, private callback: () => void, private once?: boolean) {
+        this.timeRemaining = delay;
+        this.isOnce = once ? once : false;
+    }
+    tick() {
+        const now = new Date().getTime();
+        const elapsed = now - this.lastTime;
+        this.lastTime = now;
+        this.timeRemaining -= elapsed;
+        if (this.timeRemaining <= 0) {
+            this.callback();
+            console.log('ding!');
+
+            // reset timer if repeating
+            if (!this.isOnce) {
+                this.timeRemaining = this.delay;
+                this.cycles++;
+            } else {
+                this.isActive = false;
+            }
+        }
+    }
+}
+
+interface ReverieSettings {
+    terminal: object;
+    network: object;
+    reverie: object;
+    server: object;
+}
+
+import { Logger } from './modules/logger';
+import { Network } from './modules/network';
+import { Terminal } from './modules/terminal';
+import { World } from './modules/world';
+import { ScriptLoader } from './utils/scriptLoader';
+
+export class Reverie {
+    readonly _version = {
+        major: 0,
+        minor: 0,
+        patch: 2
+    };
+    get version() { return `${this._version.major}.${this._version.minor}.${this._version.patch}`; }
+
+    // root = ~/server/
+    private _rootDir = __dirname;
+    get rootDirectory() { return this._rootDir; }
+
+    // Main modules
+    private _modules: { [moduleName: string]: ReverieModule } = {};
+    get modules() { return this._modules; }
+    private _eventer: Eventer;
+    get eventer() { return this._eventer; }
+    private _network: Network;
+    get network() { return this._network; }
+    private _terminal: Terminal;
+    get terminal() { return this._terminal; }
+    private _world: World;
+    get world() { return this._world; }
+
     /**
-     * Global Event Channel for Reverie
+     * Initialization constructor for application.
+     * @param config Optional configuration object for Reverie application.
      */
-    private EventChannel: EventChannel;
+    constructor (config?: ReverieSettings) {
+        console.log(`
+=====================================================================
+ooooooooo.                                             o8o
+ 888    Y88.                                            "
+ 888   .d88'  .ooooo.  oooo    ooo  .ooooo.  oooo d8b oooo   .ooooo.
+ 888ooo88P'  d88'  88b   88.  .8'  d88'  88b  888""8P  888  d88'  88b
+ 888 88b.    888ooo888    88..8'   888ooo888  888      888  888ooo888
+ 888   88b.  888    .o     888'    888    .o  888      888  888    .o
+o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
+=====================================================================
+(v${this.version})`);
+        console.log('\n');
 
-    constructor (config?: ReverieConfig) {
-        // setup configuration
+        // create Reverie event channel
+        this._eventer = new Eventer('reverie');
 
-        // if (config) {
-        //     // database
-        //     if (config.database) {
-        //         //
-        //     }
-        //     // socket and http server
-        //     if (config.network) {
-        //     //     server.configure(config.server);
-        //     }
+        // create network and terminal modules
+        this._network = new Network(this, {});
+        this._terminal = new Terminal(this, {});
 
-        //     // universe
-        //     if (config.universe) {
-        //         // Universe.configure(config.universe);
-        //     }
-        // }
-
-        // setup services
-        // setup logger
-        this.log = new Log();
-        this.log.configure(this.log.LEVEL.DEBUG);
-
-        // register reverie in EventChannel
-        this.EventChannel = new EventChannel();
-
-        // create modules
-        this.Modules.push(new CLI(this.EventChannel));
-        this.Modules.push(new Network(this.EventChannel));
-        this.Modules.push(new Universe(this.EventChannel));
-
-        // load scripts
-        // const scriptsDirectory = path.resolve(__dirname, '../scripts');
-        // console.log(`loading all scripts in ${scriptsDirectory}`);
-        // this.loadScripts(scriptsDirectory, 0);
-        // console.log(`finished loading ${this.scripts.length} scripts`);
-
-        console.log(`\n\nReverie is now running...\n\n`);
-        this.start();
+        // Load all the scripts in the scripts folder
+        console.log('loading command scripts...');
+        const scripts = ScriptLoader.load(this.rootDirectory + '/scripts');
+        console.log('...finished loading scripts');
     }
 
-    tick() {
+    /**
+     * Main Reverie application logic loop
+     */
+    private isRunning = false;
+    // Timer-based properties
+    private tps = 60;
+    private timePerTick = 1000 / this.tps;
+    private serverTicks = 0;
+    private lastTickDuration = 0;
+    private deltas: number[] = [];
+    private startTime: Date = new Date();
+    private lastUpdate: Date = new Date();
+    private reverieLoop: NodeJS.Timer;
+    private serverTimers: ServerTimer[] = [];
+    private getAverageTickTime() {
+        let avg = 0;
+        for (let d of this.deltas) {
+            avg += d;
+        }
+        avg = avg / this.deltas.length;
+        if (this.deltas.length > 10) this.deltas.pop();
+        return avg;
+    }
+    private update() {
         // update times
         const now = new Date();
         const delta = now.getTime() - this.lastUpdate.getTime();
         this.lastUpdate = now;
+        this.lastTickDuration += delta;
+        this.deltas.unshift(delta);
 
-        // output to console every 10th second
-        if (now.getTime() % 10000 === 0) {
-            console.log(`server ticks ${this.serverTicks}`);
+        // process eventer queue
+        this.eventer.process();
+
+        // process server timers
+        for (let i = 0, length = this.serverTimers.length; i < length; i++) {
+            let timer = this.serverTimers[i];
+            if (timer.isActive) timer.tick();
+            else this.serverTimers.splice(i, 1);
         }
-
-        // process timer events
-
-        // process queued events
-        this.EventChannel.flush();
-
         // update each module
-        this.Modules.forEach(module => {
-            module.update(delta);
-        });
-
+        while (this.lastTickDuration >= this.timePerTick) {
+            for (let module in this.modules) {
+                this.modules[module].update(this.timePerTick);
+            }
+            this.lastTickDuration -= this.timePerTick;
+        }
         this.serverTicks++;
-
-        // exit when closing
-        if (!this.running) {
-            this.updateTimer = setTimeout(() => this.tick(), 1000.0 / this.updateRate);
-        }
-    }
-    start() {
-        this.running = true;
-        this.tick();
-    }
-    stop() {
-        this.running = false;
-    }
-    loadScripts (dir: string, level: number): void {
-        // indentation for subdirectories
-        let indent = '  ';
-        for (let i = 0; i < level; i++) {
-            indent += indent;
-        }
-
-        const base = path.basename(dir);
-        const stat = fs.lstatSync(dir);
-        if (stat.isDirectory()) {
-            // increase indent and read new sub dir
-            console.log(`${indent}${base}/`);
-
-            ++level;
-            const files = fs.readdirSync(dir);
-            for (let i = 0; i < files.length; i++) {
-                this.loadScripts(path.join(dir, files[i]), level);
-            }
+        // asynchronous loop
+        if (this.isRunning) {
+            this.reverieLoop = setTimeout(() => this.update(), this.timePerTick);
         } else {
-            // file found, check if javascript file
-            if (path.extname(dir) === '.js') {
-                console.log(`${indent}─ ${base}`);
-
-                const script: Script = {
-                    file: base
-                };
-                this.scripts.push(script);
-                require(dir);
-            }
+            // this.exit();
+        }
+    }
+    /**
+     * Begins running the Reverie application loop.
+     */
+    run() {
+        this.isRunning = true;
+        this.update();
+    }
+    /**
+     * Pauses execution of Reverie application.
+     */
+    pause() {
+        this.isRunning = false;
+    }
+    /**
+     * Exiting process for application.
+     */
+    exit() {
+        process.exit();
+    }
+    /**
+     * Adds the module to the Reverie application.
+     * @param module Module to be added to Reverie
+     */
+    addModule(module: ReverieModule) {
+        if (this.modules[module.moduleName]) {
+            console.log(`Module by the name "${module.moduleName}" already exists.`);
+            return;
+        }
+        this.modules[module.moduleName] = module;
+    }
+    /**
+     * Returns the module if it exists in Reverie modules.
+     * @param moduleName Name of the module requested.
+     */
+    getModule<T extends ReverieModule>(moduleName: string) {
+        const module = this.modules[moduleName] as T;
+        if (module) return module;
+    }
+    /**
+     * Removes a module from Reverie.
+     * @param moduleName Name of the module to remove
+     */
+    removeModule(moduleName: string) {
+        const module = this.modules[moduleName];
+        if (!module) {
+            console.log(`Cannot remove module. Module "${moduleName}" does not exist.`);
+            return;
+        }
+        delete this.modules[moduleName];
+    }
+    /**
+     * Creates a new world and adds it to the current modules.
+     */
+    createWorld() {
+        if (this.modules['world']) {
+            console.log('There can be only one world module.');
+            return;
+        }
+        this.addModule(new World('default', this));
+    }
+    /**
+     * Destroys the current world module if it exists.
+     */
+    destroyWord() {
+        let world = this.getModule<World>('world');
+        if (world) {
+            world.destroy();
+            this.removeModule(world.moduleName);
+        } else {
+            console.log('No world has been created yet');
         }
     }
 }

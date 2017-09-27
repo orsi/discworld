@@ -1,3 +1,5 @@
+import { Reverie, ReverieModule } from '../reverie';
+
 enum LEVEL {
     TRACE = 0,
     DEBUG = 1,
@@ -6,10 +8,13 @@ enum LEVEL {
     ERROR = 4,
     FATAL = 5
 }
-export default class Log {
-    LEVEL = LEVEL;
-    private logLevel: LEVEL = LEVEL.DEBUG;
-    log (level: LEVEL) {
+export class Logger extends ReverieModule {
+    private static LEVEL = LEVEL;
+    private static logLevel: LEVEL = LEVEL.DEBUG;
+    constructor(public loggerName: string, reverie: Reverie, options?: any) {
+        super('logger', reverie);
+    }
+    static log (level: LEVEL) {
         const logLevel = this.logLevel; // for access inside descriptor
 
         return function (target: Object, key: string, descriptor: TypedPropertyDescriptor<any>) {
@@ -24,8 +29,9 @@ export default class Log {
             };
         };
     }
-    configure(level: LEVEL) {
+    static configure(level: LEVEL) {
     }
+    update() {}
 }
 
 // let LogLevel;

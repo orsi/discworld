@@ -1,107 +1,148 @@
-import Module from '../Module';
-import Entity from './Entity';
-import Component from './Component';
+import { Reverie, ReverieModule } from '../reverie';
+import { Eventer } from '../core/eventer';
+import { Logger } from './logger';
 
-// const utils = require('../common/utils/Utilities');
-// const perlin = utils.perlin;
-// const Random = utils.random;
+export enum WorldPhase {
+  EMPTY = 0,
+  GENERATION = 1,
+  SIMULATION = 2,
+  EDITING = 3
+}
 
-// const WorldMap = require('../common/world/WorldMap');
-// const Region = require('../common/world/RegionMap');
-// const Area = require('../common/world/AreaMap');
-// const Location = require('../common/world/LocationMap');
+export class World extends ReverieModule {
+  private _seed = 'default world';
+  get seed() { return this._seed; }
+  set seed(seed: string) { this._seed = seed; }
 
-// const Entity = require('../common/entities/Entity');
+  // State properties
+  private _currentPhase = WorldPhase.EMPTY;
+  get state() { return this._currentPhase; }
 
-// var Generator = require('./world/Generator');
-// var RegionGenerator = require('./world/RegionGenerator');
-
-/*
- *  World Object
- *
- */
-export default class Universe extends Module {
-  public seed: string;
-  public updating: boolean = false;
-  public tps: number;
-  public ticks: number = 0;
-  public tickTimes: Array<number> = [];
-  public startTime: Date = new Date();
-  public lastUpdate: Date = new Date();
-
-  public Entities: Array<Entity>;
-  private x = 256;
-  private y = 256;
-  private z = 256;
-
-  constructor (eventChannel: IEventChannel) {
-    super('universe', eventChannel);
-
-    // if (model) {
-    //   this.seed = model.seed;
-    //   this.x = model.x;
-    //   this.y = model.y;
-    //   this.z = model.z;
-    // }
-
+  constructor (seed: string, reverie: Reverie, options?: any) {
+    super('world', reverie);
+    this.seed = seed;
+    this.reverie.eventer.emit('world:created');
   }
 
-  destroy () {
-    // remove event stuff
+  // Update properties
+  private startTime = new Date();
+  private lastUpdateTime = new Date();
+  private pauseStartTime = new Date();
+  private cycles = 0;
+  private worldTime = new Date().getTime();
+  /**
+   * Returns the amount of simulated time that has passed.
+   */
+  getWorldTime() {
+    return this.worldTime;
   }
-  update (): void {
-    this.updating = true;
+
+  private _isUpdating = false;
+  get isUpdating() { return this._isUpdating; }
+  set isUpdating(val: boolean) { this._isUpdating = val; }
+
+  private _isPaused = false;
+  get isPaused() { return this._isPaused; }
+  set isPaused(val: boolean) { this._isPaused = val; }
+  /**
+   * Pauses the current world from updates.
+   */
+  pause() {
+    this.pauseStartTime = new Date();
+    this.isPaused = true;
+  }
+  /**
+   * Ensures the lastUpdate time is correct
+   * if the world was previously paused. This prevents
+   * simulating the time difference from last update.
+   */
+  run () {
     const now = new Date();
-
-    // calculate average timing of last 10 ticks
-    let totalTickTimes = 0;
-    this.tickTimes.forEach(tickTime => {
-      totalTickTimes += tickTime;
-    });
-    if (totalTickTimes > 1000) {
-      this.tps = this.tickTimes.length;
-      this.tickTimes.shift();
+    if (this.isPaused) {
+      this.lastUpdateTime = now;
     }
-    this.tickTimes.push(Math.round(now.getTime() - this.lastUpdate.getTime()));
-
-    this.eventChannel.emit('update');
-
-    // update systems in universe
-
-    this.ticks++;
-    this.updating = false;
-    this.lastUpdate = now;
+    this.isPaused = false;
   }
+  /**
+   * Main update method for world simulation.
+   */
+  update (delta: number) {
+    this.isUpdating = true;
+    const now = new Date();
+    this.lastUpdateTime = now;
+    this.worldTime += delta;
+    this.cycles++;
 
-  print (): string {
+    // Phase updates
+    if (!this.isPaused) {
+      switch (this._currentPhase) {
+        case WorldPhase.EMPTY:
+          break;
+        case WorldPhase.GENERATION:
+          this.updateGeneration();
+          break;
+        case WorldPhase.SIMULATION:
+          this.updateSimulation(delta);
+          break;
+        case WorldPhase.EDITING:
+          this.updateEditing();
+          break;
+        default:
+          break;
+      }
+    }
+    this.isUpdating = false;
+  }
+  /**
+   * Logic loop in the Generation phase of the world.
+   */
+  updateGeneration() {}
+  /**
+   * Logic loop in the Simulation phase of the world.
+   * @param delta Amount of time to simulate
+   */
+  updateSimulation(delta: number) {
+  }
+  /**
+   * Logic loop in the Editing phase of the world.
+   */
+  updateEditing() {}
+  /**
+   * Cleanup process for removing the world.
+   */
+  destroy () {}
+  /**
+   * Prints out an overview of the current world state.
+   */
+  print () {
     return JSON.stringify(this);
   }
 
-  createEntity () {
-    let universeComponent = new UniverseComponent('universe');
-    universeComponent.x = Math.floor(Math.random() * this.x);
-    universeComponent.y = Math.floor(Math.random() * this.y);
-    universeComponent.z = Math.floor(Math.random() * this.z);
+  // createEntity () {
+  //   let universeComponent = new UniverseComponent('universe');
+  //   universeComponent.x = Math.floor(Math.random() * this.x);
+  //   universeComponent.y = Math.floor(Math.random() * this.y);
+  //   universeComponent.z = Math.floor(Math.random() * this.z);
 
-    let entity = new Entity('spirit');
-    entity.addComponent(universeComponent);
+  //   let entity = new Entity('spirit');
+  //   entity.addComponent(universeComponent);
 
-    // add to entity list
-    this.Entities.push(entity);
-    return entity;
-  }
-  removeEntity (entity: Entity) {
-    this.Entities.forEach((e, i) => {
-      if (e.id === entity.id) this.Entities.splice(i, 1);
-    });
-  }
+  //   // add to entity list
+  //   this.Entities.push(entity);
+  //   return entity;
+  // }
+  // removeEntity (entity: Entity) {
+  //   this.Entities.forEach((e, i) => {
+  //     if (e.id === entity.id) this.Entities.splice(i, 1);
+  //   });
+  // }
 }
 
-class UniverseComponent extends Component {
-  public x: number;
-  public y: number;
-  public z: number;
-}
+// class UniverseComponent extends Component {
+//   public x: number;
+//   public y: number;
+//   public z: number;
+// }
 // Universe.prototype.onClientMessage = function (client, message) {
 //   // find entity associated with client
 //   let entity = client.entity;
