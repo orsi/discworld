@@ -67,10 +67,11 @@ import { World } from './modules/world';
 import { ScriptLoader } from './utils/scriptLoader';
 
 export class Reverie {
+    public static instance: Reverie;
     readonly _version = {
         major: 0,
         minor: 0,
-        patch: 2
+        patch: 3
     };
     get version() { return `${this._version.major}.${this._version.minor}.${this._version.patch}`; }
 
@@ -95,6 +96,8 @@ export class Reverie {
      * @param config Optional configuration object for Reverie application.
      */
     constructor (config?: ReverieSettings) {
+        if (!Reverie.instance) Reverie.instance = this;
+
         console.log(`
 =====================================================================
 ooooooooo.                                             o8o
@@ -114,6 +117,7 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         // create network and terminal modules
         this._network = new Network(this, {});
         this._terminal = new Terminal(this, {});
+        this._world = new World('reverie', this, {});
 
         // Load all the scripts in the scripts folder
         console.log('loading command scripts...');

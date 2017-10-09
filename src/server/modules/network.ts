@@ -33,11 +33,15 @@ export class Network extends ReverieModule {
     this.io.on('connection', (socket) => {
         const client = new Client(socket, this);
         this.clients[socket.id] = client;
+        this.reverie.eventer.emit('network:connection', client);
     });
 
     // start up http server
     this.httpServer.listen(3000);
     this.reverie.eventer.emit('network initialized');
+    this.eventer.on('client:new', (client: Client) => {
+      this.reverie.eventer.emit('client:new', client);
+    });
   }
   update(delta: number) {}
 }

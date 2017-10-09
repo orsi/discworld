@@ -2,7 +2,7 @@ export class Eventer {
   private channels: {[key: string]: ((...params: any[]) => void)[] } = {};
   constructor (public eventerName: string) {}
   emit (eventName: string, ...params: any[]): void {
-    console.log('emitted: ', eventName, ...params);
+    console.log('emitted: ', eventName);
     if (this.channels[eventName]) {
       this.channels[eventName].forEach(listener => {
         listener(params);
@@ -10,6 +10,8 @@ export class Eventer {
     }
   }
   on (eventName: string, listener: (...params: any[]) => void) {
+    console.log('registered handler', eventName, listener);
+    if (!this.channels[eventName]) this.channels[eventName] = [];
     this.channels[eventName].push(listener);
   }
   /**
@@ -17,4 +19,10 @@ export class Eventer {
    * event channel's queue
    */
   process() {}
+  /**
+   * Prints out current event handlers
+   */
+  print() {
+    console.dir(this.channels);
+  }
 }

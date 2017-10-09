@@ -1,6 +1,7 @@
 import { Reverie, ReverieModule } from '../reverie';
 import { Eventer } from '../core/eventer';
 import { Logger } from './logger';
+import { Client } from './network';
 
 export enum WorldPhase {
   EMPTY = 0,
@@ -21,9 +22,25 @@ export class World extends ReverieModule {
   constructor (seed: string, reverie: Reverie, options?: any) {
     super('world', reverie);
     this.seed = seed;
+    this.registerEvents(this.reverie.eventer);
     this.reverie.eventer.emit('world:created');
   }
 
+  /**
+   * Registers event handlers that the world listens
+   * to on the main Reverie eventer.
+   */
+  registerEvents (eventer: Eventer) {
+    eventer.on('client:new', this.onNewEntity);
+  }
+
+  /**
+   * Event handler - creates a new entity for the new
+   * connection on the network.
+   */
+  onNewEntity (client: Client) {
+    console.log('new entity created');
+  }
   // Update properties
   private startTime = new Date();
   private lastUpdateTime = new Date();

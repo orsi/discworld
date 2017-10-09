@@ -1,5 +1,6 @@
 import { Terminal, Command } from '../../modules/terminal';
+import { Reverie } from '../../reverie';
 
 new Command (Terminal.instance, 'event', function () {
-    console.log('event command');
+    Reverie.instance.eventer.print();
 });
