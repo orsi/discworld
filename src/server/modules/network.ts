@@ -7,7 +7,7 @@ import { Reverie, ReverieModule } from '../reverie';
 import { Eventer } from '../core/eventer';
 
 export class Network extends ReverieModule {
-  private publicDirectory = path.join(this.reverie.rootDirectory, '../client');
+  private publicDirectory = path.join(this.reverie.rootDirectory, '../public');
   private httpServer: http.Server;
   private app: express.Application;
   private io: SocketIO.Server;
@@ -55,7 +55,7 @@ export class Client {
 
     // register received events from client
     this.socket.on('disconnect', () => this.onDisconnect());
-    this.socket.on('message', () => this.onMessage());
+    this.socket.on('message', (a: any) => this.onMessage(a));
     this.socket.on('move', () => this.onMove());
     this.socket.on('inspect', () => this.onInspect());
     this.socket.on('interact', () => this.onInteract());
@@ -82,7 +82,8 @@ export class Client {
   /**
    * Client has sent a message from their terminal input.
    */
-  onMessage () {
+  onMessage (a: any) {
+    console.log('message received', a);
     this.eventer.emit('client/message', this);
   }
   /**

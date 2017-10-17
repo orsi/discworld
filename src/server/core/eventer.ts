@@ -1,4 +1,5 @@
 export class Eventer {
+  private queue: {} = [];
   private channels: {[key: string]: ((...params: any[]) => void)[] } = {};
   constructor (public eventerName: string) {}
   emit (eventName: string, ...params: any[]): void {

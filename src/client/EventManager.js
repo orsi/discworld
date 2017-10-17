@@ -21,5 +21,6 @@ System.prototype.on = function (eventType, listener) {
   emitter.on(eventType, listener);
 }
 System.prototype.emit = function (eventType, data, cb) {
+  console.log('emitted: ', eventType, data, cb);
   emitter.emit(eventType, data, cb);
 }

@@ -71,7 +71,7 @@ export class Reverie {
     readonly _version = {
         major: 0,
         minor: 0,
-        patch: 3
+        patch: 4
     };
     get version() { return `${this._version.major}.${this._version.minor}.${this._version.patch}`; }
 

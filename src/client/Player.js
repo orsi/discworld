@@ -1,5 +1,5 @@
 const EventManager = require('./EventManager');
-const Entity = require('../common/entities/Entity');
+const Entity = require('./entities/entity');
 
 module.exports = Player;
 function Player () {  

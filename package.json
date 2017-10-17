@@ -9,8 +9,9 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run build && npm run serve",
-    "build": "npm run clean:dist && npm run build-ts && npm run tslint && npm run copy:static",
+    "build": "npm run clean:dist && npm run build-ts && npm run tslint && npm run build-js && npm run copy:static",
     "serve": "node dist/index.js",
+    "build-js": "browserify src/client/reverieClient.js > src/client/public/js/reverie.js",
     "build-ts": "tsc",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
     "clean:dist": "node scripts/cleanDist.js",
@@ -26,6 +27,7 @@
     "@types/express": "^4.0.37",
     "@types/node": "^8.0.28",
     "@types/socket.io": "^1.4.30",
+    "browserify": "^14.4.0",
     "nodemon": "^1.12.1",
     "tslint": "^5.7.0",
     "typescript": "^2.5.2"

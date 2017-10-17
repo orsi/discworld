@@ -42,8 +42,8 @@ Terminal.prototype.submit = function () {
     }
     // console.log(terminalHistory, historyIndex);
     this.historyIndex = -1;
-
-    this.events.emit('network/send', 'player/message', input);
+    console.log(input);
+    this.events.emit('message', input);
 
     this.element.value = '';
   }
