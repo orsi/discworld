@@ -5,16 +5,16 @@ import * as path from 'path';
 
 import { Reverie, ReverieModule } from '../reverie';
 import { Eventer } from '../core/eventer';
+import * as Packets from './network/packets';
 
-export class Network extends ReverieModule {
+export class Network {
   private publicDirectory = path.join(this.reverie.rootDirectory, '../public');
   private httpServer: http.Server;
   private app: express.Application;
   private io: SocketIO.Server;
-  private clients: {[key: string]: Client} = {};
+  private clients: Client[] = [];
 
-  constructor (reverie: Reverie, options?: any) {
-    super('network', reverie);
+  constructor (public events: Eventer, public reverie: Reverie) {
 
     // create express application
     this.app = express();
@@ -29,78 +29,54 @@ export class Network extends ReverieModule {
     // attach socket server to http server
     this.io = io(this.httpServer);
 
-    // listen for new client socket connections
-    this.io.on('connection', (socket) => {
-        const client = new Client(socket, this);
-        this.clients[socket.id] = client;
-        this.reverie.eventer.emit('network:connection', client);
-    });
-
     // start up http server
     this.httpServer.listen(3000);
-    this.reverie.eventer.emit('network initialized');
-    this.eventer.on('client:new', (client: Client) => {
-      this.reverie.eventer.emit('client:new', client);
+
+    // initial connection socket from client
+    this.io.on('connection', (socket) => {
+        const client = new Client(socket, events);
+        this.clients.push(client);
+        console.log(client);
+        this.events.emit('client/connect', client);
     });
+
+    // internal events outbound
+    events.on('entity/update', (e) => {
+      let client = this.getClient(e.socket.id);
+      if (client) client.send('entity/update', e);
+    });
+
   }
-  update(delta: number) {}
+
+  getClient (socketId: string): Client | void {
+    for (let i = 0; i < this.clients.length; i++) {
+      if (this.clients[i].socket.id === socketId) return this.clients[i];
+    }
+  }
 }
 
 export class Client {
-  private _eventer: Eventer;
-  get eventer() { return this._eventer; }
-  constructor (private socket: SocketIO.Socket, private network: Network) {
+  events: Eventer;
+  socket: SocketIO.Socket;
+  constructor (socket: SocketIO.Socket, events: Eventer) {
     this.socket = socket;
-    this._eventer = network.eventer;
+    this.events = events;
 
-    // incoming client events
-    socket.on('disconnect', () => this.onDisconnect());
-    socket.on('message', (a: any) => this.onMessage(a));
-    socket.on('move', () => this.onMove());
-    socket.on('inspect', () => this.onInspect());
-    socket.on('interact', () => this.onInteract());
-
-    // outgoing server events
-    this.eventer.emit('client:new', this);
+    // incoming socket events
+    socket.on('disconnect', (e: Packets.EntityMessage) => this.events.emit('entity/disconnect', e));
+    socket.on('message', (e: Packets.EntityMessage) => this.events.emit('entity/message', e));
+    socket.on('move', (e: Packets.EntityMessage) => this.events.emit('entity/move', e));
+    socket.on('look', (e) => this.events.emit('entity/look', e));
+    socket.on('use', (e) => this.events.emit('entity/use', e));
   }
   /**
    * Send a socket event to the connected client.
    * @param event Name of event to send to client
    * @param data Data being sent to client
    */
-  send (event: string, data: any) {
-    this.socket.emit(event, data);
-  }
-  /**
-   * Client has disconnected from the network.
-   */
-  onDisconnect () {
-    console.log(`Client disconnected ${this}`);
-    // client has disconnected from the server
-    this.eventer.emit('client/disconnect', this);
-  }
-  /**
-   * Client has sent a message from their terminal input.
-   */
-  onMessage (a: any) {
-    this.eventer.emit('client/message', a);
-  }
-  /**
-   * Client is attempting to move to a new location.
-   */
-  onMove () {
-    this.eventer.emit('client/move', this);
-  }
-  /**
-   * Client single-clicked on an object in the world.
-   */
-  onInspect () {
-    this.eventer.emit('client/inspect', this);
-  }
-  /**
-   * Client double-clicked on an object in the world.
-   */
-  onInteract () {
-    this.eventer.emit('client/interact', this);
+  send (event: string, data?: any) {
+    this.socket.emit(event, {
+      entity: 'hi'
+    });
   }
 }

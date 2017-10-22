@@ -2,6 +2,7 @@ import { Reverie, ReverieModule } from '../reverie';
 import { Eventer } from '../core/eventer';
 import { Logger } from './logger';
 import { Client } from './network';
+import * as Packets from './network/packets';
 
 export enum WorldPhase {
   EMPTY = 0,
@@ -10,7 +11,9 @@ export enum WorldPhase {
   EDITING = 3
 }
 
-export class World extends ReverieModule {
+export class World {
+  events: Eventer;
+  reverie: Reverie;
   private _seed = 'default world';
   get seed() { return this._seed; }
   set seed(seed: string) { this._seed = seed; }
@@ -19,27 +22,45 @@ export class World extends ReverieModule {
   private _currentPhase = WorldPhase.EMPTY;
   get state() { return this._currentPhase; }
 
-  constructor (seed: string, reverie: Reverie, options?: any) {
-    super('world', reverie);
-    this.seed = seed;
-    this.registerEvents(this.reverie.eventer);
-    this.reverie.eventer.emit('world:created');
+  constructor (events: Eventer, reverie: Reverie) {
+    this.events = events;
+    this.reverie = reverie;
+    this.registerEvents(events);
   }
 
   /**
    * Registers event handlers that the world listens
    * to on the main Reverie eventer.
    */
-  registerEvents (eventer: Eventer) {
-    eventer.on('client:new', this.onNewEntity);
+  registerEvents (events: Eventer) {
+    events.on('client/connect', (e: Client) => this.onEntityConnect(e));
+    events.on('entity/message', (e: Packets.EntityMessage) => this.onEntityMessage(e));
+    events.on('entity/move', (e: Packets.EntityMove) => this.onEntityMove(e));
   }
 
   /**
-   * Event handler - creates a new entity for the new
+   * Creates a new entity for the new
    * connection on the network.
    */
-  onNewEntity (client: Client) {
-    console.log('new entity created');
+  onEntityConnect (e: Client) {
+    console.log('new entity connected', e);
+    this.events.emit('entity/update', e);
+  }
+
+  /**
+   * Creates a new entity for the new
+   * connection on the network.
+   */
+  onEntityMessage (e: Packets.EntityMessage) {
+    console.log('new entity message', e);
+  }
+
+  /**
+   * Creates a new entity for the new
+   * connection on the network.
+   */
+  onEntityMove (e: Packets.EntityMove) {
+    console.log('new entity moved', e);
   }
   // Update properties
   private startTime = new Date();

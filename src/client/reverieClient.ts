@@ -3,16 +3,12 @@
 import { EventManager } from './eventManager';
 import { InputManager } from './inputManager';
 import { Renderer } from './renderer';
-import { User } from './user';
 import { Network } from './network';
-import { World } from './world';
-import { GUI } from './gui';
+import { World } from './world/world';
 
 
 export class ReverieClient {
   eventManager: EventManager;
-  gui: GUI;
-  user: User;
   world: World;
   inputManager: InputManager;
   network: Network;
@@ -25,14 +21,10 @@ export class ReverieClient {
     // create base event manager
     const events = this.eventManager = new EventManager();
 
-    // create user
-    this.user = new User(events);
-    this.world = new World(events);
-
-    this.gui = new GUI(<HTMLElement>document.querySelector('body'), events);
     this.inputManager = new InputManager(events);
     this.network = new Network(events);
     this.renderer = new Renderer(events);
+    this.world = new World(events);
   }
   update () {
     if (this.running) {
@@ -43,13 +35,12 @@ export class ReverieClient {
 
       if (this.ticks % 100 === 0) {
         console.log(`last update was ${delta}ms`);
-        console.log('channels', this.eventManager.getChannels());
       }
       // process queued events
       this.eventManager.processAll();
 
-      // render output
-      this.renderer.render({});
+      // draw world
+      this.world.draw(delta);
 
       this.ticks++;
       // call next update frame

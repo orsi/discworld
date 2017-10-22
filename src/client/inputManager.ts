@@ -1,5 +1,4 @@
 import { EventManager } from './eventManager';
-import { Terminal } from './components/terminal';
 import { MouseEventManager } from './input/mouseEventManager';
 import { KeyboardEventManager } from './input/keyboardEventManager';
 

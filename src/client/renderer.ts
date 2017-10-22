@@ -1,4 +1,3 @@
-import { Canvas } from './components/canvas';
 import { EventManager } from './EventManager';
 import { ViewRenderer } from './output/viewRenderer';
 import { CanvasRenderer } from './output/canvasRenderer';
@@ -8,16 +7,16 @@ export class Renderer {
   view: ViewRenderer;
   main: CanvasRenderer;
   buffer: CanvasRenderer;
-  lastRender: number;
+  lastRender = new Date().getTime();
   delta: number;
+
   constructor (events: EventManager) {
     this.events = events;
     this.view = new ViewRenderer(window.innerWidth, window.innerHeight);
     this.main = new CanvasRenderer();
     this.buffer = new CanvasRenderer();
-    this.lastRender = new Date().getTime();
-    return this;
   }
+
   move (x: number, y: number) {
     // move offset relative to scale size
     // so that it doesn't become slow when
@@ -25,7 +24,7 @@ export class Renderer {
     this.view.offset.x -= Math.floor(x * this.view.zoom * this.view.minSize / 2);
     this.view.offset.y -= Math.floor(y * this.view.zoom * this.view.minSize / 2);
   }
-  render (state: any) {
+  render (renderables: Renderable[]) {
     let now = new Date().getTime();
     this.delta = now - this.lastRender;
     this.lastRender = now;
@@ -34,30 +33,10 @@ export class Renderer {
     this.buffer.clear();
     this.main.clear();
 
-    // draw to buffer
-    // if (state.world) {
-    //   this.buffer.drawWorldMap(state.world);
-    // }
-    // if (state.regions) {
-    //   for (let region of state.regions) {
-    //     region.render(this.buffer.ctx, view);
-    //   }
-    // }
-    // if (state.entity) {
-    //   this.view.follow(state.entity['position'].x, state.entity['position'].y, state.entity['position'].z);
-    //   this.buffer.drawPlayerEntity(state.entity);
-    // }
-    // if (state.entities) {
-    //   state.entities.forEach(function (entity) {
-    //     entity.render(this.buffer.ctx, view);
-    //   });
-    // }
-    // if (state.debug) {
-    //   // console.log(state.debug.cells)
-    //   if (state.debug) this.buffer.drawDebugMaps(state.debug);
-    // }
-
-    // switch to canvas
+    for (let renderable of renderables) {
+      renderable.draw(this.buffer);
+    }
+    // switch to main canvas
     this.swap();
   }
   swap () {
@@ -66,6 +45,10 @@ export class Renderer {
     // copy into visual canvas at different position
     this.main.putImageData(image, 0, 0);
   }
+}
+
+interface Renderable {
+  draw(ctx: CanvasRenderer): void;
 }
 
 // function OLD (world) {

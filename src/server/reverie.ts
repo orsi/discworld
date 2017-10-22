@@ -115,9 +115,9 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         this._eventer = new Eventer('reverie');
 
         // create network and terminal modules
-        this._network = new Network(this, {});
+        this._network = new Network(this._eventer, this);
+        this._world = new World(this._eventer, this);
         this._terminal = new Terminal(this, {});
-        this._world = new World('reverie', this, {});
 
         // Load all the scripts in the scripts folder
         console.log('loading command scripts...');
@@ -234,22 +234,22 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
      * Creates a new world and adds it to the current modules.
      */
     createWorld() {
-        if (this.modules['world']) {
-            console.log('There can be only one world module.');
-            return;
-        }
-        this.addModule(new World('default', this));
+        // if (this.modules['world']) {
+        //     console.log('There can be only one world module.');
+        //     return;
+        // }
+        // this.addModule(new World(this._eventer, this));
     }
     /**
      * Destroys the current world module if it exists.
      */
     destroyWord() {
-        let world = this.getModule<World>('world');
-        if (world) {
-            world.destroy();
-            this.removeModule(world.moduleName);
-        } else {
-            console.log('No world has been created yet');
-        }
+        // let world = this.getModule<World>('world');
+        // if (world) {
+        //     world.destroy();
+        //     this.removeModule(world.moduleName);
+        // } else {
+        //     console.log('No world has been created yet');
+        // }
     }
 }

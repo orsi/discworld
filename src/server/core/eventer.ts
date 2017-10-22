@@ -2,11 +2,11 @@ export class Eventer {
   private queue: {} = [];
   private channels: {[key: string]: ((...params: any[]) => void)[] } = {};
   constructor (public eventerName: string) {}
-  emit (eventName: string, ...params: any[]): void {
+  emit (eventName: string, ...args: any[]): void {
     console.log('emitted: ', eventName);
     if (this.channels[eventName]) {
       this.channels[eventName].forEach(listener => {
-        listener(params);
+        listener(...args);
       });
     }
   }

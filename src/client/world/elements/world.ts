@@ -1,6 +1,6 @@
-import { EventManager } from '../eventManager';
+import { EventManager } from '../../eventManager';
 
-export class Canvas extends HTMLElement {
+export class WorldElement extends HTMLElement {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     width: number;
@@ -155,4 +155,4 @@ export class Canvas extends HTMLElement {
     //   }
     // }
   }
-  window.customElements.define('reverie-canvas', Canvas);
+  window.customElements.define('reverie-world', WorldElement);
