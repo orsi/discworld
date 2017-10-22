@@ -53,14 +53,14 @@ export class Client {
     this.socket = socket;
     this._eventer = network.eventer;
 
-    // register received events from client
-    this.socket.on('disconnect', () => this.onDisconnect());
-    this.socket.on('message', (a: any) => this.onMessage(a));
-    this.socket.on('move', () => this.onMove());
-    this.socket.on('inspect', () => this.onInspect());
-    this.socket.on('interact', () => this.onInteract());
+    // incoming client events
+    socket.on('disconnect', () => this.onDisconnect());
+    socket.on('message', (a: any) => this.onMessage(a));
+    socket.on('move', () => this.onMove());
+    socket.on('inspect', () => this.onInspect());
+    socket.on('interact', () => this.onInteract());
 
-    // emit created event to network events
+    // outgoing server events
     this.eventer.emit('client:new', this);
   }
   /**
@@ -83,8 +83,7 @@ export class Client {
    * Client has sent a message from their terminal input.
    */
   onMessage (a: any) {
-    console.log('message received', a);
-    this.eventer.emit('client/message', this);
+    this.eventer.emit('client/message', a);
   }
   /**
    * Client is attempting to move to a new location.

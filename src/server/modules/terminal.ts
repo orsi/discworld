@@ -18,8 +18,6 @@ interface ICommand {
 
 export class Terminal extends ReverieModule {
     static instance: Terminal;
-    private SIGINT = false;
-    private SIGBREAK = false;
     private commands: { [commandName: string]: Command } = {};
     private serverStartTime = new Date();
     private input: NodeJS.ReadStream;
@@ -28,16 +26,6 @@ export class Terminal extends ReverieModule {
 
     constructor(reverie: Reverie, options?: any) {
         super('terminal', reverie);
-
-        // Setup graceful shutdown
-        if (process.platform === 'win32') {
-            // if windows, force SIGINT event
-
-            process.stdin.on('close', () => {
-                console.log('Win32 close event issued');
-                process.emit('SIGINT');
-            });
-        }
 
         if (process.stdin.isTTY) {
             process.stdin.setEncoding('utf8');

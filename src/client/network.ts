@@ -1,23 +1,25 @@
 import { EventManager } from './eventManager';
+import * as io from 'socket.io-client';
 
 export class Network {
-    socket: SocketIOClient.Socket;
     events: EventManager;
-    constructor (socket: SocketIOClient.Socket, events: EventManager) {
-        this.socket = socket;
+    socket: SocketIOClient.Socket;
+
+    constructor (events: EventManager) {
+        const socket = this.socket = io();
         this.events = events;
 
-        // Server socket events
-        socket.on('connect', () => this.events.emit('server/connected', this));
-        // socket.on('player/init', (e) => this.events.emit('player/init', e));
-        // socket.on('player/update', (playerEntity) => this.events.emit('player/update', playerEntity));
-        // socket.on('world/init', (world) => this.events.emit('world/init', world));
-        // socket.on('world/world', (wm) => this.events.emit('world/world', wm));
-        // socket.on('world/update', (world) => this.events.emit('world/update', world));
-        // socket.on('debug/maps', (maps) => this.events.emit('debug/maps', maps));
+        // server socket events
+        socket.on('connect', (e: any) => events.emit('network/connected', e));
+        socket.on('server/update', (e: any) => events.emit('server/update', e));
+        socket.on('entity/update', (e: any) => events.emit('entity/update', e));
+        socket.on('world/update', (e: any) => events.emit('world/update', e));
 
-        // Front-end events
-        // events.on('network/send', (event, data) => this.socket.emit(event, data));
-        events.on('input/message', (message: string) => socket.emit('message', message));
+        // client events
+        events.on('message', (message: string) => {
+            console.log('emitting message to server', message);
+            socket.emit('message', message);
+        });
     }
+    getSocket () { return this.socket; }
 }

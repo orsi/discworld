@@ -6,6 +6,22 @@
  *
  * */
 
+ import * as readline from 'readline';
+// Setup graceful shutdown
+if (process.platform === 'win32') {
+    let rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    rl.on('SIGINT', function () {
+        process.emit('SIGINT');
+    });
+}
+process.on('SIGINT', function () {
+    process.exit();
+});
+
 import { Reverie } from './server/reverie';
 const reverie = new Reverie();
 reverie.run();
