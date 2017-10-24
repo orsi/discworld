@@ -1,7 +1,7 @@
 import { ScriptLoader } from '../utils/scriptLoader';
 
-import { ReverieModule, Reverie } from '../reverie';
-import { Eventer } from '../core/eventer';
+import { Reverie } from '../reverie';
+import { EventManager } from '../core/eventManager';
 
 /**
  * Base Command class for creating terminal commands.
@@ -16,7 +16,7 @@ interface ICommand {
     execute(): void;
 }
 
-export class Terminal extends ReverieModule {
+export class Terminal {
     static instance: Terminal;
     private commands: { [commandName: string]: Command } = {};
     private serverStartTime = new Date();
@@ -25,8 +25,6 @@ export class Terminal extends ReverieModule {
     private inputBuffer: (string | Buffer)[] = [];
 
     constructor(reverie: Reverie, options?: any) {
-        super('terminal', reverie);
-
         if (process.stdin.isTTY) {
             process.stdin.setEncoding('utf8');
             process.stdin.on('data', (chunk) => {

@@ -1,12 +1,15 @@
 import { Entity } from './Entity';
 import { Component } from './Component';
 
-export class EntityComponentManger {
-    private entities: Entity[];
-    add(entity: Entity): void {
+export class EntitySystem {
+    private entities: Entity[] = [];
+    create(): Entity {
+        const entity = new Entity();
+        entity.serial = 'id' + this.entities.length;
         this.entities.push(entity);
+        return entity;
     }
-    remove(entity: Entity): boolean {
+    destroy(entity: Entity): boolean {
         let index = this.entities.indexOf(entity);
 
         if (index >= 0) {

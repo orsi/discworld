@@ -1,30 +1,43 @@
-import { Reverie, ReverieModule } from '../reverie';
-import { Eventer } from '../core/eventer';
+import { Reverie } from '../reverie';
+import { EventManager } from '../core/eventManager';
 import { Logger } from './logger';
-import { Client } from './network';
+import { Client } from './client';
 import * as Packets from './network/packets';
+import { EntitySystem } from '../core/entities/entitySystem';
+import { Entity } from '../core/entities/entity';
+import { WorldModel } from './models/worldModel';
 
 export enum WorldPhase {
-  EMPTY = 0,
-  GENERATION = 1,
-  SIMULATION = 2,
-  EDITING = 3
+  GENERATION = 0,
+  SIMULATION = 1
 }
 
 export class World {
-  events: Eventer;
+  model: WorldModel = new WorldModel();
+  entitySystem: EntitySystem;
+  events: EventManager;
   reverie: Reverie;
-  private _seed = 'default world';
-  get seed() { return this._seed; }
-  set seed(seed: string) { this._seed = seed; }
+  creator: Entity;
+  entities: Entity[];
+  private seed = 'default world';
+
+  // Update properties
+  private startTime = new Date();
+  private lastUpdateTime = this.startTime.getTime();
+  private lastClientUpdateTime = this.startTime.getTime();
+  private pauseStartTime = this.startTime.getTime();
+  private worldTime = this.startTime.getTime();
+  private cycles = 0;
+  private isUpdating = false;
+  private isPaused = false;
 
   // State properties
-  private _currentPhase = WorldPhase.EMPTY;
-  get state() { return this._currentPhase; }
+  private currentPhase = WorldPhase.GENERATION;
 
-  constructor (events: Eventer, reverie: Reverie) {
+  constructor (events: EventManager, reverie: Reverie) {
     this.events = events;
     this.reverie = reverie;
+    this.entitySystem = new EntitySystem();
     this.registerEvents(events);
   }
 
@@ -32,9 +45,9 @@ export class World {
    * Registers event handlers that the world listens
    * to on the main Reverie eventer.
    */
-  registerEvents (events: Eventer) {
-    events.on('client/connect', (e: Client) => this.onEntityConnect(e));
-    events.on('entity/message', (e: Packets.EntityMessage) => this.onEntityMessage(e));
+  registerEvents (events: EventManager) {
+    events.on('client/connect', (e: Client) => this.onNewClient(e));
+    events.on('entity/message', (e: Packets.ClientMessage) => this.onEntityMessage(e));
     events.on('entity/move', (e: Packets.EntityMove) => this.onEntityMove(e));
   }
 
@@ -42,51 +55,61 @@ export class World {
    * Creates a new entity for the new
    * connection on the network.
    */
-  onEntityConnect (e: Client) {
-    console.log('new entity connected', e);
-    this.events.emit('entity/update', e);
+  onNewClient (client: Client) {
+    switch (this.currentPhase) {
+      case WorldPhase.GENERATION:
+        let creator = this.creator = client.entity = this.entitySystem.create();
+        client.send('entity/init', creator);
+        client.send('world/init', this.model);
+        break;
+      case WorldPhase.SIMULATION:
+        let entity = client.entity = this.entitySystem.create();
+        client.send('entity/init', entity);
+        break;
+    }
   }
 
   /**
-   * Creates a new entity for the new
-   * connection on the network.
+   * Parses the message sent by a client
+   * to the world.
    */
-  onEntityMessage (e: Packets.EntityMessage) {
-    console.log('new entity message', e);
+  onEntityMessage (e: Packets.ClientMessage) {
+    switch (this.currentPhase) {
+      case WorldPhase.GENERATION:
+        if (e.message === 'get world') e.client.send('world/info', {
+          seed: this.seed,
+          cycles: this.cycles,
+          currentPhaseId: this.currentPhase,
+          currentPhase: WorldPhase[this.currentPhase],
+          model: this.model
+        });
+        if (e.message === 'generate world') {
+          this.generate();
+          e.client.send('world/generate', this.model);
+        }
+        break;
+      case WorldPhase.SIMULATION:
+        break;
+    }
   }
 
   /**
-   * Creates a new entity for the new
-   * connection on the network.
+   * Moves an entity in the world.
    */
   onEntityMove (e: Packets.EntityMove) {
     console.log('new entity moved', e);
   }
-  // Update properties
-  private startTime = new Date();
-  private lastUpdateTime = new Date();
-  private pauseStartTime = new Date();
-  private cycles = 0;
-  private worldTime = new Date().getTime();
   /**
    * Returns the amount of simulated time that has passed.
    */
   getWorldTime() {
     return this.worldTime;
   }
-
-  private _isUpdating = false;
-  get isUpdating() { return this._isUpdating; }
-  set isUpdating(val: boolean) { this._isUpdating = val; }
-
-  private _isPaused = false;
-  get isPaused() { return this._isPaused; }
-  set isPaused(val: boolean) { this._isPaused = val; }
   /**
    * Pauses the current world from updates.
    */
   pause() {
-    this.pauseStartTime = new Date();
+    this.pauseStartTime = new Date().getTime();
     this.isPaused = true;
   }
   /**
@@ -95,9 +118,8 @@ export class World {
    * simulating the time difference from last update.
    */
   run () {
-    const now = new Date();
     if (this.isPaused) {
-      this.lastUpdateTime = now;
+      this.lastUpdateTime = new Date().getTime();
     }
     this.isPaused = false;
   }
@@ -107,44 +129,44 @@ export class World {
   update (delta: number) {
     this.isUpdating = true;
     const now = new Date();
-    this.lastUpdateTime = now;
+    this.lastUpdateTime = now.getTime();
     this.worldTime += delta;
     this.cycles++;
 
     // Phase updates
     if (!this.isPaused) {
-      switch (this._currentPhase) {
-        case WorldPhase.EMPTY:
-          break;
+      switch (this.currentPhase) {
         case WorldPhase.GENERATION:
-          this.updateGeneration();
+          this.updateGeneration(delta);
           break;
         case WorldPhase.SIMULATION:
           this.updateSimulation(delta);
           break;
-        case WorldPhase.EDITING:
-          this.updateEditing();
-          break;
-        default:
-          break;
       }
+    }
+
+    // send world update every ~1s
+    if (now.getTime() - this.lastClientUpdateTime > 1000) {
+      this.events.emit('world/update', this.model);
     }
     this.isUpdating = false;
   }
   /**
    * Logic loop in the Generation phase of the world.
    */
-  updateGeneration() {}
+  updateGeneration(delta: number) {
+
+  }
+  generate() {
+    this.model.x = 50;
+    this.model.y = 50;
+  }
   /**
    * Logic loop in the Simulation phase of the world.
    * @param delta Amount of time to simulate
    */
   updateSimulation(delta: number) {
   }
-  /**
-   * Logic loop in the Editing phase of the world.
-   */
-  updateEditing() {}
   /**
    * Cleanup process for removing the world.
    */

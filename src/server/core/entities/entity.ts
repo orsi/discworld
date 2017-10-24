@@ -1,5 +1,6 @@
 import { Component } from './Component';
 export class Entity {
-    id: number;
+    serial: string;
     components: Component[] = [];
+    constructor() {}
 }

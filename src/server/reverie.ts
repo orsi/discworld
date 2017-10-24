@@ -1,23 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { Eventer } from './core/eventer';
+import { EventManager } from './core/eventManager';
 
-/**
- * Abstract module class for Reverie application.
- * All Reverie modules must derive from this base class
- */
-export abstract class ReverieModule implements IReverieModule {
-    private _eventer: Eventer;
-    get eventer() { return this._eventer; }
-    constructor(public moduleName: string, protected reverie: Reverie) {
-        this._eventer = new Eventer(moduleName);
-    }
-    abstract update (delta: number): void;
-}
-interface IReverieModule {
-    update (delta: number): void;
-}
 /**
  * Timer class for executing functions on the server in set
  * intervals.
@@ -80,16 +65,10 @@ export class Reverie {
     get rootDirectory() { return this._rootDir; }
 
     // Main modules
-    private _modules: { [moduleName: string]: ReverieModule } = {};
-    get modules() { return this._modules; }
-    private _eventer: Eventer;
-    get eventer() { return this._eventer; }
-    private _network: Network;
-    get network() { return this._network; }
-    private _terminal: Terminal;
-    get terminal() { return this._terminal; }
-    private _world: World;
-    get world() { return this._world; }
+    private events: EventManager;
+    private network: Network;
+    private terminal: Terminal;
+    private world: World;
 
     /**
      * Initialization constructor for application.
@@ -112,12 +91,12 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         console.log('\n');
 
         // create Reverie event channel
-        this._eventer = new Eventer('reverie');
+        this.events = new EventManager();
 
         // create network and terminal modules
-        this._network = new Network(this._eventer, this);
-        this._world = new World(this._eventer, this);
-        this._terminal = new Terminal(this, {});
+        this.network = new Network(this.events, this);
+        this.world = new World(this.events, this);
+        this.terminal = new Terminal(this, {});
 
         // Load all the scripts in the scripts folder
         console.log('loading command scripts...');
@@ -156,20 +135,19 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         this.lastTickDuration += delta;
         this.deltas.unshift(delta);
 
-        // process eventer queue
-        this.eventer.process();
-
         // process server timers
         for (let i = 0, length = this.serverTimers.length; i < length; i++) {
             let timer = this.serverTimers[i];
             if (timer.isActive) timer.tick();
             else this.serverTimers.splice(i, 1);
         }
+
+        // process event queue
+        this.events.process();
+
         // update each module
         while (this.lastTickDuration >= this.timePerTick) {
-            for (let module in this.modules) {
-                this.modules[module].update(this.timePerTick);
-            }
+            this.world.update(this.timePerTick);
             this.lastTickDuration -= this.timePerTick;
         }
         this.serverTicks++;
@@ -198,37 +176,6 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
      */
     exit() {
         process.exit();
-    }
-    /**
-     * Adds the module to the Reverie application.
-     * @param module Module to be added to Reverie
-     */
-    addModule(module: ReverieModule) {
-        if (this.modules[module.moduleName]) {
-            console.log(`Module by the name "${module.moduleName}" already exists.`);
-            return;
-        }
-        this.modules[module.moduleName] = module;
-    }
-    /**
-     * Returns the module if it exists in Reverie modules.
-     * @param moduleName Name of the module requested.
-     */
-    getModule<T extends ReverieModule>(moduleName: string) {
-        const module = this.modules[moduleName] as T;
-        if (module) return module;
-    }
-    /**
-     * Removes a module from Reverie.
-     * @param moduleName Name of the module to remove
-     */
-    removeModule(moduleName: string) {
-        const module = this.modules[moduleName];
-        if (!module) {
-            console.log(`Cannot remove module. Module "${moduleName}" does not exist.`);
-            return;
-        }
-        delete this.modules[moduleName];
     }
     /**
      * Creates a new world and adds it to the current modules.

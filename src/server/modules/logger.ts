@@ -1,4 +1,4 @@
-import { Reverie, ReverieModule } from '../reverie';
+import { Reverie } from '../reverie';
 
 enum LEVEL {
     TRACE = 0,
@@ -8,11 +8,10 @@ enum LEVEL {
     ERROR = 4,
     FATAL = 5
 }
-export class Logger extends ReverieModule {
+export class Logger  {
     private static LEVEL = LEVEL;
     private static logLevel: LEVEL = LEVEL.DEBUG;
     constructor(public loggerName: string, reverie: Reverie, options?: any) {
-        super('logger', reverie);
     }
     static log (level: LEVEL) {
         const logLevel = this.logLevel; // for access inside descriptor
