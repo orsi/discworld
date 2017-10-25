@@ -25,7 +25,7 @@ export class EventManager {
       // call all listeners
       if (this.channels[queuedEvent.event] && this.channels[queuedEvent.event].length > 0) {
         this.channels[queuedEvent.event].forEach(listener => {
-          console.log('processed event', queuedEvent);
+          // console.log('processed event', queuedEvent);
           listener(queuedEvent.data);
         });
       }

@@ -46,6 +46,9 @@ export class Network {
       let client = this.getClient(e.socket.id);
       if (client) client.send('entity/update', { event: 'entity update!' });
     });
+    events.on('world/update', (e) => {
+      this.clients.forEach(client => client.send('world/update', e));
+    });
   }
 
   getClient (socketId: string): Client | void {

@@ -2,12 +2,14 @@ import { EventManager } from '../eventManager';
 import { Entity } from './entity';
 import { WorldInterface } from './elements/worldInterface';
 import { WorldModel } from './models/worldModel';
+import { WorldView } from './views/worldView';
 
 export class World {
   playerEntity: Entity;
   entities: Entity[] = [];
   events: EventManager;
-  model: WorldModel;
+  model: WorldModel = new WorldModel();
+  view: WorldView = new WorldView(this.model);
   interface: WorldInterface;
   constructor  (events: EventManager) {
     this.events = events;
@@ -24,15 +26,18 @@ export class World {
     events.on('entity/update', (entityUpdate) => this.onEntityUpdate(entityUpdate));
     events.on('tile/update', (tileUpdate) => this.onTileUpdate(tileUpdate));
   }
-
-  draw (delta: number) {}
+  update (delta: number) {}
+  draw (interpolation: number) {
+    this.view.draw(interpolation);
+  }
   onWorldInit (data: any) {
     console.log(data);
-    this.model = new WorldModel(data);
+    this.model.x = data.x;
+    this.model.y = data.y;
     console.log(this.model);
   }
   onWorldUpdate (worldUpdate: any) {
-    console.log(worldUpdate);
+    this.model.map = worldUpdate;
   }
   onEntityInit (data: any) {
     this.playerEntity = new Entity(data);

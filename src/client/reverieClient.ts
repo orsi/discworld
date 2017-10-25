@@ -15,6 +15,9 @@ export class ReverieClient {
   renderer: Renderer;
   running = false;
   lastUpdate = new Date().getTime();
+  accumulator: number;
+  ticksPerSecond = 25;
+  tickTime = 1000 / this.ticksPerSecond;
   ticks = 0;
 
   constructor() {
@@ -39,8 +42,16 @@ export class ReverieClient {
       // process queued events
       this.eventManager.processAll();
 
+      // update world
+      this.accumulator += delta;
+      while (this.accumulator > this.tickTime) {
+        this.world.update(this.tickTime);
+        this.accumulator -= delta;
+      }
+
       // draw world
-      this.world.draw(delta);
+      let interpolation = this.accumulator / this.tickTime;
+      this.world.draw(interpolation);
 
       this.ticks++;
       // call next update frame

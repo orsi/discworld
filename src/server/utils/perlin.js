@@ -46,7 +46,7 @@ function lerp(a, b, t) {
   return (1-t)*a + t*b;
 }
 
-module.exports = {
+export const perlin = {
   // This isn't a very good seeding function, but it works ok. It supports 2^16
   // different seed values. Write something better if you need more seeds.
   seed: function seed (seed) {

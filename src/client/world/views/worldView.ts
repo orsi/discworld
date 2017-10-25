@@ -1,9 +1,9 @@
-import { World } from '../world';
 import { Renderable } from '../components/renderable';
+import { WorldModel } from '../models/worldModel';
 
 export class WorldView implements Renderable {
-    model: World;
-    constructor (model: World) {
+    model: WorldModel;
+    constructor (model: WorldModel) {
         this.model = model;
     }
 

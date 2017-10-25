@@ -1,12 +1,12 @@
-import prng from './prng';
-export default class Automaton {
+import { PRNG } from './prng';
+export class Automaton {
   private seed: number | string = new Date().getTime();
   private step: number = 0;
   private probability: number = 0.7;
   private birth: Array<number> = [6, 7, 8];
   private survival: Array<number> = [5, 6, 7, 8];
   private map: Array<Array<boolean>> = [];
-  private random: prng;
+  private random: PRNG;
   constructor (private x: number = 50, private y: number = 50, options?: AutomatonOptions) {
 
     if (options) {
@@ -17,14 +17,15 @@ export default class Automaton {
       if (options.survival) this.survival = options.survival;
     }
 
-    this.random = new prng(this.seed);
+    this.random = new PRNG(this.seed);
 
     // create automaton map
     for (let x = 0; x < this.x; x++) {
       this.map.push([]);
       for (let y = 0; y < this.y; y++) {
         // randomly choose alive/dead
-        let alive = this.random.next() < this.probability;
+        let rand = this.random.next();
+        let alive = rand < this.probability;
         this.map[x][y] = alive;
       }
     }
@@ -62,6 +63,7 @@ export default class Automaton {
           }
       }
     }
+    this.step++;
     this.map = nextMap;
   }
 

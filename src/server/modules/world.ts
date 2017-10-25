@@ -6,14 +6,17 @@ import * as Packets from './network/packets';
 import { EntitySystem } from '../core/entities/entitySystem';
 import { Entity } from '../core/entities/entity';
 import { WorldModel } from './models/worldModel';
+import { Automaton } from '../utils/automaton';
 
 export enum WorldPhase {
-  GENERATION = 0,
-  SIMULATION = 1
+  EMPTY = 0,
+  GENERATION = 1,
+  SIMULATION = 2
 }
 
 export class World {
   model: WorldModel = new WorldModel();
+  worldAutomaton: Automaton;
   entitySystem: EntitySystem;
   events: EventManager;
   reverie: Reverie;
@@ -32,7 +35,7 @@ export class World {
   private isPaused = false;
 
   // State properties
-  private currentPhase = WorldPhase.GENERATION;
+  private currentPhase = WorldPhase.EMPTY;
 
   constructor (events: EventManager, reverie: Reverie) {
     this.events = events;
@@ -56,14 +59,17 @@ export class World {
    * connection on the network.
    */
   onNewClient (client: Client) {
+    let entity = this.entitySystem.create();
     switch (this.currentPhase) {
+      case WorldPhase.EMPTY:
+        this.creator = entity;
+        client.send('entity/init', entity);
+        break;
       case WorldPhase.GENERATION:
-        let creator = this.creator = client.entity = this.entitySystem.create();
-        client.send('entity/init', creator);
+        client.send('entity/init', entity);
         client.send('world/init', this.model);
         break;
       case WorldPhase.SIMULATION:
-        let entity = client.entity = this.entitySystem.create();
         client.send('entity/init', entity);
         break;
     }
@@ -75,18 +81,21 @@ export class World {
    */
   onEntityMessage (e: Packets.ClientMessage) {
     switch (this.currentPhase) {
+      case WorldPhase.EMPTY:
+        if (e.message === 'generate world') {
+          this.generate();
+          e.client.send('world/generate', this.model);
+        }
+        break;
       case WorldPhase.GENERATION:
         if (e.message === 'get world') e.client.send('world/info', {
           seed: this.seed,
           cycles: this.cycles,
           currentPhaseId: this.currentPhase,
           currentPhase: WorldPhase[this.currentPhase],
-          model: this.model
+          model: this.model,
+          auto: this.worldAutomaton
         });
-        if (e.message === 'generate world') {
-          this.generate();
-          e.client.send('world/generate', this.model);
-        }
         break;
       case WorldPhase.SIMULATION:
         break;
@@ -147,7 +156,8 @@ export class World {
 
     // send world update every ~1s
     if (now.getTime() - this.lastClientUpdateTime > 1000) {
-      this.events.emit('world/update', this.model);
+      this.events.emit('world/update', this.worldAutomaton);
+      this.lastClientUpdateTime = now.getTime();
     }
     this.isUpdating = false;
   }
@@ -155,11 +165,17 @@ export class World {
    * Logic loop in the Generation phase of the world.
    */
   updateGeneration(delta: number) {
-
+    if (this.cycles % 1000 === 0) {
+      this.worldAutomaton.next();
+    }
   }
   generate() {
-    this.model.x = 50;
-    this.model.y = 50;
+    if (this.currentPhase === WorldPhase.EMPTY) {
+      this.model.x = 50;
+      this.model.y = 50;
+      this.worldAutomaton = new Automaton(this.model.x, this.model.y);
+      this.currentPhase = WorldPhase.GENERATION;
+    }
   }
   /**
    * Logic loop in the Simulation phase of the world.
