@@ -28,6 +28,7 @@ export class WorldElement extends HTMLElement {
     clear () {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
+    getContext () { return this.ctx; }
     // drawPlayerEntity (entity) {
     //   let canvasPosition = this.view.worldToCanvas(
     //     entity['position'].x,

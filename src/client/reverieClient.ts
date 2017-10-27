@@ -2,7 +2,6 @@
 // Created by Jonathon Orsi
 import { EventManager } from './eventManager';
 import { InputManager } from './inputManager';
-import { Renderer } from './renderer';
 import { Network } from './network';
 import { World } from './world/world';
 
@@ -12,7 +11,6 @@ export class ReverieClient {
   world: World;
   inputManager: InputManager;
   network: Network;
-  renderer: Renderer;
   running = false;
   lastUpdate = new Date().getTime();
   accumulator: number;
@@ -26,7 +24,6 @@ export class ReverieClient {
 
     this.inputManager = new InputManager(events);
     this.network = new Network(events);
-    this.renderer = new Renderer(events);
     this.world = new World(events);
   }
   update () {

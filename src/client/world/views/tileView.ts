@@ -7,5 +7,5 @@ export class TileView implements Renderable {
         this.model = model;
     }
 
-    draw(delta: number) {}
+    draw(ctx: CanvasRenderingContext2D) {}
 }

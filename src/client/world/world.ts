@@ -28,7 +28,10 @@ export class World {
   }
   update (delta: number) {}
   draw (interpolation: number) {
-    this.view.draw(interpolation);
+    let ctx = this.interface.getWorldElement().getContext();
+    ctx.fillStyle = '#333';
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    this.view.draw(this.interface.getWorldElement().getContext());
   }
   onWorldInit (data: any) {
     console.log(data);
@@ -37,7 +40,11 @@ export class World {
     console.log(this.model);
   }
   onWorldUpdate (worldUpdate: any) {
-    this.model.map = worldUpdate;
+    if (worldUpdate) {
+      this.model.map = worldUpdate.map;
+    } else {
+      this.model.map = [[]];
+    }
   }
   onEntityInit (data: any) {
     this.playerEntity = new Entity(data);

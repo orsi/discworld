@@ -96,6 +96,10 @@ export class World {
           model: this.model,
           auto: this.worldAutomaton
         });
+        if (e.message === 'destroy world') {
+          this.destroy();
+          e.client.send('world/destroy');
+        }
         break;
       case WorldPhase.SIMULATION:
         break;
@@ -186,7 +190,11 @@ export class World {
   /**
    * Cleanup process for removing the world.
    */
-  destroy () {}
+  destroy () {
+    if (this.currentPhase !== WorldPhase.EMPTY) {
+      this.worldAutomaton = null;
+      this.currentPhase = WorldPhase.EMPTY;
+    }}
   /**
    * Prints out an overview of the current world state.
    */

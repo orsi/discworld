@@ -1,20 +1,17 @@
-import { EventManager } from './EventManager';
 import { ViewRenderer } from './output/viewRenderer';
 import { CanvasRenderer } from './output/canvasRenderer';
 
 export class Renderer {
-  events: EventManager;
   view: ViewRenderer;
-  main: CanvasRenderer;
-  buffer: CanvasRenderer;
+  main: CanvasRenderingContext2D;
+  buffer: CanvasRenderingContext2D;
   lastRender = new Date().getTime();
   delta: number;
 
-  constructor (events: EventManager) {
-    this.events = events;
+  constructor (canvas: CanvasRenderingContext2D) {
+    this.main = canvas;
+    this.buffer = new CanvasRenderingContext2D();
     this.view = new ViewRenderer(window.innerWidth, window.innerHeight);
-    this.main = new CanvasRenderer();
-    this.buffer = new CanvasRenderer();
   }
 
   move (x: number, y: number) {
@@ -30,8 +27,8 @@ export class Renderer {
     this.lastRender = now;
 
     // clear buffer and canvas
-    this.buffer.clear();
-    this.main.clear();
+    // this.buffer.clear();
+    // this.main.clear();
 
     for (let renderable of renderables) {
       renderable.draw(this.buffer);
@@ -48,7 +45,7 @@ export class Renderer {
 }
 
 interface Renderable {
-  draw(ctx: CanvasRenderer): void;
+  draw(ctx: CanvasRenderingContext2D): void;
 }
 
 // function OLD (world) {

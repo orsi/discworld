@@ -7,5 +7,5 @@ export class EntityView implements Renderable {
         this.model = model;
     }
 
-    draw(delta: number) {}
+    draw(ctx: CanvasRenderingContext2D) {}
 }

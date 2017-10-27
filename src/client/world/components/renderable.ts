@@ -1,3 +1,3 @@
 export interface Renderable {
-    draw (delta: number): void;
+    draw (ctx: CanvasRenderingContext2D): void;
 }
