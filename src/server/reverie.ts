@@ -3,41 +3,6 @@ import * as path from 'path';
 
 import { EventManager } from './core/eventManager';
 
-/**
- * Timer class for executing functions on the server in set
- * intervals.
- */
-export class ServerTimer {
-    public isActive = true;
-    public start = new Date();
-    private lastTime = new Date().getTime();
-    private cycles = 0;
-    private timeRemaining = 0;
-    private isOnce = false;
-    constructor(private delay: number, private callback: () => void, private once?: boolean) {
-        this.timeRemaining = delay;
-        this.isOnce = once ? once : false;
-    }
-    tick() {
-        const now = new Date().getTime();
-        const elapsed = now - this.lastTime;
-        this.lastTime = now;
-        this.timeRemaining -= elapsed;
-        if (this.timeRemaining <= 0) {
-            this.callback();
-            console.log('ding!');
-
-            // reset timer if repeating
-            if (!this.isOnce) {
-                this.timeRemaining = this.delay;
-                this.cycles++;
-            } else {
-                this.isActive = false;
-            }
-        }
-    }
-}
-
 interface ReverieSettings {
     terminal: object;
     network: object;
@@ -49,14 +14,18 @@ import { Logger } from './modules/logger';
 import { Network } from './modules/network';
 import { Terminal } from './modules/terminal';
 import { World } from './modules/world';
-import { ScriptLoader } from './utils/scriptLoader';
+import { ScriptLoader } from '../common/utils/scriptLoader';
+import { TimerManager } from '../common/utils/timerManager';
+import * as ClientPackets from '../common/network/clientPackets';
+import * as ServerPackets from '../common/network/serverPackets';
+import * as WorldEvents from '../common/world/worldEvents';
 
 export class Reverie {
     public static instance: Reverie;
     readonly _version = {
         major: 0,
         minor: 0,
-        patch: 7
+        patch: 8
     };
     get version() { return `${this._version.major}.${this._version.minor}.${this._version.patch}`; }
 
@@ -69,6 +38,28 @@ export class Reverie {
     private network: Network;
     private terminal: Terminal;
     private world: World;
+    socketEntities: SocketEntityList = new SocketEntityList();
+
+    // Timer-based properties
+    private isRunning = false;
+    private tps = 60;
+    private timePerTick = 1000 / this.tps;
+    private serverTicks = 0;
+    private lastTickDuration = 0;
+    private deltas: number[] = [];
+    private startTime: Date = new Date();
+    private lastUpdate: Date = new Date();
+    private reverieLoop: NodeJS.Timer;
+    private timers: TimerManager = new TimerManager();
+    private getAverageTickTime() {
+        let avg = 0;
+        for (let d of this.deltas) {
+            avg += d;
+        }
+        avg = avg / this.deltas.length;
+        if (this.deltas.length > 10) this.deltas.pop();
+        return avg;
+    }
 
     /**
      * Initialization constructor for application.
@@ -102,31 +93,23 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         console.log('loading command scripts...');
         const scripts = ScriptLoader.load(this.rootDirectory + '/scripts');
         console.log('...finished loading scripts');
+
+        // register inter-module events
+        this.events.registerEvent('network/connection', (data) => this.onNetworkConnection(data));
+        this.events.registerEvent('network/disconnect', (data) => this.onNetworkDisconnect(data));
+        this.events.registerEvent('network/move', (data) => this.onNetworkMove(data));
+        this.events.registerEvent('network/message', (data) => this.onNetworkMessage(data));
+        this.events.registerEvent('network/look', (data) => this.onNetworkLook(data));
+        this.events.registerEvent('network/use', (data) => this.onNetworkUse(data));
+        this.events.registerEvent('world/created', (data) => this.onWorldCreated(data));
+        this.events.registerEvent('world/updated', (data) => this.onWorldUpdated(data));
+        this.events.registerEvent('world/destroyed', (data) => this.onWorldDestroyed(data));
+        this.events.registerEvent('terminal/command', (data) => this.onTerminalCommand(data));
     }
 
     /**
      * Main Reverie application logic loop
      */
-    private isRunning = false;
-    // Timer-based properties
-    private tps = 60;
-    private timePerTick = 1000 / this.tps;
-    private serverTicks = 0;
-    private lastTickDuration = 0;
-    private deltas: number[] = [];
-    private startTime: Date = new Date();
-    private lastUpdate: Date = new Date();
-    private reverieLoop: NodeJS.Timer;
-    private serverTimers: ServerTimer[] = [];
-    private getAverageTickTime() {
-        let avg = 0;
-        for (let d of this.deltas) {
-            avg += d;
-        }
-        avg = avg / this.deltas.length;
-        if (this.deltas.length > 10) this.deltas.pop();
-        return avg;
-    }
     private update() {
         // update times
         const now = new Date();
@@ -136,11 +119,7 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         this.deltas.unshift(delta);
 
         // process server timers
-        for (let i = 0, length = this.serverTimers.length; i < length; i++) {
-            let timer = this.serverTimers[i];
-            if (timer.isActive) timer.tick();
-            else this.serverTimers.splice(i, 1);
-        }
+        this.timers.process(delta);
 
         // process event queue
         this.events.process();
@@ -177,26 +156,101 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
     exit() {
         process.exit();
     }
-    /**
-     * Creates a new world and adds it to the current modules.
-     */
-    createWorld() {
-        // if (this.modules['world']) {
-        //     console.log('There can be only one world module.');
-        //     return;
-        // }
-        // this.addModule(new World(this._eventer, this));
+
+    // Events between modules
+
+    onNetworkConnection (packet: ClientPackets.Connection) {
+        const entity = this.world.createEntity();
+        this.socketEntities.add(entity.serial, packet.socket.id);
+        this.network.send(packet.socket.id, 'agent/created', new ServerPackets.PlayerEntity(entity));
     }
-    /**
-     * Destroys the current world module if it exists.
-     */
-    destroyWord() {
-        // let world = this.getModule<World>('world');
-        // if (world) {
-        //     world.destroy();
-        //     this.removeModule(world.moduleName);
-        // } else {
-        //     console.log('No world has been created yet');
-        // }
+    onNetworkDisconnect (packet: ClientPackets.Disconnect) {
+        const entityId = this.socketEntities.findEntityIdBySocketId(packet.socket.id);
+        if (entityId) {
+            this.world.removeEntity(entityId);
+            this.socketEntities.removeEntity(entityId);
+        }
+    }
+    onNetworkMove (packet: ClientPackets.Move) {
+        const entityId = this.socketEntities.findEntityIdBySocketId(packet.socket.id);
+        if (entityId) {
+            const canMove = this.world.moveEntity(entityId);
+            this.network.send(packet.socket.id, 'entity/move', canMove);
+        }
+    }
+    onNetworkMessage (packet: ClientPackets.Message) {
+        const entityId = this.socketEntities.findEntityIdBySocketId(packet.socket.id);
+        console.log(entityId, packet.socket.id, this.socketEntities);
+        if (entityId) {
+            this.world.messageEntity(entityId, packet.data);
+        }
+    }
+    onNetworkLook (packet: ClientPackets.Look) {
+        const entityId = this.socketEntities.findEntityIdBySocketId(packet.socket.id);
+        if (entityId) {
+            this.world.lookEntity(entityId);
+        }
+    }
+    onNetworkUse(packet: ClientPackets.Use) {
+        const entityId = this.socketEntities.findEntityIdBySocketId(packet.socket.id);
+        if (entityId) {
+            this.world.interactEntity(entityId);
+        }
+    }
+    onWorldCreated (worldCreated: WorldEvents.Created) {
+        this.network.broadcast('world/created', worldCreated);
+    }
+    onWorldUpdated (worldUpdate: WorldEvents.Updated) {
+        this.network.broadcast('world/updated', worldUpdate);
+    }
+    onWorldDestroyed (worldDestroyed: WorldEvents.Destroyed) {
+        this.network.broadcast('world/destroyed', worldDestroyed);
+    }
+    onTerminalCommand (packet: ClientPackets.Connection) {
+        // const entity = this.world.onNewClient();
+        // this.socketEntities[entity.serial] = packet.socket.id;
+        // packet.socket.send('world/playerEntity', new ServerPackets.PlayerEntity(entity));
+    }
+}
+class SocketEntityList {
+    socketEntities: { entityId: string, socketId: string }[] = [];
+    constructor() {}
+    add (entityId: string, socketId: string) {
+        this.socketEntities.push({
+            entityId: entityId,
+            socketId: socketId
+        });
+    }
+    findEntityIdBySocketId (socketId: string): string | void {
+        for (let i = 0; i < this.socketEntities.length; i++) {
+            let se = this.socketEntities[i];
+            if (se.socketId === socketId) return se.entityId;
+        }
+    }
+    findSocketIdByEntityId (entityId: string): string | void {
+        for (let i = 0; i < this.socketEntities.length; i++) {
+            let se = this.socketEntities[i];
+            if (se.entityId === entityId) return se.socketId;
+        }
+    }
+    removeEntity (entityId: string): boolean {
+        for (let i = 0; i < this.socketEntities.length; i++) {
+            let se = this.socketEntities[i];
+            if (se.entityId === entityId) {
+                this.socketEntities.splice(i, 1);
+                return true;
+            }
+        }
+        return false;
+    }
+    removeSocket (socketId: string): boolean {
+        for (let i = 0; i < this.socketEntities.length; i++) {
+            let se = this.socketEntities[i];
+            if (se.socketId === socketId) {
+                this.socketEntities.splice(i, 1);
+                return true;
+            }
+        }
+        return false;
     }
 }

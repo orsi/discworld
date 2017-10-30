@@ -1,6 +1,6 @@
-import { EventManager } from '../../eventManager';
+import { EventManager } from '../eventManager';
 
-export class Terminal extends HTMLElement {
+export class TerminalElement extends HTMLElement {
   events: EventManager;
   historyIndex = -1;
   history: string[] = [];
@@ -11,6 +11,13 @@ export class Terminal extends HTMLElement {
 
     // hook into input events
     this.events = events;
+
+    // style
+    this.style.lineHeight = '1em';
+    this.style.fontFamily = 'Courier New';
+    this.style.padding = '3px';
+    this.style.whiteSpace = 'nowrap';
+    this.style.outline = 'none';
 
     // grab all keyboard down events and process pressed key
     events.on('keyboard/down', (e: KeyboardEvent) => this.onKey(e.key));
@@ -84,4 +91,4 @@ export class Terminal extends HTMLElement {
     }
   }
 }
-window.customElements.define('reverie-terminal', Terminal);
+window.customElements.define('reverie-terminal', TerminalElement);

@@ -1,9 +1,9 @@
-import { Tile } from '../tile';
-import { Renderable } from '../components/renderable';
+import { Renderable } from '../../../common/ecs/components/renderable';
+import { TileModel } from '../../../common/world/models/tileModel';
 
 export class TileView implements Renderable {
-    model: Tile;
-    constructor (model: Tile) {
+    model: TileModel;
+    constructor (model: TileModel) {
         this.model = model;
     }
 

@@ -1,11 +1,11 @@
-import { Entity } from './Entity';
-import { Component } from './Component';
+import { Entity } from './entity';
+import { Component } from './component';
 
 export class EntitySystem {
     private entities: Entity[] = [];
     create(): Entity {
         const entity = new Entity();
-        entity.serial = 'id' + this.entities.length;
+        entity.serial = 'id#' + this.entities.length;
         this.entities.push(entity);
         return entity;
     }
@@ -32,4 +32,5 @@ export class EntitySystem {
             if (component.type === componentType) return component as T;
         }
     }
+    getAllEntities() { return this.entities; }
 }

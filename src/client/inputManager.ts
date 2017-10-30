@@ -23,7 +23,10 @@ export class InputManager {
       // the browsers context menu
       e.preventDefault();
     });
-    window.addEventListener('resize', (e) => this.onWindowResize(e));
+    window.addEventListener('resize', (e) => {
+      this.lastEvent = e;
+      this.events.emit('window/resize', e);
+    });
 
     // mouse events passed to mouse manager
     window.addEventListener('click', (e) => this.mouseEventManager.onMouseClick(e));
@@ -43,7 +46,5 @@ export class InputManager {
     document.addEventListener('keypress', (e) => this.keyboardEventManager.onKeyPress(e));
   }
   getMouseEventManager () { return this.mouseEventManager; }
-  onWindowResize (e: Event) {
-    this.lastEvent = e;
-  }
+  getKeyboardEventManager () { return this.keyboardEventManager; }
 }

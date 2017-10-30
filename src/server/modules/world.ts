@@ -1,117 +1,82 @@
 import { Reverie } from '../reverie';
 import { EventManager } from '../core/eventManager';
 import { Logger } from './logger';
-import { Client } from './client';
-import * as Packets from './network/packets';
-import { EntitySystem } from '../core/entities/entitySystem';
-import { Entity } from '../core/entities/entity';
-import { WorldModel } from './models/worldModel';
-import { Automaton } from '../utils/automaton';
-
-export enum WorldPhase {
-  EMPTY = 0,
-  GENERATION = 1,
-  SIMULATION = 2
-}
+import { EntitySystem } from '../../common/ecs/entitySystem';
+import { Entity } from '../../common/ecs/entity';
+import * as Components from '../../common/ecs/component';
+import * as WorldEvents from '../../common/world/worldEvents';
+import { WorldModel } from '../../common/world/models/worldModel';
+// utils
+import { Automaton } from '../../common/utils/automaton';
+import { perlin } from '../../common/utils/perlin';
+import { PRNG } from '../../common/utils/prng';
+import { TimerManager } from '../../common/utils/timerManager';
 
 export class World {
-  model: WorldModel = new WorldModel();
-  worldAutomaton: Automaton;
+  model: WorldModel;
   entitySystem: EntitySystem;
   events: EventManager;
-  reverie: Reverie;
-  creator: Entity;
-  entities: Entity[];
-  private seed = 'default world';
+  timers: TimerManager = new TimerManager();
+  automaton: Automaton;
+  prng: PRNG;
 
   // Update properties
   private startTime = new Date();
   private lastUpdateTime = this.startTime.getTime();
-  private lastClientUpdateTime = this.startTime.getTime();
+  private lastUpdatedEventTime = this.startTime.getTime();
   private pauseStartTime = this.startTime.getTime();
   private worldTime = this.startTime.getTime();
   private cycles = 0;
   private isUpdating = false;
   private isPaused = false;
 
-  // State properties
-  private currentPhase = WorldPhase.EMPTY;
-
   constructor (events: EventManager, reverie: Reverie) {
     this.events = events;
-    this.reverie = reverie;
     this.entitySystem = new EntitySystem();
-    this.registerEvents(events);
-  }
-
-  /**
-   * Registers event handlers that the world listens
-   * to on the main Reverie eventer.
-   */
-  registerEvents (events: EventManager) {
-    events.on('client/connect', (e: Client) => this.onNewClient(e));
-    events.on('entity/message', (e: Packets.ClientMessage) => this.onEntityMessage(e));
-    events.on('entity/move', (e: Packets.EntityMove) => this.onEntityMove(e));
   }
 
   /**
    * Creates a new entity for the new
    * connection on the network.
    */
-  onNewClient (client: Client) {
+  createEntity () {
     let entity = this.entitySystem.create();
-    switch (this.currentPhase) {
-      case WorldPhase.EMPTY:
-        this.creator = entity;
-        client.send('entity/init', entity);
-        break;
-      case WorldPhase.GENERATION:
-        client.send('entity/init', entity);
-        client.send('world/init', this.model);
-        break;
-      case WorldPhase.SIMULATION:
-        client.send('entity/init', entity);
-        break;
+    if (this.model) {
+      let mapPosition = this.getRandomLandPosition();
+      let entityPosition = entity.addComponent<Components.PositionComponent>('position');
+      if (entityPosition && mapPosition) {
+        entityPosition.x = mapPosition.x;
+        entityPosition.y = mapPosition.y;
+      }
     }
+    return entity;
   }
 
   /**
    * Parses the message sent by a client
    * to the world.
    */
-  onEntityMessage (e: Packets.ClientMessage) {
-    switch (this.currentPhase) {
-      case WorldPhase.EMPTY:
-        if (e.message === 'generate world') {
-          this.generate();
-          e.client.send('world/generate', this.model);
-        }
-        break;
-      case WorldPhase.GENERATION:
-        if (e.message === 'get world') e.client.send('world/info', {
-          seed: this.seed,
-          cycles: this.cycles,
-          currentPhaseId: this.currentPhase,
-          currentPhase: WorldPhase[this.currentPhase],
-          model: this.model,
-          auto: this.worldAutomaton
-        });
-        if (e.message === 'destroy world') {
-          this.destroy();
-          e.client.send('world/destroy');
-        }
-        break;
-      case WorldPhase.SIMULATION:
-        break;
+  messageEntity (entityId: string, message: string) {
+    if (message === 'generate world') {
+      this.create();
+    }
+    if (message === 'get world') {
+
+    }
+    if (message === 'destroy world') {
+      this.destroy();
     }
   }
 
   /**
    * Moves an entity in the world.
    */
-  onEntityMove (e: Packets.EntityMove) {
-    console.log('new entity moved', e);
+  moveEntity (entityId: string) {
+    console.log('new entity moved', entityId);
   }
+  removeEntity (entityId: string) {}
+  lookEntity (entityId: string) {}
+  interactEntity (entityId: string) {}
   /**
    * Returns the amount of simulated time that has passed.
    */
@@ -146,80 +111,69 @@ export class World {
     this.worldTime += delta;
     this.cycles++;
 
-    // Phase updates
-    if (!this.isPaused) {
-      switch (this.currentPhase) {
-        case WorldPhase.GENERATION:
-          this.updateGeneration(delta);
-          break;
-        case WorldPhase.SIMULATION:
-          this.updateSimulation(delta);
-          break;
-      }
-    }
+    // main update
+    this.timers.process(delta);
 
-    // send world update every ~1s
-    if (now.getTime() - this.lastClientUpdateTime > 1000) {
-      this.events.emit('world/update', this.worldAutomaton);
-      this.lastClientUpdateTime = now.getTime();
-    }
     this.isUpdating = false;
   }
-  /**
-   * Logic loop in the Generation phase of the world.
-   */
-  updateGeneration(delta: number) {
-    if (this.cycles % 1000 === 0) {
-      this.worldAutomaton.next();
-    }
-  }
-  generate() {
-    if (this.currentPhase === WorldPhase.EMPTY) {
-      this.model.x = 50;
-      this.model.y = 50;
-      this.worldAutomaton = new Automaton(this.model.x, this.model.y);
-      this.currentPhase = WorldPhase.GENERATION;
-    }
-  }
-  /**
-   * Logic loop in the Simulation phase of the world.
-   * @param delta Amount of time to simulate
-   */
-  updateSimulation(delta: number) {
+  create (seed?: string) {
+    this.destroy();
+    this.model = new WorldModel(seed);
+    this.prng = new PRNG(this.model.seed);
+    this.model.width = this.prng.range(50, 250);
+    this.model.height = this.prng.range(50, 250);
+    this.automaton = new Automaton(this.model.width, this.model.height, {
+      seed: this.model.seed
+    });
+    // hack for now
+    this.model.map = this.automaton.getMap();
+    // automaton update timer
+    this.timers.createTimer(2000, () => {
+      this.automaton.next();
+    });
+    //  update event
+    this.timers.createTimer(1000, () => {
+      // send world update every ~1s
+      this.events.emit<WorldEvents.Updated>('world/updated', new WorldEvents.Updated(this.model));
+      this.lastUpdatedEventTime = new Date().getTime();
+    });
+
+    // update all entites with position
+    this.entitySystem.getAllEntities().forEach(entity => {
+      let mapPosition = this.getRandomLandPosition();
+      let entityPosition = entity.addComponent<Components.PositionComponent>('position');
+      if (entityPosition && mapPosition) {
+        entityPosition.x = mapPosition.x;
+        entityPosition.y = mapPosition.y;
+      }
+    });
+    this.events.emit<WorldEvents.Created>('world/created', new WorldEvents.Created(this.model));
   }
   /**
    * Cleanup process for removing the world.
    */
   destroy () {
-    if (this.currentPhase !== WorldPhase.EMPTY) {
-      this.worldAutomaton = null;
-      this.currentPhase = WorldPhase.EMPTY;
-    }}
+    this.timers.removeAll();
+    this.events.emit<WorldEvents.Destroyed>('world/destroyed');
+  }
   /**
    * Prints out an overview of the current world state.
    */
   print () {
     return JSON.stringify(this);
   }
-
-  // createEntity () {
-  //   let universeComponent = new UniverseComponent('universe');
-  //   universeComponent.x = Math.floor(Math.random() * this.x);
-  //   universeComponent.y = Math.floor(Math.random() * this.y);
-  //   universeComponent.z = Math.floor(Math.random() * this.z);
-
-  //   let entity = new Entity('spirit');
-  //   entity.addComponent(universeComponent);
-
-  //   // add to entity list
-  //   this.Entities.push(entity);
-  //   return entity;
-  // }
-  // removeEntity (entity: Entity) {
-  //   this.Entities.forEach((e, i) => {
-  //     if (e.id === entity.id) this.Entities.splice(i, 1);
-  //   });
-  // }
+  getRandomLandPosition () {
+    for (let x = 0; x < this.model.width; x++) {
+      for (let y = 0; y < this.model.height; y++) {
+        if (this.model.map[x][y]) {
+          return {
+            x: x,
+            y: y
+          };
+        }
+      }
+    }
+  }
 }
 
 // class UniverseComponent extends Component {

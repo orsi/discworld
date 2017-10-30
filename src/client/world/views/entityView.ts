@@ -1,11 +1,13 @@
-import { Entity } from '../entity';
-import { Renderable } from '../components/renderable';
+import { Renderable } from '../../../common/ecs/components/renderable';
+import { EntityModel } from '../../../common/ecs/models/entityModel';
 
 export class EntityView implements Renderable {
-    model: Entity;
-    constructor (model: Entity) {
+    model: EntityModel;
+    constructor (model: EntityModel) {
         this.model = model;
     }
 
-    draw(ctx: CanvasRenderingContext2D) {}
+    draw(ctx: CanvasRenderingContext2D) {
+        // let position = this.model.getComponent<Components.PositionComponent>('position');
+    }
 }

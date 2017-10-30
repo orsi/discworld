@@ -1,4 +1,4 @@
-import { ScriptLoader } from '../utils/scriptLoader';
+import { ScriptLoader } from '../../common/utils/scriptLoader';
 
 import { Reverie } from '../reverie';
 import { EventManager } from '../core/eventManager';

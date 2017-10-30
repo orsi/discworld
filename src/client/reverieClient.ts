@@ -4,13 +4,16 @@ import { EventManager } from './eventManager';
 import { InputManager } from './inputManager';
 import { Network } from './network';
 import { World } from './world/world';
-
+import { ReverieInterface } from './reverieInterface';
+import { Renderer } from './renderer';
 
 export class ReverieClient {
   eventManager: EventManager;
-  world: World;
   inputManager: InputManager;
   network: Network;
+  world: World;
+  reverieInterface: ReverieInterface;
+  renderer: Renderer;
   running = false;
   lastUpdate = new Date().getTime();
   accumulator: number;
@@ -25,6 +28,16 @@ export class ReverieClient {
     this.inputManager = new InputManager(events);
     this.network = new Network(events);
     this.world = new World(events);
+
+    // create html interface
+    this.reverieInterface = new ReverieInterface(events);
+
+    // create renderer for world
+    this.renderer = new Renderer(
+      this.world,
+      this.reverieInterface.worldElement.canvas,
+      this.reverieInterface.worldElement.bufferCanvas
+    );
   }
   update () {
     if (this.running) {
@@ -48,7 +61,7 @@ export class ReverieClient {
 
       // draw world
       let interpolation = this.accumulator / this.tickTime;
-      this.world.draw(interpolation);
+      this.renderer.render(interpolation);
 
       this.ticks++;
       // call next update frame

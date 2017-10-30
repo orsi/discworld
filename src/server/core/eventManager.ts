@@ -1,17 +1,30 @@
+import { Network } from '../modules/network';
+import { World } from '../modules/world';
+import { Terminal } from '../modules/terminal';
+
+/**
+ * Event Manager for the Reverie Server.
+ * This class acts as a communications channel
+ * between multiple Reverie modules. It defines
+ * the events which require two or more modules
+ * in Reverie.
+ */
 export class EventManager {
   queue: QueuedEvent[] = [];
-  channels: EventChannel = {};
+  events: RegisteredEvents = {};
 
-  on (event: string, listener: (...args: any[]) => void) {
-    if (!this.channels[event]) this.channels[event] = [];
-    this.channels[event].push(listener);
+  constructor () {}
+  registerEvent(event: string, callback: (...args: any[]) => void) {
+    if (this.events[event]) console.log(`Event "${event}" already registered.`);
+    else this.events[event] = new EventHandler(event, callback);
   }
-  emit (event: string, data?: any, cb?: (...args: any[]) => void) {
-    this.queue.push({
-      event: event,
-      data: data,
-      cb: cb
-    });
+  // on (event: string, listener: (...args: any[]) => void) {
+  //   if (!this.channels[event]) this.channels[event] = [];
+  //   this.channels[event].push(listener);
+  // }
+  emit <T>(event: string, data?: T) {
+    let moduleEvent = new ModuleEvent(event, data);
+    this.queue.push(moduleEvent);
   }
   process () {
     // processes all the events queued
@@ -19,38 +32,40 @@ export class EventManager {
     // the data given to it
     while (this.queue.length > 0) {
       // dequeue first event
-      let queuedEvent = this.queue.shift()!;
+      const queuedEvent = this.queue.shift()!;
+      const event = this.events[queuedEvent.event];
 
-      // check if event has a channel with listeners
-      // call all listeners
-      if (this.channels[queuedEvent.event] && this.channels[queuedEvent.event].length > 0) {
-        this.channels[queuedEvent.event].forEach(listener => {
-          // console.log('processed event', queuedEvent);
-          listener(queuedEvent.data);
-        });
+      if (event) {
+        event.callback(queuedEvent.data);
+      } else {
+        console.log(`Unregistered event "${queuedEvent.event}" emitted.`);
       }
     }
   }
-  processOne () {
-    // shift next event off queue
-    if (this.queue.length > 0) {
-      const nextEvent = this.queue.shift()!;
-      if (this.channels[nextEvent.event] && this.channels[nextEvent.event].length > 0) {
-        this.channels[nextEvent.event].forEach(listener => {
-          listener(nextEvent.data);
-        });
-      }
+  processNext () {
+    // processes the next event in queue
+    let queuedEvent = this.queue.shift()!;
+    let event = this.events[queuedEvent.event];
+
+    if (event) {
+      event.callback(queuedEvent.data);
+    } else {
+      console.log(`Unregistered event "${queuedEvent.event}" emitted.`);
     }
   }
   getQueue () { return this.queue; }
-  getChannels () { return this.channels; }
 }
 
 interface QueuedEvent {
   event: string;
   data?: any;
-  cb?: (...args: any[]) => void;
 }
-interface EventChannel {
-  [event: string]: ((...args: any[]) => void)[];
+interface RegisteredEvents {
+  [event: string]: EventHandler;
+}
+class EventHandler {
+  constructor(public event: string, public callback: (...args: any[]) => void) {}
+}
+class ModuleEvent {
+  constructor(public event: string, public data: any) {}
 }

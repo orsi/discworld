@@ -22,6 +22,7 @@ export class PRNG {
   }
 
   range (min: number, max: number) {
-    return (this.next() * (max - min)) + min;
+    const normalize = this.next() * (max - min);
+    return normalize + min;
   }
 }

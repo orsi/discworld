@@ -63,10 +63,14 @@ export class Automaton {
           }
       }
     }
+    // copy nextMap to map
+    for (let x = 0; x < this.x; x++) {
+      for (let y = 0; y < this.y; y++) {
+        this.map[x][y] = nextMap[x][y];
+      }
+    }
     this.step++;
-    this.map = nextMap;
   }
-
   countNeighbours (cellX: number, cellY: number): number {
     let count = 0;
     for (let x = -1; x < 2; x++) {
@@ -85,6 +89,9 @@ export class Automaton {
       }
     }
     return count;
+  }
+  getMap () {
+    return this.map;
   }
 }
 
