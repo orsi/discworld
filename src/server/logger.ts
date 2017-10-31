@@ -1,4 +1,4 @@
-import { Reverie } from '../reverie';
+import { Reverie } from './reverie';
 
 enum LEVEL {
     TRACE = 0,

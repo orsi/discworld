@@ -1,4 +1,4 @@
-import { EventManager } from '../eventManager';
+import { EventManager } from '../../common/eventManager';
 
 export class KeyboardEventManager {
     events: EventManager;
@@ -10,14 +10,14 @@ export class KeyboardEventManager {
 
     onKeyPress (e: KeyboardEvent) {
         this.lastKeyboardEvent = e;
-        this.events.emit('keyboard/press', e);
+        this.events.emit('input/keyboard/press', e);
     }
     onKeyUp (e: KeyboardEvent) {
         this.lastKeyboardEvent = e;
-        this.events.emit('keyboard/up', e);
+        this.events.emit('input/keyboard/up', e);
     }
     onKeyDown (e: KeyboardEvent) {
       this.lastKeyboardEvent = e;
-      this.events.emit('keyboard/down', e);
+      this.events.emit('input/keyboard/down', e);
     }
 }

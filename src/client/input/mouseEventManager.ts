@@ -1,4 +1,4 @@
-import { EventManager } from '../eventManager';
+import { EventManager } from '../../common/eventManager';
 
 export class MouseEventManager {
     events: EventManager;
@@ -10,29 +10,29 @@ export class MouseEventManager {
 
     onMouseClick (e: MouseEvent) {
         this.lastMouseEvent = e;
-        this.events.emit('mouse/click', {
+        this.events.emit('input/mouse/click', {
             x: e.clientX,
             y: e.clientY
         });
     }
     onMouseDoubleClick (e: MouseEvent) {
         this.lastMouseEvent = e;
-        this.events.emit('mouse/doubleClick', {
+        this.events.emit('input/mouse/doubleClick', {
             x: e.clientX,
             y: e.clientY
         });
     }
     onMouseDown (e: MouseEvent) {
         this.lastMouseEvent = e;
-        this.events.emit('mouse/down', {});
+        this.events.emit('input/mouse/down', {});
     }
     onMouseUp (e: MouseEvent) {
         this.lastMouseEvent = e;
-        this.events.emit('mouse/up', {});
+        this.events.emit('input/mouse/up', {});
     }
     onMouseMove (e: MouseEvent) {
         this.lastMouseEvent = e;
-        this.events.emit('mouse/move', {
+        this.events.emit('input/mouse/move', {
             x: e.clientX,
             y: e.clientY
         });
@@ -43,9 +43,9 @@ export class MouseEventManager {
     onMouseOut (e: MouseEvent) {}
     onMouseWheel (e: WheelEvent) {
       if (e.deltaY < 0) {
-        this.events.emit('mouse/wheel', {});
+        this.events.emit('input/mouse/wheel', {});
       } else {
-        this.events.emit('mouse/wheel', {});
+        this.events.emit('input/mouse/wheel', {});
       }
     }
 }

@@ -1,9 +1,5 @@
-import { Network } from '../modules/network';
-import { World } from '../modules/world';
-import { Terminal } from '../modules/terminal';
-
 /**
- * Event Manager for the Reverie Server.
+ * Event Manager for Reverie.
  * This class acts as a communications channel
  * between multiple Reverie modules. It defines
  * the events which require two or more modules

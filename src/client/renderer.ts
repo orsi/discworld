@@ -1,6 +1,6 @@
 import { ViewRenderer } from './output/viewRenderer';
 import { CanvasRenderer } from './output/canvasRenderer';
-import { World } from './world/world';
+import { World } from './world';
 
 export class Renderer {
   world: World;

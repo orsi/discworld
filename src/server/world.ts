@@ -1,16 +1,16 @@
-import { Reverie } from '../reverie';
-import { EventManager } from '../core/eventManager';
+import { Reverie } from './reverie';
+import { EventManager } from '../common/eventManager';
 import { Logger } from './logger';
-import { EntitySystem } from '../../common/ecs/entitySystem';
-import { Entity } from '../../common/ecs/entity';
-import * as Components from '../../common/ecs/component';
-import * as WorldEvents from '../../common/world/worldEvents';
-import { WorldModel } from '../../common/world/models/worldModel';
+import { EntitySystem } from '../common/ecs/entitySystem';
+import { Entity } from '../common/ecs/entity';
+import * as Components from '../common/ecs/component';
+import * as WorldEvents from '../common/world/worldEvents';
+import { WorldModel } from '../common/world/models/worldModel';
 // utils
-import { Automaton } from '../../common/utils/automaton';
-import { perlin } from '../../common/utils/perlin';
-import { PRNG } from '../../common/utils/prng';
-import { TimerManager } from '../../common/utils/timerManager';
+import { Automaton } from '../common/utils/automaton';
+import { perlin } from '../common/utils/perlin';
+import { PRNG } from '../common/utils/prng';
+import { TimerManager } from '../common/utils/timerManager';
 
 export class World {
   model: WorldModel;
@@ -134,7 +134,7 @@ export class World {
     //  update event
     this.timers.createTimer(1000, () => {
       // send world update every ~1s
-      this.events.emit<WorldEvents.Updated>('world/updated', new WorldEvents.Updated(this.model));
+      this.events.emit<WorldEvents.Updated>('world/update', new WorldEvents.Updated(this.model));
       this.lastUpdatedEventTime = new Date().getTime();
     });
 
@@ -147,14 +147,14 @@ export class World {
         entityPosition.y = mapPosition.y;
       }
     });
-    this.events.emit<WorldEvents.Created>('world/created', new WorldEvents.Created(this.model));
+    this.events.emit<WorldEvents.Created>('world', new WorldEvents.Created(this.model));
   }
   /**
    * Cleanup process for removing the world.
    */
   destroy () {
     this.timers.removeAll();
-    this.events.emit<WorldEvents.Destroyed>('world/destroyed');
+    this.events.emit<WorldEvents.Destroyed>('world/destroy');
   }
   /**
    * Prints out an overview of the current world state.

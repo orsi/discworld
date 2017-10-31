@@ -1,33 +1,29 @@
-import { EventManager } from './eventManager';
+import { EventManager } from '../common/eventManager';
 import * as io from 'socket.io-client';
 
 export class Network {
     events: EventManager;
-    socket: SocketIOClient.Socket;
+    server: SocketIOClient.Socket;
 
     constructor (events: EventManager) {
-        const socket = this.socket = io();
+        const server = this.server = io();
         this.events = events;
 
         // server socket events
-        socket.on('connect', (e: any) => events.emit('network/connected', e));
-        socket.on('server/update', (e: any) => events.emit('server/update', e));
-        socket.on('agent/created', (data: any) => events.emit('agent/created', data));
-        // socket.on('entity/updated', (e: any) => events.emit('entity/update', e));
-        // socket.on('entity/destroyed', (e: any) => events.emit('entity/update', e));
-        socket.on('entity/created', (data: any) => events.emit('entity/init', data));
-        socket.on('entity/updated', (e: any) => events.emit('entity/update', e));
-        socket.on('entity/destroyed', (e: any) => events.emit('entity/update', e));
-        socket.on('world/created', (data: any) => events.emit('world/created', data));
-        socket.on('world/updated', (e: any) => events.emit('world/updated', e));
-        socket.on('world/destroyed', (e: any) => console.log(e));
-        socket.on('world/info', (e: any) => console.log(e));
-
-        // client events
-        events.on('message', (message: string) => {
-            console.log('emitting message to server', message);
-            socket.emit('message', message);
-        });
+        server.on('connect', (data: any) => events.emit('network/connected', data));
+        server.on('server', (data: any) => events.emit('server', data));
+        server.on('server/update', (data: any) => events.emit('server/update', data));
+        server.on('agent', (data: any) => events.emit('agent', data));
+        server.on('agent/update', (data: any) => events.emit('agent/update', data));
+        server.on('world', (data: any) => events.emit('world', data));
+        server.on('world/update', (data: any) => events.emit('world/update', data));
+        server.on('entity', (data: any) => events.emit('entity', data));
+        server.on('entity/update', (data: any) => events.emit('entity/update', data));
+        server.on('tile', (data: any) => events.emit('tile', data));
+        server.on('tile/update', (data: any) => events.emit('tile/update', data));
     }
-    getSocket () { return this.socket; }
+    send (event: string, data?: any) {
+        console.log('sending message to server:', event, this.server);
+        if (this.server) this.server.emit(event, data);
+      }
 }

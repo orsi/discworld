@@ -3,10 +3,10 @@ import * as express from 'express';
 import * as io from 'socket.io';
 import * as path from 'path';
 
-import { Reverie } from '../reverie';
-import { EventManager } from '../core/eventManager';
-import * as ClientPackets from '../../common/network/clientPackets';
-import * as ServerPackets from '../../common/network/serverPackets';
+import { Reverie } from './reverie';
+import { EventManager } from '../common/eventManager';
+import * as ClientPackets from '../common/network/clientPackets';
+import * as ServerPackets from '../common/network/serverPackets';
 
 export class Network {
   private publicDirectory = path.join(this.reverie.rootDirectory, '../public');

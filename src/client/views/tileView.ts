@@ -1,5 +1,5 @@
-import { Renderable } from '../../../common/ecs/components/renderable';
-import { TileModel } from '../../../common/world/models/tileModel';
+import { Renderable } from '../../common/ecs/components/renderable';
+import { TileModel } from '../../common/world/models/tileModel';
 
 export class TileView implements Renderable {
     model: TileModel;

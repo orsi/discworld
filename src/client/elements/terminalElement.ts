@@ -1,4 +1,4 @@
-import { EventManager } from '../eventManager';
+import { EventManager } from '../../common/eventManager';
 
 export class TerminalElement extends HTMLElement {
   events: EventManager;
@@ -18,9 +18,6 @@ export class TerminalElement extends HTMLElement {
     this.style.padding = '3px';
     this.style.whiteSpace = 'nowrap';
     this.style.outline = 'none';
-
-    // grab all keyboard down events and process pressed key
-    events.on('keyboard/down', (e: KeyboardEvent) => this.onKey(e.key));
   }
 
   onKey (key: string) {
@@ -74,7 +71,7 @@ export class TerminalElement extends HTMLElement {
       this.historyIndex = -1;
 
       // emit message event
-      this.events.emit('message', this.value);
+      this.events.emit('terminal/message', this.value);
 
       // reset value
       this.reset();

@@ -1,7 +1,6 @@
-import { ScriptLoader } from '../../common/utils/scriptLoader';
-
-import { Reverie } from '../reverie';
-import { EventManager } from '../core/eventManager';
+import { ScriptLoader } from '../common/utils/scriptLoader';
+import { EventManager } from '../common/eventManager';
+import { Reverie } from './reverie';
 
 /**
  * Base Command class for creating terminal commands.

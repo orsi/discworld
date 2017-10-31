@@ -1,4 +1,4 @@
-import { Terminal, Command } from '../../modules/terminal';
+import { Terminal, Command } from '../../terminal';
 import { Reverie } from '../../reverie';
 
 new Command (Terminal.instance, 'event', function () {

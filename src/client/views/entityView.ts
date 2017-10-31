@@ -1,5 +1,5 @@
-import { Renderable } from '../../../common/ecs/components/renderable';
-import { EntityModel } from '../../../common/ecs/models/entityModel';
+import { Renderable } from '../../common/ecs/components/renderable';
+import { EntityModel } from '../../common/ecs/models/entityModel';
 
 export class EntityView implements Renderable {
     model: EntityModel;

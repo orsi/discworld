@@ -1,4 +1,4 @@
-import { EventManager } from './eventManager';
+import { EventManager } from '../common/eventManager';
 import { TerminalElement } from './elements/terminalElement';
 import { WorldElement } from './elements/worldElement';
 import { InterfaceElement } from './elements/interfaceElements';

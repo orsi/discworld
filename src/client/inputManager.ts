@@ -1,4 +1,4 @@
-import { EventManager } from './eventManager';
+import { EventManager } from '../common/eventManager';
 import { MouseEventManager } from './input/mouseEventManager';
 import { KeyboardEventManager } from './input/keyboardEventManager';
 
@@ -25,7 +25,7 @@ export class InputManager {
     });
     window.addEventListener('resize', (e) => {
       this.lastEvent = e;
-      this.events.emit('window/resize', e);
+      events.emit('input/window/resize', e);
     });
 
     // mouse events passed to mouse manager

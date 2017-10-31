@@ -1,5 +1,5 @@
-import { Renderable } from '../../../common/ecs/components/renderable';
-import { WorldModel } from '../../../common/world/models/worldModel';
+import { Renderable } from '../../common/ecs/components/renderable';
+import { WorldModel } from '../../common/world/models/worldModel';
 
 export class WorldView implements Renderable {
     model: WorldModel;

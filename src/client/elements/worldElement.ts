@@ -1,4 +1,4 @@
-import { EventManager } from '../eventManager';
+import { EventManager } from '../../common/eventManager';
 
 export class WorldElement extends HTMLElement {
     canvas: HTMLCanvasElement;
@@ -21,9 +21,6 @@ export class WorldElement extends HTMLElement {
 
         // setup width/height
         this.resize(window.innerWidth, window.innerHeight);
-
-        // hook into events manager
-        events.on('window/resize', (e) => this.onResize(e));
     }
     /**
      * Resizes the world element to size of the window

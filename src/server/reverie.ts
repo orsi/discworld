@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { EventManager } from './core/eventManager';
+import { EventManager } from '../common/eventManager';
 
 interface ReverieSettings {
     terminal: object;
@@ -10,10 +10,10 @@ interface ReverieSettings {
     server: object;
 }
 
-import { Logger } from './modules/logger';
-import { Network } from './modules/network';
-import { Terminal } from './modules/terminal';
-import { World } from './modules/world';
+import { Logger } from './logger';
+import { Network } from './network';
+import { Terminal } from './terminal';
+import { World } from './world';
 import { ScriptLoader } from '../common/utils/scriptLoader';
 import { TimerManager } from '../common/utils/timerManager';
 import * as ClientPackets from '../common/network/clientPackets';
@@ -82,7 +82,7 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         console.log('\n');
 
         // create Reverie event channel
-        this.events = new EventManager();
+        const events = this.events = new EventManager();
 
         // create network and terminal modules
         this.network = new Network(this.events, this);
@@ -95,16 +95,15 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         console.log('...finished loading scripts');
 
         // register inter-module events
-        this.events.registerEvent('network/connection', (data) => this.onNetworkConnection(data));
-        this.events.registerEvent('network/disconnect', (data) => this.onNetworkDisconnect(data));
-        this.events.registerEvent('network/move', (data) => this.onNetworkMove(data));
-        this.events.registerEvent('network/message', (data) => this.onNetworkMessage(data));
-        this.events.registerEvent('network/look', (data) => this.onNetworkLook(data));
-        this.events.registerEvent('network/use', (data) => this.onNetworkUse(data));
-        this.events.registerEvent('world/created', (data) => this.onWorldCreated(data));
-        this.events.registerEvent('world/updated', (data) => this.onWorldUpdated(data));
-        this.events.registerEvent('world/destroyed', (data) => this.onWorldDestroyed(data));
-        this.events.registerEvent('terminal/command', (data) => this.onTerminalCommand(data));
+        events.registerEvent('network/connection', (data) => this.onNetworkConnection(data));
+        events.registerEvent('network/disconnect', (data) => this.onNetworkDisconnect(data));
+        events.registerEvent('network/move', (data) => this.onNetworkMove(data));
+        events.registerEvent('network/message', (data) => this.onNetworkMessage(data));
+        events.registerEvent('network/look', (data) => this.onNetworkLook(data));
+        events.registerEvent('network/use', (data) => this.onNetworkUse(data));
+        events.registerEvent('world', (data) => this.onWorld(data));
+        events.registerEvent('world/update', (data) => this.onWorldUpdate(data));
+        events.registerEvent('terminal/command', (data) => this.onTerminalCommand(data));
     }
 
     /**
@@ -162,7 +161,7 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
     onNetworkConnection (packet: ClientPackets.Connection) {
         const entity = this.world.createEntity();
         this.socketEntities.add(entity.serial, packet.socket.id);
-        this.network.send(packet.socket.id, 'agent/created', new ServerPackets.PlayerEntity(entity));
+        this.network.send(packet.socket.id, 'agent', new ServerPackets.PlayerEntity(entity));
     }
     onNetworkDisconnect (packet: ClientPackets.Disconnect) {
         const entityId = this.socketEntities.findEntityIdBySocketId(packet.socket.id);
@@ -197,14 +196,11 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
             this.world.interactEntity(entityId);
         }
     }
-    onWorldCreated (worldCreated: WorldEvents.Created) {
-        this.network.broadcast('world/created', worldCreated);
+    onWorld (worldCreated: WorldEvents.Created) {
+        this.network.broadcast('world', worldCreated);
     }
-    onWorldUpdated (worldUpdate: WorldEvents.Updated) {
-        this.network.broadcast('world/updated', worldUpdate);
-    }
-    onWorldDestroyed (worldDestroyed: WorldEvents.Destroyed) {
-        this.network.broadcast('world/destroyed', worldDestroyed);
+    onWorldUpdate (worldUpdate: WorldEvents.Updated) {
+        this.network.broadcast('world/update', worldUpdate);
     }
     onTerminalCommand (packet: ClientPackets.Connection) {
         // const entity = this.world.onNewClient();
