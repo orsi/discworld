@@ -63,5 +63,5 @@ class EventHandler {
   constructor(public event: string, public callback: (...args: any[]) => void) {}
 }
 class ModuleEvent {
-  constructor(public event: string, public data: any) {}
+  constructor(public event: string, public data?: any) {}
 }

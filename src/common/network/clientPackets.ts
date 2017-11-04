@@ -1,34 +1,32 @@
-// import { Client } from '../client';
-class Packet {
-    constructor (public socket: SocketIO.Socket) {}
-}
+import { Packet } from './packet';
+
 export class Connection extends Packet {
-    constructor(public socket: SocketIO.Socket) {
-        super(socket);
+    constructor() {
+        super();
     }
 }
 export class Disconnect extends Packet {
-    constructor(public socket: SocketIO.Socket, public data: any) {
-        super(socket);
+    constructor(public data: any) {
+        super();
     }
 }
 export class Message extends Packet {
-    constructor(public socket: SocketIO.Socket, public data: any) {
-        super(socket);
+    constructor(public message: string) {
+        super();
     }
 }
 export class Move extends Packet {
-    constructor(public socket: SocketIO.Socket, public data: any) {
-        super(socket);
+    constructor(public entitySerial: string, public direction: string) {
+        super();
     }
 }
 export class Look extends Packet {
-    constructor(public socket: SocketIO.Socket, public data: any) {
-        super(socket);
+    constructor(public data: any) {
+        super();
     }
 }
 export class Use extends Packet {
-    constructor(public socket: SocketIO.Socket, public data: any) {
-        super(socket);
+    constructor(public data: any) {
+        super();
     }
 }

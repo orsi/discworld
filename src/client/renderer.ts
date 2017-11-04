@@ -1,8 +1,10 @@
 import { ViewRenderer } from './output/viewRenderer';
 import { CanvasRenderer } from './output/canvasRenderer';
 import { World } from './world';
+import { Agent } from './agent';
 
 export class Renderer {
+  agent: Agent;
   world: World;
   view: ViewRenderer;
   canvas: HTMLCanvasElement;
@@ -12,7 +14,8 @@ export class Renderer {
   lastRenderTime = new Date().getTime();
   delta: number;
 
-  constructor (world: World, canvas: HTMLCanvasElement, bufferCanvas: HTMLCanvasElement) {
+  constructor (agent: Agent, world: World, canvas: HTMLCanvasElement, bufferCanvas: HTMLCanvasElement) {
+    this.agent = agent;
     this.world = world;
     this.canvas = canvas;
     this.ctx = <CanvasRenderingContext2D>canvas.getContext('2d');

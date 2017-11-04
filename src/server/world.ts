@@ -1,6 +1,7 @@
 import { Reverie } from './reverie';
 import { EventManager } from '../common/eventManager';
 import { Logger } from './logger';
+import * as EntityEvents from '../common/ecs/entityEvents';
 import { EntitySystem } from '../common/ecs/entitySystem';
 import { Entity } from '../common/ecs/entity';
 import * as Components from '../common/ecs/component';
@@ -13,10 +14,10 @@ import { PRNG } from '../common/utils/prng';
 import { TimerManager } from '../common/utils/timerManager';
 
 export class World {
-  model: WorldModel;
-  entitySystem: EntitySystem;
   events: EventManager;
-  timers: TimerManager = new TimerManager();
+  entitySystem: EntitySystem;
+  timers: TimerManager;
+  model: WorldModel;
   automaton: Automaton;
   prng: PRNG;
 
@@ -30,9 +31,10 @@ export class World {
   private isUpdating = false;
   private isPaused = false;
 
-  constructor (events: EventManager, reverie: Reverie) {
+  constructor (events: EventManager) {
     this.events = events;
     this.entitySystem = new EntitySystem();
+    this.timers = new TimerManager();
   }
 
   /**
@@ -49,6 +51,7 @@ export class World {
         entityPosition.y = mapPosition.y;
       }
     }
+    this.events.emit<EntityEvents.Create>('entity', new EntityEvents.Create(entity));
     return entity;
   }
 
@@ -71,8 +74,19 @@ export class World {
   /**
    * Moves an entity in the world.
    */
-  moveEntity (entityId: string) {
+  moveEntity (entityId: string, direction: string) {
     console.log('new entity moved', entityId);
+    let entity = this.entitySystem.getEntityBySerial(entityId);
+    if (entity) {
+      let position = entity.getComponent<Components.PositionComponent>('position');
+      if (position) {
+        if (direction.indexOf('n') > -1) position.y -= 1;
+        if (direction.indexOf('s') > -1) position.y += 1;
+        if (direction.indexOf('w') > -1) position.x -= 1;
+        if (direction.indexOf('e') > -1) position.x += 1;
+        this.events.emit<EntityEvents.Update>('entity/update', new EntityEvents.Update(entity));
+      }
+    }
   }
   removeEntity (entityId: string) {}
   lookEntity (entityId: string) {}
@@ -123,18 +137,15 @@ export class World {
     this.model.width = this.prng.range(50, 250);
     this.model.height = this.prng.range(50, 250);
     this.automaton = new Automaton(this.model.width, this.model.height, {
-      seed: this.model.seed
+      seed: this.model.seed,
+      step: 2
     });
     // hack for now
     this.model.map = this.automaton.getMap();
-    // automaton update timer
-    this.timers.createTimer(2000, () => {
-      this.automaton.next();
-    });
     //  update event
     this.timers.createTimer(1000, () => {
       // send world update every ~1s
-      this.events.emit<WorldEvents.Updated>('world/update', new WorldEvents.Updated(this.model));
+      this.events.emit<WorldEvents.Update>('world/update', new WorldEvents.Update(this.model));
       this.lastUpdatedEventTime = new Date().getTime();
     });
 
@@ -146,15 +157,16 @@ export class World {
         entityPosition.x = mapPosition.x;
         entityPosition.y = mapPosition.y;
       }
+      this.events.emit<EntityEvents.Update>('entity/update', new EntityEvents.Update(entity));
     });
-    this.events.emit<WorldEvents.Created>('world', new WorldEvents.Created(this.model));
+    this.events.emit<WorldEvents.Create>('world', new WorldEvents.Create(this.model));
   }
   /**
    * Cleanup process for removing the world.
    */
   destroy () {
     this.timers.removeAll();
-    this.events.emit<WorldEvents.Destroyed>('world/destroy');
+    this.events.emit<WorldEvents.Destroy>('world/destroy');
   }
   /**
    * Prints out an overview of the current world state.

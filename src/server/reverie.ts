@@ -16,16 +16,16 @@ import { Terminal } from './terminal';
 import { World } from './world';
 import { ScriptLoader } from '../common/utils/scriptLoader';
 import { TimerManager } from '../common/utils/timerManager';
-import * as ClientPackets from '../common/network/clientPackets';
-import * as ServerPackets from '../common/network/serverPackets';
+import * as NetworkEvents from '../common/network/networkEvents';
 import * as WorldEvents from '../common/world/worldEvents';
+import * as EntityEvents from '../common/ecs/entityEvents';
 
 export class Reverie {
     public static instance: Reverie;
     readonly _version = {
         major: 0,
         minor: 0,
-        patch: 8
+        patch: 10
     };
     get version() { return `${this._version.major}.${this._version.minor}.${this._version.patch}`; }
 
@@ -85,8 +85,8 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         const events = this.events = new EventManager();
 
         // create network and terminal modules
-        this.network = new Network(this.events, this);
-        this.world = new World(this.events, this);
+        this.network = new Network(this.events, this.rootDirectory);
+        this.world = new World(this.events);
         this.terminal = new Terminal(this, {});
 
         // Load all the scripts in the scripts folder
@@ -97,12 +97,14 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         // register inter-module events
         events.registerEvent('network/connection', (data) => this.onNetworkConnection(data));
         events.registerEvent('network/disconnect', (data) => this.onNetworkDisconnect(data));
-        events.registerEvent('network/move', (data) => this.onNetworkMove(data));
+        events.registerEvent('network/move', (data: NetworkEvents.Move) => this.onNetworkMove(data));
         events.registerEvent('network/message', (data) => this.onNetworkMessage(data));
         events.registerEvent('network/look', (data) => this.onNetworkLook(data));
         events.registerEvent('network/use', (data) => this.onNetworkUse(data));
         events.registerEvent('world', (data) => this.onWorld(data));
         events.registerEvent('world/update', (data) => this.onWorldUpdate(data));
+        events.registerEvent('entity', (data) => this.onEntity(data));
+        events.registerEvent('entity/update', (data) => this.onEntityUpdate(data));
         events.registerEvent('terminal/command', (data) => this.onTerminalCommand(data));
     }
 
@@ -158,51 +160,55 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
 
     // Events between modules
 
-    onNetworkConnection (packet: ClientPackets.Connection) {
+    onNetworkConnection (packet: NetworkEvents.Connection) {
         const entity = this.world.createEntity();
-        this.socketEntities.add(entity.serial, packet.socket.id);
-        this.network.send(packet.socket.id, 'agent', new ServerPackets.PlayerEntity(entity));
+        this.socketEntities.add(entity.serial, packet.socketId);
+        this.network.send(packet.socketId, 'agent', entity);
     }
-    onNetworkDisconnect (packet: ClientPackets.Disconnect) {
-        const entityId = this.socketEntities.findEntityIdBySocketId(packet.socket.id);
+    onNetworkDisconnect (packet: NetworkEvents.Disconnect) {
+        const entityId = this.socketEntities.findEntitySerialBySocketId(packet.socketId);
         if (entityId) {
             this.world.removeEntity(entityId);
             this.socketEntities.removeEntity(entityId);
         }
     }
-    onNetworkMove (packet: ClientPackets.Move) {
-        const entityId = this.socketEntities.findEntityIdBySocketId(packet.socket.id);
-        if (entityId) {
-            const canMove = this.world.moveEntity(entityId);
-            this.network.send(packet.socket.id, 'entity/move', canMove);
+    onNetworkMove (packet: NetworkEvents.Move) {
+        console.log('from network: ', packet);
+        let entity = this.world.moveEntity(packet.packet.entitySerial, packet.packet.direction);
+    }
+    onNetworkMessage (event: NetworkEvents.Message) {
+        const entitySerial = this.socketEntities.findEntitySerialBySocketId(event.socketId);
+        console.log(entitySerial, event.packet.message);
+        if (entitySerial) {
+            this.world.messageEntity(entitySerial, event.packet.message);
         }
     }
-    onNetworkMessage (packet: ClientPackets.Message) {
-        const entityId = this.socketEntities.findEntityIdBySocketId(packet.socket.id);
-        console.log(entityId, packet.socket.id, this.socketEntities);
-        if (entityId) {
-            this.world.messageEntity(entityId, packet.data);
-        }
-    }
-    onNetworkLook (packet: ClientPackets.Look) {
-        const entityId = this.socketEntities.findEntityIdBySocketId(packet.socket.id);
+    onNetworkLook (packet: NetworkEvents.Look) {
+        const entityId = this.socketEntities.findEntitySerialBySocketId(packet.socketId);
         if (entityId) {
             this.world.lookEntity(entityId);
         }
     }
-    onNetworkUse(packet: ClientPackets.Use) {
-        const entityId = this.socketEntities.findEntityIdBySocketId(packet.socket.id);
+    onNetworkUse(packet: NetworkEvents.Use) {
+        const entityId = this.socketEntities.findEntitySerialBySocketId(packet.socketId);
         if (entityId) {
             this.world.interactEntity(entityId);
         }
     }
-    onWorld (worldCreated: WorldEvents.Created) {
+    onWorld (worldCreated: WorldEvents.Create) {
         this.network.broadcast('world', worldCreated);
     }
-    onWorldUpdate (worldUpdate: WorldEvents.Updated) {
+    onWorldUpdate (worldUpdate: WorldEvents.Update) {
         this.network.broadcast('world/update', worldUpdate);
     }
-    onTerminalCommand (packet: ClientPackets.Connection) {
+    onEntity (entityCreate: EntityEvents.Create) {
+        this.network.broadcast('entity', entityCreate);
+    }
+    onEntityUpdate (entityUpdate: EntityEvents.Update) {
+        let socketId = this.socketEntities.findSocketIdByEntityId(entityUpdate.entity.serial);
+        if (socketId) this.network.send(socketId, 'entity/update', entityUpdate);
+    }
+    onTerminalCommand (packet: NetworkEvents.Connection) {
         // const entity = this.world.onNewClient();
         // this.socketEntities[entity.serial] = packet.socket.id;
         // packet.socket.send('world/playerEntity', new ServerPackets.PlayerEntity(entity));
@@ -217,7 +223,7 @@ class SocketEntityList {
             socketId: socketId
         });
     }
-    findEntityIdBySocketId (socketId: string): string | void {
+    findEntitySerialBySocketId (socketId: string): string | void {
         for (let i = 0; i < this.socketEntities.length; i++) {
             let se = this.socketEntities[i];
             if (se.socketId === socketId) return se.entityId;

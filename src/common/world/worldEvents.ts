@@ -3,17 +3,17 @@ import { WorldModel } from './models/worldModel';
 export class WorldEvent {
     constructor () {}
 }
-export class Created extends WorldEvent {
+export class Create extends WorldEvent {
     constructor (public model: WorldModel) {
         super();
     }
 }
-export class Updated extends WorldEvent {
+export class Update extends WorldEvent {
     constructor (public model: WorldModel) {
         super();
     }
 }
-export class Destroyed extends WorldEvent {
+export class Destroy extends WorldEvent {
     constructor (public model: WorldModel) {
         super();
     }

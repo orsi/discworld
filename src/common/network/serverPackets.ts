@@ -1,14 +1,12 @@
+import { Packet } from './packet';
 import { Entity } from '../ecs/entity';
 
-class ServerPacket {
-    constructor() {}
-}
-export class PlayerEntity extends ServerPacket {
+export class Agent extends Packet {
     constructor (public entity: Entity) {
         super();
     }
 }
-export class WorldUpdate extends ServerPacket {
+export class WorldUpdate extends Packet {
     constructor (public data: any) {
         super();
     }

@@ -11,9 +11,9 @@ export class Component {
     }
 }
 export class PositionComponent extends Component {
-    x: number | void;
-    y: number | void;
-    constructor (x?: number, y?: number) {
+    x: number;
+    y: number;
+    constructor (x: number = 0, y: number = 0) {
         super('position');
         this.x = x;
         this.y = y;

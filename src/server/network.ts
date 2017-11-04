@@ -5,17 +5,19 @@ import * as path from 'path';
 
 import { Reverie } from './reverie';
 import { EventManager } from '../common/eventManager';
+import * as NetworkEvents from '../common/network/networkEvents';
 import * as ClientPackets from '../common/network/clientPackets';
-import * as ServerPackets from '../common/network/serverPackets';
+import { Packet } from '../common/network/packet';
 
 export class Network {
-  private publicDirectory = path.join(this.reverie.rootDirectory, '../public');
+  private publicDirectory: string;
   private httpServer: http.Server;
   private app: express.Application;
   private io: SocketIO.Server;
   private sockets: SocketIO.Socket[] = [];
 
-  constructor (public events: EventManager, public reverie: Reverie) {
+  constructor (public events: EventManager, rootDir: string) {
+    this.publicDirectory = path.join(rootDir, '../public');
 
     // create express application
     this.app = express();
@@ -38,22 +40,23 @@ export class Network {
       this.sockets.push(socket);
 
       // attach socket events
-      socket.on('disconnect', (data) => events.emit<ClientPackets.Disconnect>('network/disconnect', new ClientPackets.Disconnect(socket, data)));
-      socket.on('message', (data) => events.emit<ClientPackets.Message>('network/message', new ClientPackets.Message(socket, data)));
-      socket.on('move', (data) => events.emit<ClientPackets.Move>('network/move', new ClientPackets.Move(socket, data)));
-      socket.on('look', (data) => events.emit<ClientPackets.Look>('network/look', new ClientPackets.Look(socket, data)));
-      socket.on('use', (data) => events.emit<ClientPackets.Use>('network/use', new ClientPackets.Use(socket, data)));
+      socket.on('disconnect', (packet: ClientPackets.Disconnect) => events.emit<NetworkEvents.Disconnect>('network/disconnect', new NetworkEvents.Disconnect(socket.id)));
+      socket.on('message', (packet: ClientPackets.Message) => events.emit<NetworkEvents.Message>('network/message', new NetworkEvents.Message(socket.id, packet)));
+      socket.on('entity/move', (packet: ClientPackets.Move) => events.emit<NetworkEvents.Move>('network/move', new NetworkEvents.Move(socket.id, packet)));
+      socket.on('look', (packet: ClientPackets.Look) => events.emit<NetworkEvents.Look>('network/look', new NetworkEvents.Look(socket.id, packet)));
+      socket.on('use', (packet: ClientPackets.Use) => events.emit<NetworkEvents.Use>('network/use', new NetworkEvents.Use(socket.id, packet)));
 
-      this.events.emit('network/connection', new ClientPackets.Connection(socket));
+      this.events.emit('network/connection', new NetworkEvents.Connection(socket.id));
     });
   }
-  send (socketId: string, event: string, data?: any) {
+  send (socketId: string, event: string, packet?: Packet) {
     let socket = this.getSocket(socketId);
-    console.log('sending message from network', event, socket);
-    if (socket) socket.emit(event, data);
+    console.log('send to socket: ', socketId, event, packet);
+    if (socket) socket.emit(event, packet);
   }
-  broadcast (event: string, data: any) {
-    this.io.emit(event, data);
+  broadcast (event: string, packet: Packet) {
+    console.log('broadcast: ', event, packet);
+    this.io.emit(event, packet);
   }
   multicast (socketIds: string[], event: string, data?: any) {
     for (let i = 0; i < socketIds.length; i++) {

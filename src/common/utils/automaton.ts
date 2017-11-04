@@ -1,7 +1,7 @@
 import { PRNG } from './prng';
 export class Automaton {
   private seed: number | string = new Date().getTime();
-  private step: number = 0;
+  private step = 0;
   private probability: number = 0.7;
   private birth: Array<number> = [6, 7, 8];
   private survival: Array<number> = [5, 6, 7, 8];
@@ -11,7 +11,6 @@ export class Automaton {
 
     if (options) {
       if (options.seed) this.seed = options.seed;
-      if (options.step) this.step = options.step;
       if (options.probability) this.probability = options.probability;
       if (options.birth) this.birth = options.birth;
       if (options.survival) this.survival = options.survival;
@@ -31,8 +30,10 @@ export class Automaton {
     }
 
     // do initial iterations
-    for (let i = 0; i < this.step; i++) {
-      this.next();
+    if (options && options.step) {
+      for (let i = 0; i < options.step; i++) {
+        this.next();
+      }
     }
   }
   next () {

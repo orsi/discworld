@@ -1,8 +1,20 @@
 import * as Components from './component';
+import { uuid } from '../../common/utils/uuid';
 export class Entity {
     serial: string;
     components: Components.Component[] = [];
-    constructor() {}
+    constructor(entity?: Entity) {
+        if (entity) {
+            this.serial = entity.serial;
+            if (entity.components) {
+                entity.components.forEach(component => {
+                    this.components.push(component);
+                });
+            }
+        } else {
+            this.serial = uuid();
+        }
+    }
     getComponent <T extends Components.Component> (componentName: string): T | void {
         for (let i = 0; i < this.components.length; i++) {
             let component = this.components[i];

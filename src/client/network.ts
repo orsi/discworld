@@ -1,4 +1,5 @@
 import { EventManager } from '../common/eventManager';
+import { Packet } from '../common/network/packet';
 import * as io from 'socket.io-client';
 
 export class Network {
@@ -22,8 +23,8 @@ export class Network {
         server.on('tile', (data: any) => events.emit('tile', data));
         server.on('tile/update', (data: any) => events.emit('tile/update', data));
     }
-    send (event: string, data?: any) {
-        console.log('sending message to server:', event, this.server);
-        if (this.server) this.server.emit(event, data);
+    send (event: string, packet: Packet) {
+        console.log('network send: ', event, packet);
+        if (this.server) this.server.emit(event, packet);
       }
 }
