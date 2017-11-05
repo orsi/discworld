@@ -31,9 +31,6 @@ export class WorldElement extends HTMLElement {
       this.width = this.bufferCanvas.width = this.canvas.width = width;
       this.height = this.bufferCanvas.height = this.canvas.height = height;
     }
-    onResize (e: UIEvent) {
-      this.resize(window.innerWidth, window.innerHeight);
-    }
     getContext () { return this.ctx; }
   }
   window.customElements.define('reverie-world', WorldElement);

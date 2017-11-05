@@ -49,7 +49,7 @@ export class ReverieClient {
     // register inter-module events
     events.registerEvent('input/keyboard/down', (data) => this.onKeyDown(data));
     events.registerEvent('input/mouse/down', (data: MouseEvent) => this.onMouseDown(data));
-    events.registerEvent('input/window/resize', (data) => this.onWindowResize(data));
+    events.registerEvent('input/window/resize', (e: Event) => this.onWindowResize(<Window>e.currentTarget));
     events.registerEvent('terminal/message', (message: string) => this.onTerminalMessage(message));
     events.registerEvent('server', (data) => this.onServer(data));
     events.registerEvent('server/update', (data) => this.onServerUpdate(data));
@@ -114,8 +114,9 @@ export class ReverieClient {
         break;
     }
   }
-  onWindowResize (data: any) {
-    this.reverieInterface.getWorldElement().onResize(data);
+  onWindowResize (window: Window) {
+    this.reverieInterface.getWorldElement().resize(window.innerWidth, window.innerHeight);
+    this.renderer.setViewportSize(window.innerWidth, window.innerHeight);
   }
   onTerminalMessage (message: string) {
     this.network.send('entity/message', message);

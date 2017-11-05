@@ -21,7 +21,7 @@ export class Renderer {
     this.ctx = <CanvasRenderingContext2D>canvas.getContext('2d');
     this.bufferCanvas = bufferCanvas;
     this.bufferCtx = <CanvasRenderingContext2D>bufferCanvas.getContext('2d');
-    this.view = new ViewRenderer(window.innerWidth, window.innerHeight);
+    this.view = new ViewRenderer(this.canvas.width, this.canvas.height);
   }
 
   move (x: number, y: number) {
@@ -50,6 +50,10 @@ export class Renderer {
     const image = this.bufferCtx.getImageData(this.view.left, this.view.top, this.view.width, this.view.height);
     // copy into visual canvas at different position
     this.ctx.putImageData(image, 0, 0);
+  }
+  setViewportSize (width: number, height: number) {
+    this.view.width = width;
+    this.view.height = height;
   }
 }
 // drawPlayerEntity (entity) {
