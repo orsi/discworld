@@ -9,6 +9,8 @@ import { ReverieInterface } from './reverieInterface';
 import { Renderer } from './renderer';
 import * as EntityEvents from '../common/ecs/entityEvents';
 import * as ClientPackets from '../common/network/clientPackets';
+import { WorldModel } from 'common/world/models/worldModel';
+import { Entity } from 'common/ecs/entity';
 
 export class ReverieClient {
   agent: Agent;
@@ -46,16 +48,17 @@ export class ReverieClient {
 
     // register inter-module events
     events.registerEvent('input/keyboard/down', (data) => this.onKeyDown(data));
-    events.registerEvent('input/mouse/down', (data) => this.onMouseDown(data));
+    events.registerEvent('input/mouse/down', (data: MouseEvent) => this.onMouseDown(data));
     events.registerEvent('input/window/resize', (data) => this.onWindowResize(data));
     events.registerEvent('terminal/message', (message: string) => this.onTerminalMessage(message));
     events.registerEvent('server', (data) => this.onServer(data));
     events.registerEvent('server/update', (data) => this.onServerUpdate(data));
-    events.registerEvent('agent', (data) => this.onAgentEntity(data));
-    events.registerEvent('world', (data) => this.onWorld(data));
-    events.registerEvent('world/update', (data) => this.onWorldUpdate(data));
-    events.registerEvent('entity', (data) => this.onEntity(data));
-    events.registerEvent('entity/update', (data) => this.onEntityUpdate(data));
+    events.registerEvent('agent', (entitySerial: string) => this.onAgentEntity(entitySerial));
+    events.registerEvent('world', (data: WorldModel) => this.onWorld(data));
+    events.registerEvent('world/update', (data: WorldModel) => this.onWorldUpdate(data));
+    events.registerEvent('entity', (data: Entity) => this.onEntity(data));
+    events.registerEvent('entity/update', (data: Entity) => this.onEntityUpdate(data));
+    events.registerEvent('entity/destroy', (data: string) => this.onEntityDestroy(data));
     events.registerEvent('tile', (data) => this.onTile(data));
     events.registerEvent('tile/update', (data) => this.onTileUpdate(data));
   }
@@ -107,7 +110,7 @@ export class ReverieClient {
       case 2:
         let direction = this.parseMouseDirection(mouseEvent);
         console.log(direction);
-        this.network.send('entity/move', new ClientPackets.Move(this.agent.entityId, direction));
+        this.network.send('entity/move', direction);
         break;
     }
   }
@@ -115,7 +118,7 @@ export class ReverieClient {
     this.reverieInterface.getWorldElement().onResize(data);
   }
   onTerminalMessage (message: string) {
-    this.network.send('message', new ClientPackets.Message(message));
+    this.network.send('entity/message', message);
   }
   onServer (data: any) {
     console.log(data);
@@ -123,21 +126,24 @@ export class ReverieClient {
   onServerUpdate (data: any) {
     console.log(data);
   }
-  onAgentEntity (data: any) {
-    console.log(data);
-    this.agent.setEntityId(data.serial);
+  onAgentEntity (entitySerial: string) {
+    console.log(entitySerial);
+    this.agent.setEntityId(entitySerial);
   }
-  onWorld (data: any) {
-    this.world.loadWorld(data);
+  onWorld (world: WorldModel) {
+    this.world.loadWorld(world);
   }
-  onWorldUpdate (data: any) {
-    this.world.updateWorld(data);
+  onWorldUpdate (world: WorldModel) {
+    this.world.updateWorld(world);
   }
-  onEntity (entityCreate: EntityEvents.Create) {
-    this.world.addEntity(entityCreate);
+  onEntity (entity: Entity) {
+    this.world.addEntity(entity);
   }
-  onEntityUpdate (data: any) {
-    this.world.updateEntity(data);
+  onEntityUpdate (entity: Entity) {
+    this.world.updateEntity(entity);
+  }
+  onEntityDestroy (entitySerial: string) {
+    this.world.removeEntity(entitySerial);
   }
   onTile (data: any) {
     this.world.loadTile(data);

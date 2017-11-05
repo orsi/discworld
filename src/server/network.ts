@@ -40,23 +40,23 @@ export class Network {
       this.sockets.push(socket);
 
       // attach socket events
-      socket.on('disconnect', (packet: ClientPackets.Disconnect) => events.emit<NetworkEvents.Disconnect>('network/disconnect', new NetworkEvents.Disconnect(socket.id)));
-      socket.on('message', (packet: ClientPackets.Message) => events.emit<NetworkEvents.Message>('network/message', new NetworkEvents.Message(socket.id, packet)));
-      socket.on('entity/move', (packet: ClientPackets.Move) => events.emit<NetworkEvents.Move>('network/move', new NetworkEvents.Move(socket.id, packet)));
-      socket.on('look', (packet: ClientPackets.Look) => events.emit<NetworkEvents.Look>('network/look', new NetworkEvents.Look(socket.id, packet)));
-      socket.on('use', (packet: ClientPackets.Use) => events.emit<NetworkEvents.Use>('network/use', new NetworkEvents.Use(socket.id, packet)));
+      socket.on('disconnect', () => events.emit<NetworkEvents.Disconnect>('network/disconnect', new NetworkEvents.Disconnect(socket.id)));
+      socket.on('entity/message', (message: string) => events.emit<NetworkEvents.Message>('network/message', new NetworkEvents.Message(socket.id, message)));
+      socket.on('entity/move', (direction: string) => events.emit<NetworkEvents.Move>('network/move', new NetworkEvents.Move(socket.id, direction)));
+      socket.on('entity/look', (objectSerial: string) => events.emit<NetworkEvents.Look>('network/look', new NetworkEvents.Look(socket.id, objectSerial)));
+      socket.on('entity/use', (objectSerial: string) => events.emit<NetworkEvents.Use>('network/use', new NetworkEvents.Use(socket.id, objectSerial)));
 
       this.events.emit('network/connection', new NetworkEvents.Connection(socket.id));
     });
   }
-  send (socketId: string, event: string, packet?: Packet) {
+  send (socketId: string, event: string, data?: any) {
     let socket = this.getSocket(socketId);
-    console.log('send to socket: ', socketId, event, packet);
-    if (socket) socket.emit(event, packet);
+    console.log('>> network send: ', socketId, event, JSON.stringify(data).substr(0, 50));
+    if (socket) socket.emit(event, data);
   }
-  broadcast (event: string, packet: Packet) {
-    console.log('broadcast: ', event, packet);
-    this.io.emit(event, packet);
+  broadcast (event: string, data?: any) {
+    console.log('>> network broadcast: ', event, JSON.stringify(data).substr(0, 50));
+    this.io.emit(event, data);
   }
   multicast (socketIds: string[], event: string, data?: any) {
     for (let i = 0; i < socketIds.length; i++) {

@@ -19,6 +19,7 @@ import { TimerManager } from '../common/utils/timerManager';
 import * as NetworkEvents from '../common/network/networkEvents';
 import * as WorldEvents from '../common/world/worldEvents';
 import * as EntityEvents from '../common/ecs/entityEvents';
+import { Entity } from '../common/ecs/entity';
 
 export class Reverie {
     public static instance: Reverie;
@@ -95,17 +96,18 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         console.log('...finished loading scripts');
 
         // register inter-module events
-        events.registerEvent('network/connection', (data) => this.onNetworkConnection(data));
-        events.registerEvent('network/disconnect', (data) => this.onNetworkDisconnect(data));
+        events.registerEvent('network/connection', (data: NetworkEvents.Connection) => this.onNetworkConnection(data));
+        events.registerEvent('network/disconnect', (data: NetworkEvents.Disconnect) => this.onNetworkDisconnect(data));
         events.registerEvent('network/move', (data: NetworkEvents.Move) => this.onNetworkMove(data));
-        events.registerEvent('network/message', (data) => this.onNetworkMessage(data));
-        events.registerEvent('network/look', (data) => this.onNetworkLook(data));
-        events.registerEvent('network/use', (data) => this.onNetworkUse(data));
-        events.registerEvent('world', (data) => this.onWorld(data));
-        events.registerEvent('world/update', (data) => this.onWorldUpdate(data));
-        events.registerEvent('entity', (data) => this.onEntity(data));
-        events.registerEvent('entity/update', (data) => this.onEntityUpdate(data));
-        events.registerEvent('terminal/command', (data) => this.onTerminalCommand(data));
+        events.registerEvent('network/message', (data: NetworkEvents.Message) => this.onNetworkMessage(data));
+        events.registerEvent('network/look', (data: NetworkEvents.Look) => this.onNetworkLook(data));
+        events.registerEvent('network/use', (data: NetworkEvents.Use) => this.onNetworkUse(data));
+        events.registerEvent('world', () => this.onWorld());
+        events.registerEvent('world/update', () => this.onWorldUpdate());
+        events.registerEvent('entity', (data: Entity) => this.onEntity(data));
+        events.registerEvent('entity/update', (data: Entity) => this.onEntityUpdate(data));
+        events.registerEvent('entity/destroy', (data: string) => this.onEntityDestroy(data));
+        events.registerEvent('terminal/command', (data: any) => this.onTerminalCommand(data));
     }
 
     /**
@@ -160,10 +162,21 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
 
     // Events between modules
 
-    onNetworkConnection (packet: NetworkEvents.Connection) {
+    onNetworkConnection (netEvent: NetworkEvents.Connection) {
         const entity = this.world.createEntity();
-        this.socketEntities.add(entity.serial, packet.socketId);
-        this.network.send(packet.socketId, 'agent', entity);
+        this.socketEntities.add(entity.serial, netEvent.socketId);
+
+        // tell new connection which entity they are
+        this.network.send(netEvent.socketId, 'agent', entity.serial);
+
+        // send the world
+        if (this.world.model) this.network.send(netEvent.socketId, 'world', this.world.model);
+
+        // send all entities
+        const allEntitites = this.world.getAllEntities();
+        allEntitites.forEach(entity => {
+            this.network.send(netEvent.socketId, 'entity', entity);
+        });
     }
     onNetworkDisconnect (packet: NetworkEvents.Disconnect) {
         const entityId = this.socketEntities.findEntitySerialBySocketId(packet.socketId);
@@ -172,15 +185,16 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
             this.socketEntities.removeEntity(entityId);
         }
     }
-    onNetworkMove (packet: NetworkEvents.Move) {
-        console.log('from network: ', packet);
-        let entity = this.world.moveEntity(packet.packet.entitySerial, packet.packet.direction);
+    onNetworkMove (netEvent: NetworkEvents.Move) {
+        console.log('from network: ', netEvent);
+        const entitySerial = this.socketEntities.findEntitySerialBySocketId(netEvent.socketId);
+        if (entitySerial) this.world.moveEntity(entitySerial, netEvent.direction);
     }
-    onNetworkMessage (event: NetworkEvents.Message) {
-        const entitySerial = this.socketEntities.findEntitySerialBySocketId(event.socketId);
-        console.log(entitySerial, event.packet.message);
+    onNetworkMessage (netEvent: NetworkEvents.Message) {
+        const entitySerial = this.socketEntities.findEntitySerialBySocketId(netEvent.socketId);
+        console.log('entity message: ', entitySerial, netEvent.message);
         if (entitySerial) {
-            this.world.messageEntity(entitySerial, event.packet.message);
+            this.world.messageEntity(entitySerial, netEvent.message);
         }
     }
     onNetworkLook (packet: NetworkEvents.Look) {
@@ -195,18 +209,27 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
             this.world.interactEntity(entityId);
         }
     }
-    onWorld (worldCreated: WorldEvents.Create) {
-        this.network.broadcast('world', worldCreated);
+    onWorld () {
+        // broadcast new world
+        this.network.broadcast('world', this.world.model);
+
+        // broadcast new entity data
+        const allEntitites = this.world.getAllEntities();
+        allEntitites.forEach(entity => {
+            this.network.broadcast('entity/update', entity);
+        });
     }
-    onWorldUpdate (worldUpdate: WorldEvents.Update) {
-        this.network.broadcast('world/update', worldUpdate);
+    onWorldUpdate () {
+        this.network.broadcast('world/update', this.world.model);
     }
-    onEntity (entityCreate: EntityEvents.Create) {
-        this.network.broadcast('entity', entityCreate);
+    onEntity (entity: Entity) {
+        this.network.broadcast('entity', entity);
     }
-    onEntityUpdate (entityUpdate: EntityEvents.Update) {
-        let socketId = this.socketEntities.findSocketIdByEntityId(entityUpdate.entity.serial);
-        if (socketId) this.network.send(socketId, 'entity/update', entityUpdate);
+    onEntityUpdate (entity: Entity) {
+        this.network.broadcast('entity/update', entity);
+    }
+    onEntityDestroy (entitySerial: string) {
+        this.network.broadcast('entity/destroy', entitySerial);
     }
     onTerminalCommand (packet: NetworkEvents.Connection) {
         // const entity = this.world.onNewClient();

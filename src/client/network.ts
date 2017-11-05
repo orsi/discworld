@@ -20,6 +20,7 @@ export class Network {
         server.on('world/update', (data: any) => events.emit('world/update', data));
         server.on('entity', (data: any) => events.emit('entity', data));
         server.on('entity/update', (data: any) => events.emit('entity/update', data));
+        server.on('entity/destroy', (data: any) => events.emit('entity/destroy', data));
         server.on('tile', (data: any) => events.emit('tile', data));
         server.on('tile/update', (data: any) => events.emit('tile/update', data));
     }

@@ -14,15 +14,13 @@ export class EntitySystem {
         this.entities.push(newEntity);
         return newEntity;
     }
-    destroy(entity: Entity): boolean {
-        let index = this.entities.indexOf(entity);
-
-        if (index >= 0) {
-            this.entities.splice(index, 1);
-            return true;
+    destroy(entitySerial: string) {
+        for (let i = 0; i < this.entities.length; i++) {
+            let entity = this.entities[i];
+            if (entity.serial === entitySerial) {
+                this.entities.splice(i, 1);
+            }
         }
-
-        return false;
     }
     getEntitiesByComponentType(componentType: string): Entity[] {
         return this.entities.filter(entity => {
@@ -45,14 +43,9 @@ export class EntitySystem {
     }
     getAllEntities() { return this.entities; }
     updateEntity (entitySerial: string, entity: Entity) {
-        let updateEntity = this.getEntityBySerial(entitySerial);
-        if (updateEntity) {
-            let oldPosition = updateEntity.getComponent<Components.PositionComponent>('position');
-            let newPosition = this.getEntityComponent<Components.PositionComponent>('position', entity);
-            if (oldPosition && newPosition) {
-                oldPosition.x = newPosition.x;
-                oldPosition.y = newPosition.y;
-            }
+        let oldEntity = this.getEntityBySerial(entitySerial);
+        if (oldEntity) {
+            oldEntity.components = entity.components;
         }
     }
 }

@@ -28,19 +28,19 @@ export class World {
     });
   }
   destroy () {}
-  loadWorld (data: any) {
+  loadWorld (world: WorldModel) {
     if (this.model) {
       this.destroy();
     }
-    this.model = data.model;
+    this.model = world;
     this.view = new WorldView(this.model);
   }
-  updateWorld (data: any) {
-    if (data.model && !this.model) {
-      this.model = data.model;
+  updateWorld (worldModel: WorldModel) {
+    if (!this.model) {
+      this.model = worldModel;
       this.view = new WorldView(this.model);
-    } else if (data.model && this.model) {
-      this.model.map = data.model.map;
+    } else {
+      this.model.map = worldModel.map;
     }
   }
   findAgentEntity (serial: string) {
@@ -49,13 +49,17 @@ export class World {
       this.agentEntity = entity;
     }
   }
-  addEntity (entityCreate: EntityEvents.Create) {
-    console.log('add entity', entityCreate);
-    this.ecs.create(entityCreate.entity);
+  addEntity (entity: Entity) {
+    console.log('add entity', entity);
+    this.ecs.create(entity);
   }
-  updateEntity (data: any) {
-    console.log('update entity', data);
-    this.ecs.updateEntity(data.entity.serial, data.entity);
+  updateEntity (entity: Entity) {
+    console.log('update entity', entity);
+    this.ecs.updateEntity(entity.serial, entity);
+  }
+  removeEntity (entitySerial: string) {
+    console.log('remove entity', entitySerial);
+    this.ecs.destroy(entitySerial);
   }
   loadTile (data: any) {
     console.log('load tile', data);

@@ -10,7 +10,7 @@ export class EventManager {
   events: RegisteredEvents = {};
 
   constructor () {}
-  registerEvent(event: string, callback: (...args: any[]) => void) {
+  registerEvent <T> (event: string, callback: (data?: T) => void) {
     if (this.events[event]) console.log(`Event "${event}" already registered.`);
     else this.events[event] = new EventHandler(event, callback);
   }

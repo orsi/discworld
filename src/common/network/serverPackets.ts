@@ -11,3 +11,8 @@ export class WorldUpdate extends Packet {
         super();
     }
 }
+export class EntityUpdate extends Packet {
+    constructor (public entity: Entity) {
+        super();
+    }
+}

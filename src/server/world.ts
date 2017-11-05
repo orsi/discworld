@@ -38,8 +38,13 @@ export class World {
   }
 
   /**
-   * Creates a new entity for the new
-   * connection on the network.
+   * Returns array of all entities in the world.
+   */
+  getAllEntities() {
+    return this.entitySystem.getAllEntities();
+  }
+  /**
+   * Creates a new entity and returns it.
    */
   createEntity () {
     let entity = this.entitySystem.create();
@@ -51,7 +56,7 @@ export class World {
         entityPosition.y = mapPosition.y;
       }
     }
-    this.events.emit<EntityEvents.Create>('entity', new EntityEvents.Create(entity));
+    this.events.emit<Entity>('entity', entity);
     return entity;
   }
 
@@ -84,11 +89,14 @@ export class World {
         if (direction.indexOf('s') > -1) position.y += 1;
         if (direction.indexOf('w') > -1) position.x -= 1;
         if (direction.indexOf('e') > -1) position.x += 1;
-        this.events.emit<EntityEvents.Update>('entity/update', new EntityEvents.Update(entity));
+        this.events.emit<Entity>('entity/update', entity);
       }
     }
   }
-  removeEntity (entityId: string) {}
+  removeEntity (entitySerial: string) {
+    this.entitySystem.destroy(entitySerial);
+    this.events.emit('entity/destroy', entitySerial);
+  }
   lookEntity (entityId: string) {}
   interactEntity (entityId: string) {}
   /**
@@ -145,7 +153,7 @@ export class World {
     //  update event
     this.timers.createTimer(1000, () => {
       // send world update every ~1s
-      this.events.emit<WorldEvents.Update>('world/update', new WorldEvents.Update(this.model));
+      this.events.emit<WorldModel>('world/update', this.model);
       this.lastUpdatedEventTime = new Date().getTime();
     });
 
@@ -157,16 +165,15 @@ export class World {
         entityPosition.x = mapPosition.x;
         entityPosition.y = mapPosition.y;
       }
-      this.events.emit<EntityEvents.Update>('entity/update', new EntityEvents.Update(entity));
     });
-    this.events.emit<WorldEvents.Create>('world', new WorldEvents.Create(this.model));
+    this.events.emit<WorldModel>('world', this.model);
   }
   /**
    * Cleanup process for removing the world.
    */
   destroy () {
     this.timers.removeAll();
-    this.events.emit<WorldEvents.Destroy>('world/destroy');
+    this.events.emit('world/destroy');
   }
   /**
    * Prints out an overview of the current world state.
