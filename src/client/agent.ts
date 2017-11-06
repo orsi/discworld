@@ -3,11 +3,15 @@ import { Entity } from 'common/ecs/entity';
 
 export class Agent {
     events: EventManager;
-    entityId: string;
+    entity: Entity | void;
     constructor(events: EventManager) {
         this.events = events;
     }
-    setEntityId (id: string) {
-        this.entityId = id;
+    setEntity (entity: Entity) {
+        this.entity = entity;
+        console.log('set entity', entity);
+    }
+    getEntity () {
+        return this.entity;
     }
 }

@@ -166,17 +166,17 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         const entity = this.world.createEntity();
         this.socketEntities.add(entity.serial, netEvent.socketId);
 
-        // tell new connection which entity they are
-        this.network.send(netEvent.socketId, 'agent', entity.serial);
-
         // send the world
         if (this.world.model) this.network.send(netEvent.socketId, 'world', this.world.model);
 
         // send all entities
-        const allEntitites = this.world.getAllEntities();
+        const allEntitites = this.world.entities.getAllEntities();
         allEntitites.forEach(entity => {
             this.network.send(netEvent.socketId, 'entity', entity);
         });
+
+        // tell new connection which entity they are
+        this.network.send(netEvent.socketId, 'agent', entity.serial);
     }
     onNetworkDisconnect (packet: NetworkEvents.Disconnect) {
         const entityId = this.socketEntities.findEntitySerialBySocketId(packet.socketId);

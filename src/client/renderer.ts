@@ -1,5 +1,6 @@
 import { ViewRenderer } from './output/viewRenderer';
 import { CanvasRenderer } from './output/canvasRenderer';
+import * as Components from '../common/ecs/component';
 import { World } from './world';
 import { Agent } from './agent';
 
@@ -10,9 +11,10 @@ export class Renderer {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   bufferCanvas: HTMLCanvasElement;
-  bufferCtx: CanvasRenderingContext2D;
+  ctxBuffer: CanvasRenderingContext2D;
   lastRenderTime = new Date().getTime();
   delta: number;
+  BLOCK_SIZE = 25;
 
   constructor (agent: Agent, world: World, canvas: HTMLCanvasElement, bufferCanvas: HTMLCanvasElement) {
     this.agent = agent;
@@ -20,16 +22,26 @@ export class Renderer {
     this.canvas = canvas;
     this.ctx = <CanvasRenderingContext2D>canvas.getContext('2d');
     this.bufferCanvas = bufferCanvas;
-    this.bufferCtx = <CanvasRenderingContext2D>bufferCanvas.getContext('2d');
-    this.view = new ViewRenderer(this.canvas.width, this.canvas.height);
+    this.ctxBuffer = <CanvasRenderingContext2D>bufferCanvas.getContext('2d');
+    this.view = new ViewRenderer(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  move (x: number, y: number) {
-    // move offset relative to scale size
-    // so that it doesn't become slow when
-    // zoomed in
-    this.view.offset.x -= Math.floor(x * this.view.zoom * this.view.minSize / 2);
-    this.view.offset.y -= Math.floor(y * this.view.zoom * this.view.minSize / 2);
+  // move (x: number, y: number) {
+  //   // move offset relative to scale size
+  //   // so that it doesn't become slow when
+  //   // zoomed in
+  //   this.view.offset.x -= Math.floor(x * this.view.zoom * this.view.minSize / 2);
+  //   this.view.offset.y -= Math.floor(y * this.view.zoom * this.view.minSize / 2);
+  // }
+  update() {
+    let agentEntity = this.agent.getEntity();
+    if (agentEntity) {
+      let position = agentEntity.getComponent<Components.PositionComponent>('position');
+      if (position) {
+        let viewPosition = this.view.mapWorldLocationToPixel(position.x, position.y);
+        this.view.center(viewPosition.x, viewPosition.y);
+      }
+    }
   }
   render (interpolation: number) {
     let now = new Date().getTime();
@@ -39,21 +51,22 @@ export class Renderer {
     // clear buffer and canvas
     // this.buffer.clear();
     // this.main.clear();
-    this.bufferCtx.fillStyle = '#333';
-    this.bufferCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    this.world.draw(this.bufferCtx);
+    this.ctxBuffer.fillStyle = '#333';
+    this.ctxBuffer.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.world.draw(this.ctxBuffer, this.view);
     this.swap();
   }
   swap () {
     // cut the drawn rectangle
-    const image = this.bufferCtx.getImageData(this.view.left, this.view.top, this.view.width, this.view.height);
+    const image = this.ctxBuffer.getImageData(this.view.left, this.view.top, this.view.width, this.view.height);
     // copy into visual canvas at different position
     this.ctx.putImageData(image, 0, 0);
   }
   setViewportSize (width: number, height: number) {
-    this.view.width = width;
-    this.view.height = height;
+    this.view.setSize(width, height);
+  }
+  centerView (x: number, y: number) {
+    this.view.center(x, y);
   }
 }
 // drawPlayerEntity (entity) {

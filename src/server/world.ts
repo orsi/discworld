@@ -15,7 +15,7 @@ import { TimerManager } from '../common/utils/timerManager';
 
 export class World {
   events: EventManager;
-  entitySystem: EntitySystem;
+  entities: EntitySystem;
   timers: TimerManager;
   model: WorldModel;
   automaton: Automaton;
@@ -33,7 +33,7 @@ export class World {
 
   constructor (events: EventManager) {
     this.events = events;
-    this.entitySystem = new EntitySystem();
+    this.entities = new EntitySystem();
     this.timers = new TimerManager();
   }
 
@@ -41,13 +41,13 @@ export class World {
    * Returns array of all entities in the world.
    */
   getAllEntities() {
-    return this.entitySystem.getAllEntities();
+    return this.entities.getAllEntities();
   }
   /**
    * Creates a new entity and returns it.
    */
   createEntity () {
-    let entity = this.entitySystem.create();
+    let entity = this.entities.create();
     if (this.model) {
       let mapPosition = this.getRandomLandPosition();
       let entityPosition = entity.addComponent<Components.PositionComponent>('position');
@@ -81,7 +81,7 @@ export class World {
    */
   moveEntity (entityId: string, direction: string) {
     console.log('new entity moved', entityId);
-    let entity = this.entitySystem.getEntityBySerial(entityId);
+    let entity = this.entities.getEntityBySerial(entityId);
     if (entity) {
       let position = entity.getComponent<Components.PositionComponent>('position');
       if (position) {
@@ -94,7 +94,7 @@ export class World {
     }
   }
   removeEntity (entitySerial: string) {
-    this.entitySystem.destroy(entitySerial);
+    this.entities.destroy(entitySerial);
     this.events.emit('entity/destroy', entitySerial);
   }
   lookEntity (entityId: string) {}
@@ -158,7 +158,7 @@ export class World {
     });
 
     // update all entites with position
-    this.entitySystem.getAllEntities().forEach(entity => {
+    this.entities.getAllEntities().forEach(entity => {
       let mapPosition = this.getRandomLandPosition();
       let entityPosition = entity.addComponent<Components.PositionComponent>('position');
       if (entityPosition && mapPosition) {

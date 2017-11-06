@@ -3,41 +3,61 @@ export class ViewRenderer {
     left: number;
     width: number;
     height: number;
-    center: { x: number, y: number };
-    offset: { x: number, y: number };
-    zoom: number;
-    minSize: number;
-    blockSize: number;
-    constructor (width: number, height: number) {
+    xCenter: number;
+    yCenter: number;
+    zoomScale: number;
+    xOffset: number;
+    yOffset: number;
+    BLOCK_SIZE = 32;
+    constructor (top: number, left: number, width: number, height: number) {
       this.top = 0;
       this.left = 0;
       this.width = width;
       this.height = height;
-      this.center = {
-        x: Math.floor(this.width / 2),
-        y: Math.floor(this.height / 2)
-      };
-      this.offset = {
-        x: 0,
-        y: 0
-      };
-      this.zoom = 1;
-      this.minSize = 12;
-      this.blockSize = 32;
+      this.xCenter = Math.floor(width / 2);
+      this.yCenter = Math.floor(height / 2);
+      this.xOffset = 0;
+      this.yOffset = 0;
+      this.zoomScale = 1;
     }
-    follow (x: number, y: number, z: number) {
-      this.centerOn(x, y);
+    move (x: number, y: number) {
+      this.center(x, y);
     }
-    centerOn (x: number, y: number) {
-      this.offset.x = x - this.center.x;
-      this.offset.y = y - this.center.y;
+    center (x: number, y: number) {
+      this.xOffset = -x;
+      this.yOffset = -y;
+    }
+    mapWorldLocationToPixel (x: number, y: number) {
+      let pixelX = x * this.BLOCK_SIZE;
+      let pixelY = y * this.BLOCK_SIZE;
+      return {
+        x: pixelX,
+        y: pixelY
+      };
+    }
+    mapPixelToWorldLocation (x: number, y: number) {
+      let worldX = Math.floor(x / this.BLOCK_SIZE);
+      let worldY = Math.floor(y / this.BLOCK_SIZE);
+      return {
+        x: worldX,
+        y: worldY
+      };
+    }
+    zoom (scale: number) {
+      this.zoomScale = scale;
+    }
+    setSize (width: number, height: number) {
+      this.width = width;
+      this.height = height;
+      this.xCenter = Math.floor(width / 2);
+      this.yCenter = Math.floor(height / 2);
     }
     isOnScreen (x: number, y: number) {
       // takes canvas positions and sees whether it's in view
-      return  x + this.blockSize >= this.left
-              && x - this.blockSize <= this.left + this.width
-              && y + this.blockSize >= this.top
-              && y - this.blockSize <= this.top + this.height;
+      return  x + this.BLOCK_SIZE >= this.left
+              && x - this.BLOCK_SIZE <= this.left + this.width
+              && y + this.BLOCK_SIZE >= this.top
+              && y - this.BLOCK_SIZE <= this.top + this.height;
     }
     isObscured (bx: number, by: number, bz: number, maxX: number, maxY: number, maxZ: number, position: any) {
       // check if there are any blocks directly
@@ -75,26 +95,5 @@ export class ViewRenderer {
 
       // if (bx % 10 === 0 && by % 10 === 0 ) console.log(viewportVisible, faceVisible);
       return viewportVisible && faceVisible;
-    }
-    worldToCanvas (wx: number, wy: number, wz: number) {
-      let cx = ((wx - wy) * this.blockSize / 2);
-      let cy = ((wy + wx) * this.blockSize / 4) - (wz * this.blockSize / 2);
-
-      // if (position.x % 10 === 0 && position.y % 10 === 0) console.log(position, blockX, blockY, blockZ);
-      return {
-        x: cx,
-        y: cy
-      };
-    }
-    canvasToWorld (canvasPosition: any) {
-      // return world position in center of viewport
-      let x = ((canvasPosition.x + canvasPosition.y) * 2 / this.blockSize);
-      let y = ((canvasPosition.y - canvasPosition.x) * 4 / this.blockSize);
-
-      // if (canvasPosition.x % 10 === 0 && canvasPosition.y % 10 === 0) console.log(x, y);
-      return {
-        x: Math.floor(x),
-        y: Math.floor(y),
-      };
     }
   }

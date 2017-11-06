@@ -22,7 +22,7 @@ export class ReverieClient {
   renderer: Renderer;
   running = false;
   lastUpdate = new Date().getTime();
-  accumulator: number;
+  accumulator = 0;
   ticksPerSecond = 25;
   tickTime = 1000 / this.ticksPerSecond;
   ticks = 0;
@@ -70,7 +70,7 @@ export class ReverieClient {
       this.lastUpdate = now;
 
       if (this.ticks % 100 === 0) {
-        console.log(`last update was ${delta}ms`);
+        console.log(`update - delta: ${delta}ms, acc: ${this.accumulator}, ticktime: ${this.tickTime}`);
       }
 
       // process queued events
@@ -80,6 +80,7 @@ export class ReverieClient {
       this.accumulator += delta;
       while (this.accumulator > this.tickTime) {
         this.world.update(this.tickTime);
+        this.renderer.update();
         this.accumulator -= delta;
       }
 
@@ -129,7 +130,8 @@ export class ReverieClient {
   }
   onAgentEntity (entitySerial: string) {
     console.log(entitySerial);
-    this.agent.setEntityId(entitySerial);
+    let agentEntity = this.world.entities.getEntityBySerial(entitySerial);
+    if (agentEntity) this.agent.setEntity(agentEntity);
   }
   onWorld (world: WorldModel) {
     this.world.loadWorld(world);
