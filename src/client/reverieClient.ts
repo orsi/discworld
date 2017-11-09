@@ -47,9 +47,15 @@ export class ReverieClient {
     );
 
     // register inter-module events
-    events.registerEvent('input/keyboard/down', (data) => this.onKeyDown(data));
-    events.registerEvent('input/mouse/down', (data: MouseEvent) => this.onMouseDown(data));
-    events.registerEvent('input/window/resize', (e: Event) => this.onWindowResize(<Window>e.currentTarget));
+    events.registerEvent('key/press', (e) => this.onKeyPress(e));
+    events.registerEvent('mouse/click', (e: MouseEvent) => this.onMouseClick(e));
+    events.registerEvent('mouse/double', (e: MouseEvent) => this.onMouseDoubleClick(e));
+    events.registerEvent('mouse/down', (e: MouseEvent) => this.onMouseDown(e));
+    events.registerEvent('mouse/up', (e: MouseEvent) => this.onMouseUp(e));
+    events.registerEvent('mouse/dragstart', (e: MouseEvent) => this.onMouseDragStart(e));
+    events.registerEvent('mouse/dragend', (e: MouseEvent) => this.onMouseDragEnd(e));
+    events.registerEvent('mouse/move', (e: MouseEvent) => this.onMouseMove(e));
+    events.registerEvent('window/resize', (e: Event) => this.onWindowResize(<Window>e.currentTarget));
     events.registerEvent('terminal/message', (message: string) => this.onTerminalMessage(message));
     events.registerEvent('server', (data) => this.onServer(data));
     events.registerEvent('server/update', (data) => this.onServerUpdate(data));
@@ -72,6 +78,9 @@ export class ReverieClient {
       if (this.ticks % 100 === 0) {
         console.log(`update - delta: ${delta}ms, acc: ${this.accumulator}, ticktime: ${this.tickTime}`);
       }
+
+      // update input events
+      this.inputManager.update(delta);
 
       // process queued events
       this.events.process();
@@ -102,11 +111,17 @@ export class ReverieClient {
   }
 
   // Events
-  onKeyDown (data: any) {
-    this.reverieInterface.getTerminalElement().onKey(data.key);
+  onKeyPress (e: any) {
+    this.reverieInterface.getTerminalElement().onKey(e.key);
+  }
+  onMouseClick (e: MouseEvent) {
+    console.log('mouse click!');
+  }
+  onMouseDoubleClick (e: MouseEvent) {
+    console.log('mouse double!!');
   }
   onMouseDown (mouseEvent: MouseEvent) {
-    console.log(mouseEvent);
+    console.log('mouse down!');
     switch (mouseEvent.button) {
       case 2:
         let direction = this.parseMouseDirection(mouseEvent);
@@ -114,6 +129,17 @@ export class ReverieClient {
         this.network.send('entity/move', direction);
         break;
     }
+  }
+  onMouseUp (e: MouseEvent) {
+    console.log('mouse up');
+  }
+  onMouseMove (e: MouseEvent) {
+  }
+  onMouseDragStart (e: MouseEvent) {
+    console.log('drag start');
+  }
+  onMouseDragEnd (e: MouseEvent) {
+    console.log('drag end');
   }
   onWindowResize (window: Window) {
     this.reverieInterface.getWorldElement().resize(window.innerWidth, window.innerHeight);

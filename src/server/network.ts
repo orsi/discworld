@@ -51,11 +51,11 @@ export class Network {
   }
   send (socketId: string, event: string, data?: any) {
     let socket = this.getSocket(socketId);
-    console.log('>> network send: ', socketId, event, JSON.stringify(data).substr(0, 50));
+    console.log(`>> network send '${event}' to ${socketId}: ${JSON.stringify(data).substr(0, 50)}`);
     if (socket) socket.emit(event, data);
   }
   broadcast (event: string, data?: any) {
-    console.log('>> network broadcast: ', event, JSON.stringify(data).substr(0, 50));
+    console.log(`>> network broadcast '${event}': ${JSON.stringify(data).substr(0, 50)}`);
     this.io.emit(event, data);
   }
   multicast (socketIds: string[], event: string, data?: any) {
