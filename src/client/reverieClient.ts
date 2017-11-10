@@ -30,8 +30,8 @@ export class ReverieClient {
   constructor() {
     const events = this.events = new EventManager();
 
-    this.agent = new Agent(events);
     this.inputManager = new InputManager(events);
+    this.agent = new Agent(events, this.inputManager);
     this.network = new Network(events);
     this.world = new World(events);
 
@@ -50,15 +50,15 @@ export class ReverieClient {
     events.registerEvent('key/press', (e) => this.onKeyPress(e));
     events.registerEvent('mouse/click', (e: MouseEvent) => this.onMouseClick(e));
     events.registerEvent('mouse/double', (e: MouseEvent) => this.onMouseDoubleClick(e));
-    events.registerEvent('mouse/down', (e: MouseEvent) => this.onMouseDown(e));
     events.registerEvent('mouse/up', (e: MouseEvent) => this.onMouseUp(e));
+    events.registerEvent('mouse/move', (e: MouseEvent) => this.onMouseMove(e));
     events.registerEvent('mouse/dragstart', (e: MouseEvent) => this.onMouseDragStart(e));
     events.registerEvent('mouse/dragend', (e: MouseEvent) => this.onMouseDragEnd(e));
-    events.registerEvent('mouse/move', (e: MouseEvent) => this.onMouseMove(e));
     events.registerEvent('window/resize', (e: Event) => this.onWindowResize(<Window>e.currentTarget));
     events.registerEvent('terminal/message', (message: string) => this.onTerminalMessage(message));
     events.registerEvent('server', (data) => this.onServer(data));
     events.registerEvent('server/update', (data) => this.onServerUpdate(data));
+    events.registerEvent('agent/move', (e: any) => this.onAgentMove(e));
     events.registerEvent('agent', (entitySerial: string) => this.onAgentEntity(entitySerial));
     events.registerEvent('world', (data: WorldModel) => this.onWorld(data));
     events.registerEvent('world/update', (data: WorldModel) => this.onWorldUpdate(data));
@@ -81,6 +81,9 @@ export class ReverieClient {
 
       // update input events
       this.inputManager.update(delta);
+
+      // update agent
+      this.agent.update(delta);
 
       // process queued events
       this.events.process();
@@ -120,15 +123,11 @@ export class ReverieClient {
   onMouseDoubleClick (e: MouseEvent) {
     console.log('mouse double!!');
   }
-  onMouseDown (mouseEvent: MouseEvent) {
-    console.log('mouse down!');
-    switch (mouseEvent.button) {
-      case 2:
-        let direction = this.parseMouseDirection(mouseEvent);
-        console.log(direction);
-        this.network.send('entity/move', direction);
-        break;
-    }
+  onAgentMove (e: any) {
+    console.log('agent move!');
+    let direction = this.parseMouseDirection(e.x, e.y);
+    console.log(direction);
+    this.network.send('entity/move', direction);
   }
   onMouseUp (e: MouseEvent) {
     console.log('mouse up');
@@ -181,10 +180,10 @@ export class ReverieClient {
     this.world.updateTile(data);
   }
 
-  parseMouseDirection (mouseEvent: MouseEvent) {
+  parseMouseDirection (x: number, y: number) {
     let direction = '';
-    let mouseX = mouseEvent.clientX;
-    let mouseY = mouseEvent.clientY;
+    let mouseX = x;
+    let mouseY = y;
     let width = window.innerWidth;
     let height = window.innerHeight;
 

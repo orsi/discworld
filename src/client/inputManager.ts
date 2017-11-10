@@ -12,22 +12,20 @@ export class InputManager {
   totalTime = 0;
 
   modifiers = {};
-  keys: {[keyCode: number]: boolean} = {};
-  mouse = {
-    isDragging: false,
+  keys: KeyState = {};
+  mouse: MouseState = {
     left: false,
     right: false,
     middle: false,
-    click: false,
-    doubleClick: false,
-    drag: false,
     x: 0,
-    y: 0
+    y: 0,
+    wheelDelta: 0,
+    isDragging: false
   };
   doubleClickWindow = 500;
   clickTimeout: number;
-  lastKeyboardEvent: KeyboardEvent;
-  lastMouseEvent: MouseEvent;
+  lastKeyState: KeyState;
+  lastMouseState: MouseState;
   constructor (events: EventManager) {
     this.events = events;
 
@@ -42,8 +40,6 @@ export class InputManager {
     });
 
     // mouse events
-    window.addEventListener('click', (e) => this.onMouseClick(e));
-    window.addEventListener('dblclick', (e) => this.onMouseDoubleClick(e));
     window.addEventListener('mousedown', (e) => this.onMouseDown(e));
     window.addEventListener('mouseup', (e) => this.onMouseUp(e));
     window.addEventListener('mousemove', (e) => this.onMouseMove(e));
@@ -55,64 +51,46 @@ export class InputManager {
 
     // timer for console logs
     setInterval(() => {
-      // console.dir('keys', this.keys);
-      // console.dir('mouse', this.mouse);
-    }, 5000);
+      console.log('keys', this.keys);
+      console.log('mouse', this.mouse);
+    }, 2000);
   }
   update (delta: number) {
     this.totalTime += delta;
-
-    this.parseInput();
-    this.inputEvents.length = 0;
-  }
-  parseInput () {
+    this.lastMouseState = this.mouse;
+    this.lastKeyState = this.keys;
     this.inputEvents.forEach(e => {
-      if (e.type === 'keydown') this.events.emit('key/press', e);
-      if (e.type === 'click') {
-        let mouseEvent = <MouseEvent>e;
-        if (this.lastMouseClick && (mouseEvent.timeStamp - this.lastMouseClick.timeStamp) < this.doubleClickWindow) {
-          // prevents second click from happening right before double click event
-        } else {
-          this.events.emit('mouse/click', mouseEvent);
-          this.lastMouseClick = mouseEvent;
+      if (e.type === 'keydown') {
+        if (!(<KeyboardEvent>e).altKey || !(<KeyboardEvent>e).shiftKey || !(<KeyboardEvent>e).ctrlKey) {
+          this.events.emit('key/press', e);
         }
+        this.keys[(<KeyboardEvent>e).keyCode] = true;
       }
-      if (e.type === 'dblclick') this.events.emit('mouse/double', e);
-      if (e.type === 'mousedown') this.lastMouseDown = <MouseEvent>e;
+      if (e.type === 'keyup') {
+        this.keys[(<KeyboardEvent>e).keyCode] = false;
+      }
+      if (e.type === 'mousedown') {
+        console.log('mousedown', e);
+        if (((<MouseEvent>e).buttons & 0x1) > 0) this.mouse.left = true;
+        if (((<MouseEvent>e).buttons & 0x2) > 0) this.mouse.right = true;
+        if (((<MouseEvent>e).buttons & 0x4) > 0) this.mouse.middle = true;
+        console.log(this.mouse);
+      }
       if (e.type === 'mouseup') {
-        if (this.mouse.isDragging) {
-          this.events.emit('mouse/dragend');
-          this.mouse.isDragging = false;
-        }
-        this.lastMouseDown = undefined;
+        if (((<MouseEvent>e).buttons & 0x1) === 0) this.mouse.left = false;
+        if (((<MouseEvent>e).buttons & 0x2) === 0) this.mouse.right = false;
+        if (((<MouseEvent>e).buttons & 0x4) === 0) this.mouse.middle = false;
+        this.mouse.isDragging = false;
       }
       if (e.type === 'mousemove') {
-        let mouseEvent = <MouseEvent>e;
-        this.events.emit('mouse/move', e);
-        if (this.lastMouseDown) {
-          // check if movement
-          let inClickRange = this.checkDistance(
-            this.lastMouseDown.clientX,
-            this.lastMouseDown.clientY,
-            mouseEvent.clientX,
-            mouseEvent.clientY,
-            this.maxMouseClickDistance
-          );
-          if (!this.mouse.isDragging && !inClickRange) {
-            this.events.emit('mouse/dragstart', e);
-            this.mouse.isDragging = true;
-          }
+        if (this.mouse.left) {
+          this.mouse.isDragging = true;
         }
+        this.mouse.x = (<MouseEvent>e).clientX;
+        this.mouse.y = (<MouseEvent>e).clientY;
       }
     });
-  }
-  onMouseClick (e: MouseEvent) {
-    e.preventDefault();
-    this.inputEvents.push(e);
-  }
-  onMouseDoubleClick (e: MouseEvent) {
-    e.preventDefault();
-    this.inputEvents.push(e);
+    this.inputEvents.length = 0;
   }
   onMouseDown (e: MouseEvent) {
     e.preventDefault();
@@ -141,4 +119,17 @@ export class InputManager {
   checkDistance (x: number, y: number, mx: number, my: number, maxDistance: number) {
     return Math.abs(mx - x) + Math.abs(my - y) < maxDistance;
   }
+}
+
+interface KeyState {
+  [keyCode: number]: boolean;
+}
+interface MouseState {
+  left: boolean;
+  right: boolean;
+  middle: boolean;
+  x: number;
+  y: number;
+  wheelDelta: number;
+  isDragging: boolean;
 }
