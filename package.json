@@ -13,7 +13,7 @@
     "build": "npm run tslint && npm run build-ts",
     "postbuild": "npm run copy:static && npm run bundle-js",
     "build-ts": "tsc",
-    "bundle-js": "browserify ./dist/client/reverieClient.js > ./dist/public/js/reverie.js",
+    "bundle-js": "browserify ./dist/client/client.js > ./dist/public/js/reverie.js",
     "serve": "node dist/index.js",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
     "clean:dist": "node scripts/cleanDist.js",

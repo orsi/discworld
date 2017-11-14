@@ -12,7 +12,7 @@ export class World {
   entities: EntitySystem;
   entityView: EntityView;
   events: EventManager;
-  agentEntity: Entity;
+  agentEntitySerial: string;
   model: WorldModel;
   view: WorldView;
   constructor  (events: EventManager) {
@@ -43,11 +43,15 @@ export class World {
       this.model.map = worldModel.map;
     }
   }
-  findAgentEntity (serial: string) {
+  setAgentEntity (serial: string) {
+    this.agentEntitySerial = serial;
+  }
+  getAgentEntity () {
+    if (this.agentEntitySerial) return this.findEntity(this.agentEntitySerial);
+  }
+  findEntity (serial: string) {
     let entity = this.entities.getEntityBySerial(serial);
-    if (entity) {
-      this.agentEntity = entity;
-    }
+    return entity;
   }
   addEntity (entity: Entity) {
     console.log('add entity', entity);
@@ -61,10 +65,22 @@ export class World {
     console.log('remove entity', entitySerial);
     this.entities.destroy(entitySerial);
   }
+  moveEntity(direction: string) {
+    this.events.emit('entity/move', direction);
+  }
   loadTile (data: any) {
     console.log('load tile', data);
   }
   updateTile (data: any) {
     console.log('update tile', data);
+  }
+
+  lastMouseEvent: MouseEvent;
+  onMouseDown (e: MouseEvent) {
+    console.log('click on world', e);
+    this.lastMouseEvent = e;
+  }
+  onMouseUp (e: MouseEvent) {
+    this.lastMouseEvent = e;
   }
 }

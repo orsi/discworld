@@ -7,7 +7,7 @@ export class WorldElement extends HTMLElement {
     bufferCtx: CanvasRenderingContext2D;
     width: number;
     height: number;
-    constructor (events: EventManager) {
+    constructor () {
         super();
 
         // main canvas

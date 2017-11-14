@@ -2,10 +2,8 @@ import { ViewRenderer } from './output/viewRenderer';
 import { CanvasRenderer } from './output/canvasRenderer';
 import * as Components from '../common/ecs/component';
 import { World } from './world';
-import { Agent } from './agent';
 
 export class Renderer {
-  agent: Agent;
   world: World;
   view: ViewRenderer;
   canvas: HTMLCanvasElement;
@@ -16,8 +14,7 @@ export class Renderer {
   delta: number;
   BLOCK_SIZE = 25;
 
-  constructor (agent: Agent, world: World, canvas: HTMLCanvasElement, bufferCanvas: HTMLCanvasElement) {
-    this.agent = agent;
+  constructor (world: World, canvas: HTMLCanvasElement, bufferCanvas: HTMLCanvasElement) {
     this.world = world;
     this.canvas = canvas;
     this.ctx = <CanvasRenderingContext2D>canvas.getContext('2d');
@@ -25,23 +22,9 @@ export class Renderer {
     this.ctxBuffer = <CanvasRenderingContext2D>bufferCanvas.getContext('2d');
     this.view = new ViewRenderer(0, 0, this.canvas.width, this.canvas.height);
   }
-
-  // move (x: number, y: number) {
-  //   // move offset relative to scale size
-  //   // so that it doesn't become slow when
-  //   // zoomed in
-  //   this.view.offset.x -= Math.floor(x * this.view.zoom * this.view.minSize / 2);
-  //   this.view.offset.y -= Math.floor(y * this.view.zoom * this.view.minSize / 2);
-  // }
-  update() {
-    let agentEntity = this.agent.getEntity();
-    if (agentEntity) {
-      let position = agentEntity.getComponent<Components.PositionComponent>('position');
-      if (position) {
-        let viewPosition = this.view.mapWorldLocationToPixel(position.x, position.y);
-        this.view.center(viewPosition.x, viewPosition.y);
-      }
-    }
+  centerMap (x: number, y: number) {
+    let viewPosition = this.view.mapWorldLocationToPixel(x, y);
+    this.view.center(viewPosition.x, viewPosition.y);
   }
   render (interpolation: number) {
     let now = new Date().getTime();
