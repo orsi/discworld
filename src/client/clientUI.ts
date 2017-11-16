@@ -3,10 +3,10 @@ import { Renderer } from './renderer';
 import { World } from './world';
 import * as Components from '../common/ecs/component';
 import { EventManager } from '../common/eventManager';
-import { TerminalElement } from './elements/terminalElement';
-import { WorldElement } from './elements/worldElement';
-import { UIElement } from './elements/ui/uiElement';
-import { UIContainerElement } from './elements/uiContainerElement';
+import { UIElement } from './ui/uiElement';
+import { TerminalElement } from './ui/terminalElement';
+import { WorldElement } from './ui/worldElement';
+import { ContainerElement } from './ui/containerElement';
 export class ClientUI {
     client: Client;
     events: EventManager;
@@ -14,7 +14,7 @@ export class ClientUI {
     renderer: Renderer;
     htmlBody: HTMLBodyElement;
     worldElement: WorldElement;
-    uiContainer: HTMLElement;
+    containerElement: ContainerElement;
     terminalElement: TerminalElement;
     elements: { [key: string]: UIElement } = {};
     constructor (client: Client) {
@@ -26,41 +26,32 @@ export class ClientUI {
         this.htmlBody = <HTMLBodyElement>document.querySelector('body');
 
         // create world element
-        this.worldElement = new WorldElement();
-        this.worldElement.style.position = 'absolute';
-        this.worldElement.style.top = '0';
-        this.worldElement.style.left = '0';
-        this.worldElement.style.width = window.innerWidth + 'px';
-        this.worldElement.style.height = window.innerHeight + 'px';
+        this.worldElement = new WorldElement(this);
         this.worldElement.style.zIndex = '1';
         this.htmlBody.appendChild(this.worldElement);
 
+        // terminal
+        this.terminalElement = new TerminalElement(this);
+        this.terminalElement.style.zIndex = '3';
+        this.htmlBody.appendChild(this.terminalElement);
+
+        // UIElement container
+        this.containerElement = new ContainerElement(this);
+        this.containerElement.style.zIndex = '2';
+        this.htmlBody.appendChild(this.containerElement);
+
         // create renderer for world
         this.renderer = new Renderer(
-            this.world,
+            this.world.view,
             this.worldElement.canvas,
             this.worldElement.bufferCanvas
         );
 
-        // UIElement container
-        this.uiContainer = new UIContainerElement();
-        this.uiContainer.style.position = 'absolute';
-        this.uiContainer.style.top = '0';
-        this.uiContainer.style.left = '0';
-        this.uiContainer.style.width = window.innerWidth + 'px';
-        this.uiContainer.style.height = window.innerHeight + 'px';
-        this.uiContainer.style.zIndex = '2';
-        this.htmlBody.appendChild(this.uiContainer);
-
-        // terminal
-        this.terminalElement = new TerminalElement(events);
-        this.terminalElement.style.position = 'absolute';
-        this.terminalElement.style.bottom = '0';
-        this.terminalElement.style.left = '0';
-        this.terminalElement.style.right = '0';
-        this.terminalElement.style.height = '1em';
-        this.terminalElement.style.zIndex = '3';
-        this.htmlBody.appendChild(this.terminalElement);
+        // general browser events
+        window.addEventListener('resize',       (e: Event) => this.onWindowResize(e));
+        window.addEventListener('keydown',      (e: KeyboardEvent) => this.onKeyDown(e));
+        window.addEventListener('keyup',        (e: KeyboardEvent) => this.onKeyUp(e));
+        window.addEventListener('contextmenu',  (e) => e.preventDefault()); // prevents context menu
     }
 
     update (delta: number) {
@@ -78,12 +69,24 @@ export class ClientUI {
         this.worldElement.resize(width, height);
         this.renderer.setViewportSize(width, height);
     }
+    onWindowResize (e: Event) {
+        let window = <Window>e.currentTarget;
+        this.resize(window.innerWidth, window.innerHeight);
+    }
+    onKeyDown (e: KeyboardEvent) {
+        if (e.ctrlKey || e.altKey || e.metaKey) {
+            // do command
+        } else {
+            this.onKey(e.key);
+        }
+    }
+    onKeyUp (e: KeyboardEvent) {}
     onKey (key: string) {
         this.terminalElement.onKey(key);
     }
     addElement (el: UIElement) {
         this.elements[el.serial] = el;
-        this.uiContainer.appendChild(el);
+        this.containerElement.appendChild(el);
     }
     removeElement (serial: string) {
         let htmlElement = <HTMLElement>document.querySelector('#' + serial);
@@ -92,7 +95,7 @@ export class ClientUI {
     }
     getTerminalElement (): TerminalElement { return this.terminalElement; }
     getWorldElement (): WorldElement { return this.worldElement; }
-    getUIContainerElement (): UIContainerElement { return this.uiContainer; }
+    getUIContainerElement (): ContainerElement { return this.containerElement; }
     getUIElements() { return this.elements; }
     isOnUserInterface (x: number, y: number) {
         let hasPoint = false;
@@ -110,5 +113,18 @@ export class ClientUI {
     }
     onMouseUp (e: MouseEvent) {
 
+    }
+    parseMouseDirection (x: number, y: number) {
+        let direction = '';
+        let mouseX = x;
+        let mouseY = y;
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+
+        if (mouseY <= Math.floor(height * (1 / 3))) direction += 'n';
+        if (mouseY >= Math.floor(height * (2 / 3))) direction += 's';
+        if (mouseX >= Math.floor(width * (2 / 3))) direction += 'e';
+        if (mouseX <= Math.floor(width * (1 / 3))) direction += 'w';
+        return direction;
     }
 }

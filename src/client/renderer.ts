@@ -1,26 +1,25 @@
-import { ViewRenderer } from './output/viewRenderer';
-import { CanvasRenderer } from './output/canvasRenderer';
+import { RendererView } from './rendererView';
 import * as Components from '../common/ecs/component';
-import { World } from './world';
+import { WorldView } from 'client/views/worldView';
 
 export class Renderer {
-  world: World;
-  view: ViewRenderer;
+  view: RendererView;
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   bufferCanvas: HTMLCanvasElement;
   ctxBuffer: CanvasRenderingContext2D;
+  worldView: WorldView;
   lastRenderTime = new Date().getTime();
   delta: number;
   BLOCK_SIZE = 25;
 
-  constructor (world: World, canvas: HTMLCanvasElement, bufferCanvas: HTMLCanvasElement) {
-    this.world = world;
+  constructor (worldView: WorldView, canvas: HTMLCanvasElement, bufferCanvas: HTMLCanvasElement) {
+    this.worldView = worldView;
     this.canvas = canvas;
     this.ctx = <CanvasRenderingContext2D>canvas.getContext('2d');
     this.bufferCanvas = bufferCanvas;
     this.ctxBuffer = <CanvasRenderingContext2D>bufferCanvas.getContext('2d');
-    this.view = new ViewRenderer(0, 0, this.canvas.width, this.canvas.height);
+    this.view = new RendererView(0, 0, this.canvas.width, this.canvas.height);
   }
   centerMap (x: number, y: number) {
     let viewPosition = this.view.mapWorldLocationToPixel(x, y);
@@ -36,7 +35,7 @@ export class Renderer {
     // this.main.clear();
     this.ctxBuffer.fillStyle = '#333';
     this.ctxBuffer.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.world.draw(this.ctxBuffer, this.view);
+    this.worldView.draw(this.ctxBuffer, this.view);
     this.swap();
   }
   swap () {

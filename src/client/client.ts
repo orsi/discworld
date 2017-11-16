@@ -2,9 +2,6 @@
 // Created by Jonathon Orsi
 import { ClientUI } from './clientUI';
 import { ClientNetworkHandler } from './clientNetworkHandler';
-import { ClientInputHandler } from './clientInputHandler';
-import { Input } from './input';
-import { Network } from './network';
 import { World } from './world';
 import { EventManager } from '../common/eventManager';
 
@@ -12,9 +9,6 @@ export class Client {
   events: EventManager;
   ui: ClientUI;
   clientNetwork: ClientNetworkHandler;
-  clientInput: ClientInputHandler;
-  input: Input;
-  network: Network;
   world: World;
 
   running = false;
@@ -27,16 +21,10 @@ export class Client {
   constructor() {
     const events = this.events = new EventManager();
 
-    // input manager
-    this.input = new Input(events);
-
-    // modules
-    this.network = new Network(events);
     this.world = new World(events);
 
     // specialized client classes
     this.ui = new ClientUI(this);
-    this.clientInput = new ClientInputHandler(this);
     this.clientNetwork = new ClientNetworkHandler(this);
   }
   update () {
@@ -50,10 +38,6 @@ export class Client {
       if (this.ticks % 100 === 0) {
         console.log(`update - delta: ${delta}ms, acc: ${this.accumulator}, ticktime: ${this.tickTime}`);
       }
-
-      // client handler updates
-      this.clientInput.update(delta);
-      this.clientNetwork.update(delta);
 
       // process queued events
       this.events.process();
@@ -80,7 +64,8 @@ export class Client {
   }
 
 }
-
-// initial run
-let reverie = new Client();
-reverie.run();
+document.addEventListener('DOMContentLoaded', function() {
+  // initial run
+  let reverie = new Client();
+  reverie.run();
+}, false);

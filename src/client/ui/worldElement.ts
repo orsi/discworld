@@ -1,14 +1,16 @@
 import { EventManager } from '../../common/eventManager';
+import { UIElement } from './uiElement';
+import { ClientUI } from '../clientUI';
 
-export class WorldElement extends HTMLElement {
+export class WorldElement extends UIElement {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     bufferCanvas: HTMLCanvasElement;
     bufferCtx: CanvasRenderingContext2D;
     width: number;
     height: number;
-    constructor () {
-        super();
+    constructor (ui: ClientUI) {
+        super('world');
 
         // main canvas
         this.canvas = document.createElement('canvas');
@@ -20,6 +22,7 @@ export class WorldElement extends HTMLElement {
         this.bufferCtx = <CanvasRenderingContext2D>this.canvas.getContext('2d');
 
         // setup width/height
+        this.style.position = 'absolute';
         this.resize(window.innerWidth, window.innerHeight);
     }
     /**

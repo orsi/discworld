@@ -1,11 +1,11 @@
 import * as Components from '../../common/ecs/component';
 import { Entity } from '../../common/ecs/entity';
-import { ViewRenderer } from '../output/viewRenderer';
+import { RendererView } from '../rendererView';
 
 export class EntityView {
     constructor () {}
 
-    draw(ctx: CanvasRenderingContext2D, view: ViewRenderer, model: Entity) {
+    draw(ctx: CanvasRenderingContext2D, view: RendererView, model: Entity) {
         let position = model.getComponent<Components.PositionComponent>('position');
         if (position) {
             ctx.fillStyle = 'red';

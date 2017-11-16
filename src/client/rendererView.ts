@@ -1,4 +1,4 @@
-export class ViewRenderer {
+export class RendererView {
     top: number;
     left: number;
     width: number;

@@ -1,18 +1,25 @@
 import { EventManager } from '../../common/eventManager';
+import { ClientUI } from '../clientUI';
+import { UIElement } from './uiElement';
 
-export class TerminalElement extends HTMLElement {
+export class TerminalElement extends UIElement {
   events: EventManager;
   historyIndex = -1;
   history: string[] = [];
   value = '';
 
-  constructor (events: EventManager) {
-    super();
+  constructor (ui: ClientUI) {
+    super('terminal');
 
     // hook into input events
-    this.events = events;
+    this.events = ui.events;
 
     // style
+    this.style.position = 'absolute';
+    this.style.bottom = '0';
+    this.style.left = '0';
+    this.style.right = '0';
+    this.style.height = '1em';
     this.style.lineHeight = '1em';
     this.style.fontFamily = 'Courier New';
     this.style.padding = '3px';

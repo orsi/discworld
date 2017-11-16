@@ -1,34 +1,23 @@
 import { EventManager } from '../common/eventManager';
-import { WorldView } from './views/worldView';
 import { WorldModel } from '../common/world/models/worldModel';
 import * as WorldEvents from '../common/world/worldEvents';
 import { EntitySystem } from '../common/ecs/entitySystem';
 import { Entity } from '../common/ecs/entity';
-import { EntityView } from './views/entityView';
 import * as EntityEvents from '../common/ecs/entityEvents';
-import { ViewRenderer } from './output/viewRenderer';
+import { WorldView } from './views/worldView';
 
 export class World {
   entities: EntitySystem;
-  entityView: EntityView;
   events: EventManager;
   agentEntitySerial: string;
   model: WorldModel;
   view: WorldView;
   constructor  (events: EventManager) {
     this.events = events;
-    this.view = new WorldView();
     this.entities = new EntitySystem();
-    this.entityView = new EntityView();
+    this.view = new WorldView(this);
   }
   update (delta: number) {}
-  draw (ctx: CanvasRenderingContext2D, viewRenderer: ViewRenderer) {
-    if (this.model) this.view.draw(ctx, viewRenderer, this.model);
-    let entities = this.entities.getAllEntities();
-    entities.forEach(entity => {
-      this.entityView.draw(ctx, viewRenderer, entity);
-    });
-  }
   destroy () {}
   loadWorld (world: WorldModel) {
     if (this.model) {

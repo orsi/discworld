@@ -19,11 +19,11 @@ export class ClientNetworkHandler {
     totalTime = 0;
     constructor (client: Client) {
         this.client = client;
-        this.ui = this.client.ui;
-        this.network = this.client.network;
-        this.world = this.client.world;
-
         let events = this.events = this.client.events;
+        this.ui = this.client.ui;
+        this.world = this.client.world;
+        this.network = new Network(events);
+
         events.registerEvent('terminal/message', (message: string) => this.onTerminalMessage(message));
         events.registerEvent('server', (data) => this.onServer(data));
         events.registerEvent('server/update', (data) => this.onServerUpdate(data));
