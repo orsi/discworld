@@ -1,58 +1,42 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { EventManager } from '../common/eventManager';
-
-interface ReverieSettings {
-    terminal: object;
-    network: object;
-    reverie: object;
-    server: object;
-}
-
-import { Logger } from './logger';
-import { Network } from './network';
-import { Terminal } from './terminal';
-import { World } from './world';
+import { EventChannel } from '../common/services/eventChannel';
+import { NetworkModule } from './networkModule';
+import { TerminalModule } from './terminalModule';
+import { WorldModule } from './worldModule';
 import { ScriptLoader } from '../common/utils/scriptLoader';
 import { TimerManager } from '../common/utils/timerManager';
-import * as NetworkEvents from '../common/network/networkEvents';
-import * as WorldEvents from '../common/world/worldEvents';
-import * as EntityEvents from '../common/ecs/entityEvents';
-import { Entity } from '../common/ecs/entity';
 
 export class Reverie {
     public static instance: Reverie;
-    readonly _version = {
+    readonly version = {
         major: 0,
         minor: 0,
-        patch: 16
+        patch: 17
     };
-    get version() { return `${this._version.major}.${this._version.minor}.${this._version.patch}`; }
 
     // root = ~/server/
-    private _rootDir = __dirname;
-    get rootDirectory() { return this._rootDir; }
+    rootDirectory = __dirname;
 
     // Main modules
-    private events: EventManager;
-    private network: Network;
-    private terminal: Terminal;
-    private world: World;
-    socketEntities: SocketEntityList = new SocketEntityList();
+    events: EventChannel;
+    network: NetworkModule;
+    terminal: TerminalModule;
+    world: WorldModule;
 
     // Timer-based properties
-    private isRunning = false;
-    private tps = 60;
-    private timePerTick = 1000 / this.tps;
-    private serverTicks = 0;
-    private lastTickDuration = 0;
-    private deltas: number[] = [];
-    private startTime: Date = new Date();
-    private lastUpdate: Date = new Date();
-    private reverieLoop: NodeJS.Timer;
-    private timers: TimerManager = new TimerManager();
-    private getAverageTickTime() {
+    isRunning = false;
+    tps = 60;
+    timePerTick = 1000 / this.tps;
+    serverTicks = 0;
+    accumulator = 0;
+    deltas: number[] = [];
+    startTime: Date = new Date();
+    lastUpdate = this.startTime.getTime();
+    reverieLoop: NodeJS.Timer;
+    timers: TimerManager = new TimerManager();
+    getAverageTickTime() {
         let avg = 0;
         for (let d of this.deltas) {
             avg += d;
@@ -66,7 +50,7 @@ export class Reverie {
      * Initialization constructor for application.
      * @param config Optional configuration object for Reverie application.
      */
-    constructor (config?: ReverieSettings) {
+    constructor () {
         if (!Reverie.instance) Reverie.instance = this;
 
         console.log(`
@@ -79,35 +63,31 @@ ooooooooo.                                             o8o
  888   88b.  888    .o     888'    888    .o  888      888  888    .o
 o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
 =====================================================================
-(v${this.version})`);
+(v${this.version.major}.${this.version.minor}.${this.version.patch})`);
         console.log('\n');
 
         // create Reverie event channel
-        const events = this.events = new EventManager();
+        const events = this.events = new EventChannel();
 
         // create network and terminal modules
-        this.network = new Network(this.events, this.rootDirectory);
-        this.world = new World(this.events);
-        this.terminal = new Terminal(this, {});
+        this.network = new NetworkModule(this);
+        this.world = new WorldModule(this);
+        this.terminal = new TerminalModule(this);
 
         // Load all the scripts in the scripts folder
-        console.log('loading command scripts...');
-        const scripts = ScriptLoader.load(this.rootDirectory + '/scripts');
-        console.log('...finished loading scripts');
+        // console.log('loading command scripts...');
+        // const scripts = ScriptLoader.load(this.rootDirectory + '/scripts');
+        // console.log('...finished loading scripts');
 
-        // register inter-module events
-        events.registerEvent('network/connection', (data: NetworkEvents.Connection) => this.onNetworkConnection(data));
-        events.registerEvent('network/disconnect', (data: NetworkEvents.Disconnect) => this.onNetworkDisconnect(data));
-        events.registerEvent('network/move', (data: NetworkEvents.Move) => this.onNetworkMove(data));
-        events.registerEvent('network/message', (data: NetworkEvents.Message) => this.onNetworkMessage(data));
-        events.registerEvent('network/look', (data: NetworkEvents.Look) => this.onNetworkLook(data));
-        events.registerEvent('network/use', (data: NetworkEvents.Use) => this.onNetworkUse(data));
-        events.registerEvent('world', () => this.onWorld());
-        events.registerEvent('world/update', () => this.onWorldUpdate());
-        events.registerEvent('entity', (data: Entity) => this.onEntity(data));
-        events.registerEvent('entity/update', (data: Entity) => this.onEntityUpdate(data));
-        events.registerEvent('entity/destroy', (data: string) => this.onEntityDestroy(data));
-        events.registerEvent('terminal/command', (data: any) => this.onTerminalCommand(data));
+        // to network
+        events.on('world', (data) => this.onWorld(data));
+        events.on('world/update', (data) => this.onWorldUpdate(data));
+        events.on('entity', (data) => this.onEntity(data));
+        events.on('entity/update', (data) => this.onEntityUpdate(data));
+        events.on('entity/destroy', (data) => this.onEntityDestroy(data));
+
+        // misc
+        events.on('terminal/command', (data) => this.onTerminalCommand(data));
     }
 
     /**
@@ -115,11 +95,10 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
      */
     private update() {
         // update times
-        const now = new Date();
-        const delta = now.getTime() - this.lastUpdate.getTime();
+        this.serverTicks++;
+        const now = new Date().getTime();
+        const delta = now - this.lastUpdate;
         this.lastUpdate = now;
-        this.lastTickDuration += delta;
-        this.deltas.unshift(delta);
 
         // process server timers
         this.timers.process(delta);
@@ -128,11 +107,12 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         this.events.process();
 
         // update each module
-        while (this.lastTickDuration >= this.timePerTick) {
+        this.accumulator += delta;
+        while (this.accumulator >= this.timePerTick) {
             this.world.update(this.timePerTick);
-            this.lastTickDuration -= this.timePerTick;
+            this.accumulator -= this.timePerTick;
         }
-        this.serverTicks++;
+
         // asynchronous loop
         if (this.isRunning) {
             this.reverieLoop = setTimeout(() => this.update(), this.timePerTick);
@@ -160,122 +140,26 @@ o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
         process.exit();
     }
 
-    // Events between modules
-
-    onNetworkConnection (netEvent: NetworkEvents.Connection) {
-        const entity = this.world.createEntity();
-        this.socketEntities.add(entity.serial, netEvent.socketId);
-
-        // send the world
-        if (this.world.model) this.network.send(netEvent.socketId, 'world', this.world.model);
-
-        // send all entities
-        const allEntitites = this.world.entities.getAllEntities();
-        allEntitites.forEach(entity => {
-            this.network.send(netEvent.socketId, 'entity', entity);
-        });
-
-        // tell new connection which entity they are
-        this.network.send(netEvent.socketId, 'agent', entity.serial);
-    }
-    onNetworkDisconnect (packet: NetworkEvents.Disconnect) {
-        const entityId = this.socketEntities.findEntitySerialBySocketId(packet.socketId);
-        if (entityId) {
-            this.world.removeEntity(entityId);
-            this.socketEntities.removeEntity(entityId);
-        }
-    }
-    onNetworkMove (netEvent: NetworkEvents.Move) {
-        console.log('from network: ', netEvent);
-        const entitySerial = this.socketEntities.findEntitySerialBySocketId(netEvent.socketId);
-        if (entitySerial) this.world.moveEntity(entitySerial, netEvent.direction);
-    }
-    onNetworkMessage (netEvent: NetworkEvents.Message) {
-        const entitySerial = this.socketEntities.findEntitySerialBySocketId(netEvent.socketId);
-        console.log('entity message: ', entitySerial, netEvent.message);
-        if (entitySerial) {
-            this.world.messageEntity(entitySerial, netEvent.message);
-        }
-    }
-    onNetworkLook (packet: NetworkEvents.Look) {
-        const entityId = this.socketEntities.findEntitySerialBySocketId(packet.socketId);
-        if (entityId) {
-            this.world.lookEntity(entityId);
-        }
-    }
-    onNetworkUse(packet: NetworkEvents.Use) {
-        const entityId = this.socketEntities.findEntitySerialBySocketId(packet.socketId);
-        if (entityId) {
-            this.world.interactEntity(entityId);
-        }
-    }
-    onWorld () {
+    // to Network
+    onWorld (data: any) {
         // broadcast new world
-        this.network.broadcast('world', this.world.model);
-
-        // broadcast new entity data
-        const allEntitites = this.world.getAllEntities();
-        allEntitites.forEach(entity => {
-            this.network.broadcast('entity/update', entity);
-        });
+        this.network.broadcast('world', data);
     }
-    onWorldUpdate () {
-        this.network.broadcast('world/update', this.world.model);
+    onWorldUpdate (data: any) {
+        this.network.broadcast('world/update', data);
     }
-    onEntity (entity: Entity) {
-        this.network.broadcast('entity', entity);
+    onEntity (data: any) {
+        this.network.broadcast('entity', data);
     }
-    onEntityUpdate (entity: Entity) {
-        this.network.broadcast('entity/update', entity);
+    onEntityUpdate (data: any) {
+        this.network.broadcast('entity/update', data);
     }
-    onEntityDestroy (entitySerial: string) {
-        this.network.broadcast('entity/destroy', entitySerial);
+    onEntityDestroy (data: any) {
+        this.network.broadcast('entity/destroy', data);
     }
-    onTerminalCommand (packet: NetworkEvents.Connection) {
+    onTerminalCommand (data: any) {
         // const entity = this.world.onNewClient();
         // this.socketEntities[entity.serial] = packet.socket.id;
         // packet.socket.send('world/playerEntity', new ServerPackets.PlayerEntity(entity));
-    }
-}
-class SocketEntityList {
-    socketEntities: { entityId: string, socketId: string }[] = [];
-    constructor() {}
-    add (entityId: string, socketId: string) {
-        this.socketEntities.push({
-            entityId: entityId,
-            socketId: socketId
-        });
-    }
-    findEntitySerialBySocketId (socketId: string): string | void {
-        for (let i = 0; i < this.socketEntities.length; i++) {
-            let se = this.socketEntities[i];
-            if (se.socketId === socketId) return se.entityId;
-        }
-    }
-    findSocketIdByEntityId (entityId: string): string | void {
-        for (let i = 0; i < this.socketEntities.length; i++) {
-            let se = this.socketEntities[i];
-            if (se.entityId === entityId) return se.socketId;
-        }
-    }
-    removeEntity (entityId: string): boolean {
-        for (let i = 0; i < this.socketEntities.length; i++) {
-            let se = this.socketEntities[i];
-            if (se.entityId === entityId) {
-                this.socketEntities.splice(i, 1);
-                return true;
-            }
-        }
-        return false;
-    }
-    removeSocket (socketId: string): boolean {
-        for (let i = 0; i < this.socketEntities.length; i++) {
-            let se = this.socketEntities[i];
-            if (se.socketId === socketId) {
-                this.socketEntities.splice(i, 1);
-                return true;
-            }
-        }
-        return false;
     }
 }

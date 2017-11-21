@@ -1,4 +1,5 @@
 import { uuid } from '../../common/utils/uuid';
+import { ClientUI } from '../clientUI';
 
 export class UIElement extends HTMLElement {
     x = 0;
@@ -6,10 +7,14 @@ export class UIElement extends HTMLElement {
     width: number;
     height: number;
     serial: string;
-    constructor (name: string) {
+    name: string;
+    ui: ClientUI;
+    constructor (name: string, ui: ClientUI) {
         super();
+        this.name = name;
         this.serial = uuid();
         this.id = this.serial;
+        this.ui = ui;
         this.registerInputHandlers();
     }
     private registerInputHandlers () {
@@ -25,30 +30,39 @@ export class UIElement extends HTMLElement {
     }
     onClick (e: MouseEvent) {
         console.log(this.serial + ' clicked');
+        this.ui.addEvent(this, e);
     }
     onDoubleClick (e: MouseEvent) {
         console.log(this.serial + ' double clicked');
+        this.ui.addEvent(this, e);
     }
     onDrag (e: MouseEvent) {
         console.log(this.serial + ' dragged');
+        this.ui.addEvent(this, e);
     }
     onDragStart (e: MouseEvent) {
         console.log(this.serial + ' drag start');
+        this.ui.addEvent(this, e);
     }
     onDragEnd (e: MouseEvent) {
         console.log(this.serial + ' drag end');
+        this.ui.addEvent(this, e);
     }
     onMouseDown (e: MouseEvent) {
         console.log(this.serial + ' mouse down');
+        this.ui.addEvent(this, e);
     }
     onMouseUp (e: MouseEvent) {
         console.log(this.serial + ' mouse up');
+        this.ui.addEvent(this, e);
     }
     onMouseOver (e: MouseEvent) {
         console.log(this.serial + ' mouse over');
+        this.ui.addEvent(this, e);
     }
     onMouseMove (e: MouseEvent) {
         console.log(this.serial + ' mouse move');
+        this.ui.addEvent(this, e);
     }
     hasPoint (x: number, y: number) {
         let hasPoint = false;

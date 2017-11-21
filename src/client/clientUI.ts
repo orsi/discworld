@@ -1,22 +1,23 @@
 import { Client } from './client';
 import { Renderer } from './renderer';
-import { World } from './world';
-import * as Components from '../common/ecs/component';
-import { EventManager } from '../common/eventManager';
+import { WorldModule } from './worldModule';
+import { EventChannel } from '../common/services/eventChannel';
 import { UIElement } from './ui/uiElement';
 import { TerminalElement } from './ui/terminalElement';
 import { WorldElement } from './ui/worldElement';
 import { ContainerElement } from './ui/containerElement';
 export class ClientUI {
     client: Client;
-    events: EventManager;
-    world: World;
+    events: EventChannel;
+    interfaceEvents: InterfaceEvent[] = [];
+    world: WorldModule;
     renderer: Renderer;
     htmlBody: HTMLBodyElement;
     worldElement: WorldElement;
     containerElement: ContainerElement;
     terminalElement: TerminalElement;
     elements: { [key: string]: UIElement } = {};
+    focus: UIElement | void;
     constructor (client: Client) {
         this.client = client;
         this.world = this.client.world;
@@ -55,19 +56,60 @@ export class ClientUI {
     }
 
     update (delta: number) {
-        let agent = this.world.getAgentEntity();
-        if (agent) {
-            let position = agent.getComponent<Components.PositionComponent>('position');
-            if (position) {
-                let viewPosition = this.renderer.view.mapWorldLocationToPixel(position.x, position.y);
-                this.renderer.view.center(viewPosition.x, viewPosition.y);
+        // process input events
+        this.process(delta);
+
+        // do events
+        this.emit();
+
+        // process renderer
+        this.render(delta / this.client.tickTime);
+    }
+    move: string | void = '';
+    process (delta: number) {
+        for (let iEvent of this.interfaceEvents) {
+            // do event parse
+            if (iEvent.element.name === 'world') {
+                if (iEvent.event.type === 'mousedown') {
+                    let e = <MouseEvent>iEvent.event;
+                    // world click
+                    if (e.button === 2) this.move = this.parseMouseDirection(e.x, e.y);
+                }
+            }
+            if (iEvent.event.type === 'mouseup') {
+                let e = <MouseEvent>iEvent.event;
+                // world click
+                if (e.button === 2) this.move = undefined;
+            }
+            if (iEvent.event.type === 'mousemove') {
+                let e = <MouseEvent>iEvent.event;
+                // if moving
+                if (this.move) this.move = this.parseMouseDirection(e.x, e.y);
             }
         }
-        this.renderer.render(delta / this.client.tickTime);
+        // reset events
+        this.interfaceEvents.length = 0;
+    }
+    emit () {
+        if (this.move) this.world.moveEntity(this.move);
+    }
+    render (interpolation: number) {
+        let agent = this.world.getAgentEntity();
+        if (agent) {
+            let viewPosition = this.renderer.view.mapWorldLocationToPixel(agent.entity.x, agent.entity.y);
+            this.renderer.view.center(viewPosition.x, viewPosition.y);
+        }
+        this.renderer.render(interpolation);
     }
     resize (width: number, height: number) {
         this.worldElement.resize(width, height);
         this.renderer.setViewportSize(width, height);
+    }
+    addEvent (el: UIElement, e: Event) {
+        this.interfaceEvents.push({
+            element: el,
+            event: e
+        });
     }
     onWindowResize (e: Event) {
         let window = <Window>e.currentTarget;
@@ -77,13 +119,11 @@ export class ClientUI {
         if (e.ctrlKey || e.altKey || e.metaKey) {
             // do command
         } else {
-            this.onKey(e.key);
+            this.terminalElement.onKey(e.key);
         }
     }
     onKeyUp (e: KeyboardEvent) {}
-    onKey (key: string) {
-        this.terminalElement.onKey(key);
-    }
+
     addElement (el: UIElement) {
         this.elements[el.serial] = el;
         this.containerElement.appendChild(el);
@@ -97,6 +137,7 @@ export class ClientUI {
     getWorldElement (): WorldElement { return this.worldElement; }
     getUIContainerElement (): ContainerElement { return this.containerElement; }
     getUIElements() { return this.elements; }
+
     isOnUserInterface (x: number, y: number) {
         let hasPoint = false;
         // check all ui elements and see if position is within them
@@ -107,12 +148,6 @@ export class ClientUI {
             }
         }
         return hasPoint;
-    }
-    onMouseDown (e: MouseEvent) {
-        console.log('click on ui', e);
-    }
-    onMouseUp (e: MouseEvent) {
-
     }
     parseMouseDirection (x: number, y: number) {
         let direction = '';
@@ -127,4 +162,9 @@ export class ClientUI {
         if (mouseX <= Math.floor(width * (1 / 3))) direction += 'w';
         return direction;
     }
+}
+
+interface InterfaceEvent {
+    element: UIElement;
+    event: Event;
 }

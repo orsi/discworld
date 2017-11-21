@@ -1,31 +1,24 @@
-import { EventManager } from '../common/eventManager';
-import { Packet } from '../common/network/packet';
+import { EventChannel } from '../common/services/eventChannel';
 import * as io from 'socket.io-client';
 
 export class Network {
-    events: EventManager;
+    events: EventChannel;
     server: SocketIOClient.Socket;
 
-    constructor (events: EventManager) {
+    constructor (events: EventChannel) {
         const server = this.server = io();
         this.events = events;
 
         // server socket events
-        server.on('connect',        (data: any) => events.emit('network/connected', data));
-        server.on('server',         (data: any) => events.emit('server', data));
-        server.on('server/update',  (data: any) => events.emit('server/update', data));
-        server.on('agent',          (data: any) => events.emit('agent', data));
-        server.on('agent/update',   (data: any) => events.emit('agent/update', data));
-        server.on('world',          (data: any) => events.emit('world', data));
-        server.on('world/update',   (data: any) => events.emit('world/update', data));
-        server.on('entity',         (data: any) => events.emit('entity', data));
-        server.on('entity/update',  (data: any) => events.emit('entity/update', data));
-        server.on('entity/destroy', (data: any) => events.emit('entity/destroy', data));
-        server.on('tile',           (data: any) => events.emit('tile', data));
-        server.on('tile/update',    (data: any) => events.emit('tile/update', data));
+        server.on('connect',        (data: any) => events.emit('connect', data));
+        server.on('client/entity',          (data: any) => events.emit('client/entity', data));
+        server.on('world/info',          (data: any) => events.emit('world/info', data));
+        server.on('world/map',   (data: any) => events.emit('world/map', data));
+        server.on('entity/info',         (data: any) => events.emit('entity/info', data));
+        server.on('entity/remove', (data: any) => events.emit('entity/remove', data));
     }
-    send (event: string, packet: Packet) {
-        console.log('network send: ', event, packet);
-        if (this.server) this.server.emit(event, packet);
+    send (event: string, data?: any) {
+        console.log('network send: ', event, data);
+        this.server.emit(event, data);
       }
 }

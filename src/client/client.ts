@@ -2,14 +2,14 @@
 // Created by Jonathon Orsi
 import { ClientUI } from './clientUI';
 import { ClientNetworkHandler } from './clientNetworkHandler';
-import { World } from './world';
-import { EventManager } from '../common/eventManager';
+import { WorldModule } from './worldModule';
+import { EventChannel } from '../common/services/eventChannel';
 
 export class Client {
-  events: EventManager;
+  events: EventChannel;
   ui: ClientUI;
   clientNetwork: ClientNetworkHandler;
-  world: World;
+  world: WorldModule;
 
   running = false;
   lastUpdate = new Date().getTime();
@@ -19,9 +19,9 @@ export class Client {
   ticks = 0;
 
   constructor() {
-    const events = this.events = new EventManager();
+    const events = this.events = new EventChannel();
 
-    this.world = new World(events);
+    this.world = new WorldModule(events);
 
     // specialized client classes
     this.ui = new ClientUI(this);

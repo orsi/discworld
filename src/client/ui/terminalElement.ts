@@ -1,15 +1,15 @@
-import { EventManager } from '../../common/eventManager';
+import { EventChannel } from '../../common/services/eventChannel';
 import { ClientUI } from '../clientUI';
 import { UIElement } from './uiElement';
 
 export class TerminalElement extends UIElement {
-  events: EventManager;
+  events: EventChannel;
   historyIndex = -1;
   history: string[] = [];
   value = '';
 
   constructor (ui: ClientUI) {
-    super('terminal');
+    super('terminal', ui);
 
     // hook into input events
     this.events = ui.events;

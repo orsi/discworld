@@ -1,4 +1,4 @@
-import { EventManager } from '../../common/eventManager';
+import { EventChannel } from '../../common/services/eventChannel';
 import { UIElement } from './uiElement';
 import { ClientUI } from '../clientUI';
 
@@ -10,7 +10,7 @@ export class WorldElement extends UIElement {
     width: number;
     height: number;
     constructor (ui: ClientUI) {
-        super('world');
+        super('world', ui);
 
         // main canvas
         this.canvas = document.createElement('canvas');

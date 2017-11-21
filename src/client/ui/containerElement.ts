@@ -3,7 +3,7 @@ import { UIElement } from './uiElement';
 
 export class ContainerElement extends UIElement {
   constructor (ui: ClientUI) {
-    super('container');
+    super('container', ui);
 
     this.style.position = 'absolute';
   }
