@@ -7,4 +7,4 @@ export { WorldState } from './worldState';
 export { WorldRegion } from './region';
 export { RegionTypes } from './regionTypes';
 export { WorldLocation } from './location';
-export { Tiles } from './tiles';
+export { Tile } from './tile';

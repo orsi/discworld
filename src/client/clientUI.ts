@@ -91,11 +91,13 @@ export class ClientUI {
         this.interfaceEvents.length = 0;
     }
     emit () {
-        if (this.move) this.world.moveEntity(this.move);
+        if (this.move) this.events.emit('move', this.move);
     }
     render (interpolation: number) {
         let agent = this.world.getAgentEntity();
+        // console.log(agent);
         if (agent) {
+
             let viewPosition = this.renderer.view.mapWorldLocationToPixel(agent.entity.x, agent.entity.y);
             this.renderer.view.center(viewPosition.x, viewPosition.y);
         }

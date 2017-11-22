@@ -8,7 +8,7 @@ export class WorldModule {
   events: EventChannel;
   agentEntitySerial: string;
   world: World;
-  map: Map<{x: number, y: number }, WorldLocation> = new Map();
+  map: any[][];
   view: WorldView;
   constructor  (events: EventChannel) {
     this.events = events;
@@ -17,16 +17,19 @@ export class WorldModule {
   }
   update (delta: number) {}
   destroy () {}
+
+  // Events
   onWorldInfo (world: World) {
     console.log('world info', world);
     this.world = world;
   }
-  onWorldMap (map: Map<{x: number, y: number}, WorldLocation>) {
+  onWorldMap (map: any[][]) {
     console.log('world map', map);
     this.map = map;
   }
-  updateWorld (worldModel: World) {}
-  setAgentEntity (serial: string) {
+  onWorldUpdate (worldModel: World) {}
+  onAgentEntity (serial: string) {
+    console.log('got agent', serial);
     this.agentEntitySerial = serial;
   }
   getAgentEntity () {
@@ -37,22 +40,18 @@ export class WorldModule {
     return entity;
   }
   onEntityInfo (entityInfo: Entity) {
-    console.log('entity info', entityInfo);
     let entity = this.entities.get(entityInfo.serial);
-    if (!entity) entity = this.entities.create(entity);
+    if (!entity) entity = this.entities.create(entityInfo);
   }
-  removeEntity (serial: string) {
+  onRemoveEntity (serial: string) {
     console.log('remove entity', serial);
     this.entities.remove(serial);
   }
-  moveEntity(direction: string) {
-    this.events.emit('entity/move', direction);
-  }
-  loadTile (data: any) {
-    console.log('load tile', data);
-  }
-  updateTile (data: any) {
-    console.log('update tile', data);
+  onEntityMove(data: any) {
+    console.log('>> move entity ', data);
+    let entity = this.entities.get(data.serial);
+    if (!entity) return;
+    entity.move(data.x, data.y);
   }
 
   lastMouseEvent: MouseEvent;

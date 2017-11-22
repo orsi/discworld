@@ -1,19 +1,18 @@
 import { Reverie } from './reverie';
 import { EventChannel } from '../common/services/eventChannel';
 import { EntityManager } from './world/entityManager';
-import { World, WorldState, WorldRegion, WorldLocation, Tiles } from '../common/models';
+import { World, WorldState, WorldRegion, WorldLocation, Tile } from '../common/models';
 import { PRNG } from '../common/utils/prng';
-import { Automaton } from '../common/utils/automaton';
+import { MapManager } from './world/mapManager';
 import { SocketEntity } from './world/entities/socketEntity';
 
 export class WorldModule {
   reverie: Reverie;
   events: EventChannel;
-  world: World;
-  map: Map<{x: number, y: number}, WorldLocation> = new Map();
+  world: World | void;
+  maps: MapManager;
   regions: WorldRegion[] = [];
   entities: EntityManager;
-  random: PRNG;
 
   // Update properties
   startTime = new Date();
@@ -28,7 +27,7 @@ export class WorldModule {
   constructor (reverie: Reverie) {
     const events = this.events = reverie.events;
     this.entities = new EntityManager(this);
-    this.world = new World();
+    this.maps = new MapManager(this);
 
     // from network
     events.on('connection', (data) => this.onEntityConnection(data));
@@ -51,52 +50,29 @@ export class WorldModule {
 
     this.world = new World();
     this.world.seed = seed;
-    this.random = new PRNG(this.world.seed);
-    this.world.width = Math.floor(this.random.range(50, 250));
-    this.world.height = Math.floor(this.random.range(50, 250));
+    this.world.width = 192;
+    this.world.height = 192;
 
-    // create regions in world
-    // let numRegions = Math.floor(this.random.range(3, 10));
-    // for (let i = 0; i < numRegions; i++) {
-    //   let region = new WorldRegion();
-    //   region.from.x =
-    //   this.regions.push(region);
-    // }
+    this.maps.createMap(this.world);
 
-    // create locations in regions
-    let automaton = new Automaton(this.world.width, this.world.height, {
-      seed: this.world.seed,
-      step: 2
-    });
-    for (let ix = 0; ix < this.world.width; ix++) {
-      for (let iy = 0; iy < this.world.height; iy++) {
-        let location = new WorldLocation();
-        location.x = ix;
-        location.y = iy;
-        if (automaton.getMap().get(ix, iy)) {
-          let tileIndex = Math.floor(this.random.range(0, Tiles.length - 1));
-          location.tile = Tiles[tileIndex];
-        } else {
-          location.tile = 'sea';
-        }
-        this.map.set({ x: ix, y: iy }, location);
-      }
-    }
     this.world.state = WorldState.SIMULATING;
-    console.log(this.map);
+
     // give all entities a position and send info
     let entities = this.entities.getAll();
     for (let e in entities) {
       let entity = <SocketEntity>entities[e];
-      let location = this.getRandomLocation()!;
-      entity.move(location.x, location.y);
+
+      let x = Math.floor(Math.random() * this.world.width);
+      let y = Math.floor(Math.random() * this.world.height);
+
+      entity.move(x, y);
       entity.send('world/info', this.world);
-      entity.send('world/map', this.map);
+      entity.send('world/map', this.maps.getRegionAt(x, y));
       entity.send('entity/info', entity.entity);
     }
   }
   destroy () {
-    this.world = new World();
+    this.world = undefined;
   }
   onEntityConnection (socket: SocketIO.Socket) {
     // new client has connected to world
@@ -108,18 +84,20 @@ export class WorldModule {
     entity.send('client/entity', entity.entity.serial);
     entity.send('entity/info', entity.entity);
 
-    let location = this.getRandomLocation()!;
-    if (!location) return;
-    entity.move(location.x, location.y);
+    if (!this.world) return;
+
+    let x = Math.floor(Math.random() * this.world.width);
+    let y = Math.floor(Math.random() * this.world.height);
+    entity.move(x, y);
 
     entity.send('world/info', this.world);
-    entity.send('world/map', this.map);
+    entity.send('world/map', this.maps.getRegionAt(x, y));
     // get entities in range
     let entities = this.entities.find((e) => {
-      if (e.entity.x < location.x + 10
-        && e.entity.x > location.x - 10
-        && e.entity.y < location.y + 10
-      && e.entity.y > location.y - 10) return true;
+      if (e.entity.x < x + 10
+        && e.entity.x > x - 10
+        && e.entity.y < y + 10
+      && e.entity.y > y - 10) return true;
       return false;
     });
     for (let e of entities) {
@@ -156,25 +134,39 @@ export class WorldModule {
         break;
     }
   }
+  parsePosition (x: number, y: number, direction: string) {
+    if (direction.indexOf('n') > -1) y--;
+    if (direction.indexOf('s') > -1) y++;
+    if (direction.indexOf('e') > -1) x++;
+    if (direction.indexOf('w') > -1) x--;
+    return {
+      x: x,
+      y: y
+    };
+  }
   onEntityMove (sEntity: SocketEntity, data: any) {
     // get entity current location
     // get request world location they wish to move to
     // check if entity can move to location
     // if they can, move entity to location
     // if they can't, reject movement
-    console.log('new entity moved: ', sEntity.entity.serial, data);
+    console.log('>> move request - ', sEntity.entity.serial, data);
 
-    let location = this.map.get({ x: data.x, y: data.y});
-    if (!location || location.tile === 'rock') return;
+    if (!this.world) return;
 
-    sEntity.move(data.x, data.y);
+    let newLocation = this.parsePosition(sEntity.entity.x, sEntity.entity.y, data);
+
+    let location = this.maps.getLocation(newLocation.x,  newLocation.y);
+    if (!location || !location.tile || location.tile.name === 'rock') return;
+
+    sEntity.move(newLocation.x, newLocation.y);
 
     // get entities in range
     let entities = this.entities.find((e) => {
-      if (e.entity.x < data.x + 10
-        && e.entity.x > data.x - 10
-        && e.entity.y < data.y + 10
-      && e.entity.y > data.y - 10) return true;
+      if (e.entity.x < newLocation.x + 10
+        && e.entity.x > newLocation.x - 10
+        && e.entity.y < newLocation.y + 10
+      && e.entity.y > newLocation.y - 10) return true;
       return false;
     });
 
@@ -200,10 +192,5 @@ export class WorldModule {
     // get object entity wants to focus
     // check if entity can focus on object
     // return information if entity can focus on it
-  }
-  getRandomLocation () {
-    let x = Math.floor(Math.random() * this.world.width);
-    let y = Math.floor(Math.random() * this.world.height);
-    return {x: x, y: y};
   }
 }

@@ -25,16 +25,17 @@ export class ClientNetworkHandler {
 
         // from server
         events.on('connect', (data) => console.log(data));
-        events.on('client/entity', (data) => this.world.setAgentEntity(data));
+        events.on('client/entity', (data) => this.world.onAgentEntity(data));
         events.on('world/info', (data) => this.world.onWorldInfo(data));
         events.on('world/map', (data) => this.world.onWorldMap(data));
-        events.on('world/update', (data) => this.world.updateWorld(data));
+        events.on('world/update', (data) => this.world.onWorldUpdate(data));
         events.on('entity/info', (data) => this.world.onEntityInfo(data));
-        events.on('entity/destroy', (data) => this.world.removeEntity(data));
+        events.on('entity/move', (data) => this.world.onEntityMove(data));
+        events.on('entity/destroy', (data) => this.world.onRemoveEntity(data));
 
         // to server
         events.on('terminal/message', (data) => this.network.send('message', data));
-        events.on('entity/move', (data) => this.network.send('move', data));
+        events.on('move', (data) => this.network.send('move', data));
     }
     update (delta: number) {
         this.totalTime += delta;
