@@ -1,5 +1,5 @@
 import { RendererView } from './rendererView';
-import { WorldView } from 'client/views/worldView';
+import { WorldView } from './worldView';
 
 export class Renderer {
   view: RendererView;
@@ -29,9 +29,6 @@ export class Renderer {
     this.delta = now - this.lastRenderTime;
     this.lastRenderTime = now;
 
-    // clear buffer and canvas
-    // this.buffer.clear();
-    // this.main.clear();
     this.ctxBuffer.fillStyle = '#333';
     this.ctxBuffer.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.worldView.draw(this.ctxBuffer, this.view);

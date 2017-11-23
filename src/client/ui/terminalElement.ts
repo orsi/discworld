@@ -1,5 +1,5 @@
 import { EventChannel } from '../../common/services/eventChannel';
-import { ClientUI } from '../clientUI';
+import { UIModule } from '../uiModule';
 import { UIElement } from './uiElement';
 
 export class TerminalElement extends UIElement {
@@ -8,7 +8,7 @@ export class TerminalElement extends UIElement {
   history: string[] = [];
   value = '';
 
-  constructor (ui: ClientUI) {
+  constructor (ui: UIModule) {
     super('terminal', ui);
 
     // hook into input events
@@ -78,9 +78,8 @@ export class TerminalElement extends UIElement {
       this.historyIndex = -1;
 
       // emit message event
-      this.events.emit('terminal/message', this.value);
+      this.ui.onTerminalMessage(this.value);
 
-      // reset value
       this.reset();
     }
   }

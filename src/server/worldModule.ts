@@ -42,7 +42,7 @@ export class WorldModule {
   }
 
   // Eventing Routes
-  create (seed: string = 'reverie') {
+  onCreate (seed: string = 'reverie') {
     // get entity
     // get current world
     // if entity can create world, and world doesn't exist, create world
@@ -124,7 +124,7 @@ export class WorldModule {
     // check if entity can perform action
     switch (message) {
       case 'generate':
-        this.create();
+        this.onCreate();
         break;
       case 'destroy':
         this.destroy();
@@ -160,6 +160,7 @@ export class WorldModule {
     if (!location || !location.tile || location.tile.name === 'rock') return;
 
     sEntity.move(newLocation.x, newLocation.y);
+    sEntity.send('world/map', this.maps.getRegionAt(newLocation.x, newLocation.y));
 
     // get entities in range
     let entities = this.entities.find((e) => {

@@ -1,14 +1,15 @@
 import { Client } from './client';
-import { Renderer } from './renderer';
+import { Renderer } from './views/renderer';
 import { WorldModule } from './worldModule';
 import { EventChannel } from '../common/services/eventChannel';
 import { UIElement } from './ui/uiElement';
 import { TerminalElement } from './ui/terminalElement';
 import { WorldElement } from './ui/worldElement';
 import { ContainerElement } from './ui/containerElement';
-export class ClientUI {
+export class UIModule {
     client: Client;
     events: EventChannel;
+    socket: SocketIO.Socket;
     interfaceEvents: InterfaceEvent[] = [];
     world: WorldModule;
     renderer: Renderer;
@@ -53,6 +54,9 @@ export class ClientUI {
         window.addEventListener('keydown',      (e: KeyboardEvent) => this.onKeyDown(e));
         window.addEventListener('keyup',        (e: KeyboardEvent) => this.onKeyUp(e));
         window.addEventListener('contextmenu',  (e) => e.preventDefault()); // prevents context menu
+
+        // socket
+        events.on('connect', (data) => this.onServerConnect(data));
     }
 
     update (delta: number) {
@@ -64,6 +68,13 @@ export class ClientUI {
 
         // process renderer
         this.render(delta / this.client.tickTime);
+    }
+    onServerConnect (socket: SocketIO.Socket) {
+        this.socket = socket;
+    }
+    onTerminalMessage (message: string) {
+        console.log('>> message sent: ', message);
+        this.socket.emit('message', message);
     }
     move: string | void = '';
     process (delta: number) {
@@ -91,13 +102,11 @@ export class ClientUI {
         this.interfaceEvents.length = 0;
     }
     emit () {
-        if (this.move) this.events.emit('move', this.move);
+        if (this.move) this.socket.emit('move', this.move);
     }
     render (interpolation: number) {
         let agent = this.world.getAgentEntity();
-        // console.log(agent);
         if (agent) {
-
             let viewPosition = this.renderer.view.mapWorldLocationToPixel(agent.entity.x, agent.entity.y);
             this.renderer.view.center(viewPosition.x, viewPosition.y);
         }

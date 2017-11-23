@@ -70,7 +70,7 @@ export class MapManager {
         }
     }
     isLocation(x: number, y: number) {
-        return x >= 0 && x <= this.world.width && y >= 0 && y <= this.world.height;
+        return x >= 0 && x < this.world.width && y >= 0 && y < this.world.height;
     }
     getLocation (x: number, y: number) {
         return {

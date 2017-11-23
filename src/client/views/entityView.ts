@@ -1,5 +1,5 @@
 import { Entity } from '../../common/models';
-import { RendererView } from '../rendererView';
+import { RendererView } from './rendererView';
 
 export class EntityView {
     constructor () {}

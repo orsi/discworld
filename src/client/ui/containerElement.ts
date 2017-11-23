@@ -1,8 +1,8 @@
-import { ClientUI } from '../clientUI';
+import { UIModule } from '../uiModule';
 import { UIElement } from './uiElement';
 
 export class ContainerElement extends UIElement {
-  constructor (ui: ClientUI) {
+  constructor (ui: UIModule) {
     super('container', ui);
 
     this.style.position = 'absolute';

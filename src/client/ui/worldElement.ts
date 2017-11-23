@@ -1,6 +1,6 @@
 import { EventChannel } from '../../common/services/eventChannel';
 import { UIElement } from './uiElement';
-import { ClientUI } from '../clientUI';
+import { UIModule } from '../uiModule';
 
 export class WorldElement extends UIElement {
     canvas: HTMLCanvasElement;
@@ -9,7 +9,7 @@ export class WorldElement extends UIElement {
     bufferCtx: CanvasRenderingContext2D;
     width: number;
     height: number;
-    constructor (ui: ClientUI) {
+    constructor (ui: UIModule) {
         super('world', ui);
 
         // main canvas

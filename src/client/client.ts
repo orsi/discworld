@@ -1,14 +1,14 @@
 // Reverie client
 // Created by Jonathon Orsi
-import { ClientUI } from './clientUI';
-import { ClientNetworkHandler } from './clientNetworkHandler';
-import { WorldModule } from './worldModule';
 import { EventChannel } from '../common/services/eventChannel';
+import { WorldModule } from './worldModule';
+import { NetworkModule } from './networkModule';
+import { UIModule } from './uiModule';
 
 export class Client {
   events: EventChannel;
-  ui: ClientUI;
-  clientNetwork: ClientNetworkHandler;
+  ui: UIModule;
+  network: NetworkModule;
   world: WorldModule;
 
   running = false;
@@ -21,11 +21,9 @@ export class Client {
   constructor() {
     const events = this.events = new EventChannel();
 
-    this.world = new WorldModule(events);
-
-    // specialized client classes
-    this.ui = new ClientUI(this);
-    this.clientNetwork = new ClientNetworkHandler(this);
+    this.network = new NetworkModule(this);
+    this.world = new WorldModule(this);
+    this.ui = new UIModule(this);
   }
   update () {
     if (this.running) {

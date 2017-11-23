@@ -1,5 +1,5 @@
 import { uuid } from '../../common/utils/uuid';
-import { ClientUI } from '../clientUI';
+import { UIModule } from '../uiModule';
 
 export class UIElement extends HTMLElement {
     x = 0;
@@ -8,8 +8,8 @@ export class UIElement extends HTMLElement {
     height: number;
     serial: string;
     name: string;
-    ui: ClientUI;
-    constructor (name: string, ui: ClientUI) {
+    ui: UIModule;
+    constructor (name: string, ui: UIModule) {
         super();
         this.name = name;
         this.serial = uuid();

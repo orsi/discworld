@@ -1,21 +1,37 @@
+import { Client } from './client';
 import { EventChannel } from '../common/services/eventChannel';
 import { World, Entity, WorldLocation } from '../common/models';
-import { EntityManager } from './entityManager';
+import { EntityManager } from './world/entityManager';
 import { WorldView } from './views/worldView';
 
 export class WorldModule {
-  entities: EntityManager;
   events: EventChannel;
+  socket: SocketIO.Socket;
+  entities: EntityManager;
   agentEntitySerial: string;
   world: World;
-  map: any[][];
+  map: any[][] = [];
   view: WorldView;
-  constructor  (events: EventChannel) {
-    this.events = events;
+  constructor  (client: Client) {
+    const events = this.events = client.events;
     this.entities = new EntityManager(this);
     this.view = new WorldView(this);
+
+    events.on('connect', (data) => this.onServerConnect(data));
   }
   update (delta: number) {}
+
+  onServerConnect (socket: SocketIO.Socket) {
+    this.socket = socket;
+    socket.on('client/entity', (data) => this.onAgentEntity(data));
+    socket.on('world/info', (data) => this.onWorldInfo(data));
+    socket.on('world/map', (data) => this.onWorldMap(data));
+    socket.on('world/update', (data) => this.onWorldUpdate(data));
+    socket.on('entity/info', (data) => this.onEntityInfo(data));
+    socket.on('entity/move', (data) => this.onEntityMove(data));
+    socket.on('entity/destroy', (data) => this.onRemoveEntity(data));
+  }
+
   destroy () {}
 
   // Events
@@ -42,15 +58,18 @@ export class WorldModule {
   onEntityInfo (entityInfo: Entity) {
     let entity = this.entities.get(entityInfo.serial);
     if (!entity) entity = this.entities.create(entityInfo);
+
+    entity.entity = entityInfo;
+    console.log('>> entity info: ', entityInfo, entity);
   }
   onRemoveEntity (serial: string) {
     console.log('remove entity', serial);
     this.entities.remove(serial);
   }
-  onEntityMove(data: any) {
+  onEntityMove(data: Entity) {
     console.log('>> move entity ', data);
     let entity = this.entities.get(data.serial);
-    if (!entity) return;
+    if (!entity) entity = this.entities.create(data);
     entity.move(data.x, data.y);
   }
 
