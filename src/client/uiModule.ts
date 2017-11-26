@@ -6,6 +6,7 @@ import { UIElement } from './ui/uiElement';
 import { TerminalElement } from './ui/terminalElement';
 import { WorldElement } from './ui/worldElement';
 import { ContainerElement } from './ui/containerElement';
+import { Point } from '../common/data/point';
 export class UIModule {
     client: Client;
     events: EventChannel;
@@ -19,10 +20,19 @@ export class UIModule {
     terminalElement: TerminalElement;
     elements: { [key: string]: UIElement } = {};
     focus: UIElement | void;
+
+    height: number;
+    width: number;
+    center: Point;
     constructor (client: Client) {
         this.client = client;
         this.world = this.client.world;
         let events = this.events = client.events;
+
+        // ui properties
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.center = new Point(window.innerWidth / 2, window.innerHeight / 2);
 
         // html setup
         this.htmlBody = <HTMLBodyElement>document.querySelector('body');
@@ -58,8 +68,9 @@ export class UIModule {
         // socket
         events.on('connect', (data) => this.onServerConnect(data));
     }
-
+    time = 0;
     update (delta: number) {
+        this.time += delta;
         // process input events
         this.process(delta);
 
@@ -77,6 +88,7 @@ export class UIModule {
         this.socket.emit('message', message);
     }
     move: string | void = '';
+    lastMove = 0;
     process (delta: number) {
         for (let iEvent of this.interfaceEvents) {
             // do event parse
@@ -102,7 +114,10 @@ export class UIModule {
         this.interfaceEvents.length = 0;
     }
     emit () {
-        if (this.move) this.socket.emit('move', this.move);
+        if (this.move && this.time - this.lastMove >= 200) {
+            this.lastMove = this.time;
+            this.socket.emit('move', this.move);
+        }
     }
     render (interpolation: number) {
         let agent = this.world.getAgentEntity();
@@ -124,6 +139,11 @@ export class UIModule {
     }
     onWindowResize (e: Event) {
         let window = <Window>e.currentTarget;
+
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.center = new Point(window.innerWidth / 2, window.innerHeight / 2);
+
         this.resize(window.innerWidth, window.innerHeight);
     }
     onKeyDown (e: KeyboardEvent) {
@@ -162,26 +182,40 @@ export class UIModule {
     }
     parseMouseDirection (x: number, y: number) {
         let direction = '';
-        let width = window.innerWidth;
-        let height = window.innerHeight;
 
-        if (y <= Math.floor(height * (1 / 3))) direction += 'n';
-        if (y >= Math.floor(height * (2 / 3))) direction += 's';
-        if (x >= Math.floor(width * (2 / 3))) direction += 'e';
-        if (x <= Math.floor(width * (1 / 3))) direction += 'w';
+        if (this.isNorth(x, y)) direction += 'n';
+        if (this.isEast(x, y)) direction += 'e';
+        if (this.isWest(x, y)) direction += 'w';
+        if (this.isSouth(x, y)) direction += 's';
         return direction;
     }
-    isNorth(x: number, y: number) {
-        let x1 = 0;
-        let y1 = 0;
-        let x2 = window.innerWidth;
-        let y2 = 0;
-        let x3 = 0;
-        let y3 = window.innerHeight;
+    getTheta (x: number, y: number) {
+        // translate around origin
+        x = x - this.center.x;
+        y = y - this.center.y;
+        // get angle
+        let rad = Math.atan2(-1, 1) - Math.atan2(x, y);
+        rad =  rad * 360 / (2 * Math.PI);
+        if (rad < 0) rad += 360;
+        return rad;
     }
-    isEast(x: number, y: number) {}
-    isWest(x: number, y: number) {}
-    isSouth(x: number, y: number) {}
+    isNorth(x: number, y: number) {
+        let theta = this.getTheta(x, y);
+        return  theta >= 30 && theta <= 175;
+    }
+    isEast(x: number, y: number) {
+        let theta = this.getTheta(x, y);
+        return theta >= 110 && theta <= 245;
+    }
+    isWest(x: number, y: number) {
+        let theta = this.getTheta(x, y);
+        return theta >= 0 && theta <= 55
+            || theta >= 280 && theta <= 360;
+    }
+    isSouth(x: number, y: number) {
+        let theta = this.getTheta(x, y);
+        return theta >= 225 && theta <= 315;
+    }
 }
 
 interface InterfaceEvent {
