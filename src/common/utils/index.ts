@@ -1,4 +1,4 @@
-export { Perlin } from './perlin';
+export { Noise } from './noise';
 export { PRNG } from './prng';
 export { Automaton } from './automaton';
 export { uuid } from './uuid';

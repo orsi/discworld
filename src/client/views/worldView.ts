@@ -13,30 +13,47 @@ export class WorldView {
     draw (ctx: CanvasRenderingContext2D, view: RendererView) {
         for (let ix = 0; ix < this.worldModule.map.length - 1; ix++) {
             for (let iy = 0; iy < this.worldModule.map[ix].length - 1; iy++) {
-                let alive = this.worldModule.map[ix][iy].land;
-                let alpha = alive ? '1' : '.3';
-                let tile = this.worldModule.map[ix][iy].tile ? this.worldModule.map[ix][iy].tile.name : 'null';
-                let color = '';
-                switch (tile) {
-                    case 'rock':
-                        color = '150,150,150';
-                        break;
-                    case 'grass':
-                        color = '0,150,0';
-                        break;
-                    case 'water':
-                        color = '0,0,150';
-                        break;
-                    case 'dirt':
-                        color = '150,120,0';
-                        break;
-                    case 'null':
-                        color = '45,45,45';
-                        break;
+                if (this.worldModule.map[ix][iy].land) {
+                    // tiles
+                    let tile = this.worldModule.map[ix][iy].tile ? this.worldModule.map[ix][iy].tile.name : 'null';
+                    let color = '';
+                    switch (tile) {
+                        case 'rock':
+                            color = '150,150,150';
+                            break;
+                        case 'grass':
+                            color = '0,150,0';
+                            break;
+                        case 'water':
+                            color = '0,0,150';
+                            break;
+                        case 'dirt':
+                            color = '150,120,0';
+                            break;
+                        case 'null':
+                            color = '45,45,45';
+                            break;
+                    }
+                    // height
+                    let height = this.worldModule.map[ix][iy].height;
+                    if (!height) height = 0;
+                    let alpha = height / 32;
+
+                    let viewPosition = view.mapWorldLocationToPixel(this.worldModule.map[ix][iy].x,  this.worldModule.map[ix][iy].y);
+                    let x = viewPosition.x + view.xOffset + view.xCenter;
+                    let y = (viewPosition.y + view.yOffset + view.yCenter);
+
+                    ctx.fillStyle = `rgba(${color},${alpha})`;
+
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + view.BLOCK_SIZE, y + (view.BLOCK_SIZE / 2));
+                    ctx.lineTo(x, y + view.BLOCK_SIZE);
+                    ctx.lineTo(x - view.BLOCK_SIZE, y + (view.BLOCK_SIZE / 2));
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                    ctx.fill();
                 }
-                let viewPosition = view.mapWorldLocationToPixel(this.worldModule.map[ix][iy].x,  this.worldModule.map[ix][iy].y);
-                ctx.fillStyle = `rgba(${color},${alpha})`;
-                ctx.fillRect(viewPosition.x + view.xOffset + view.xCenter, viewPosition.y + view.yOffset + view.yCenter, view.BLOCK_SIZE, view.BLOCK_SIZE);
             }
         }
         let entities = this.worldModule.entities.getAll();

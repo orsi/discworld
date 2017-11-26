@@ -28,8 +28,8 @@ export class RendererView {
       this.yOffset = -y;
     }
     mapWorldLocationToPixel (x: number, y: number) {
-      let pixelX = x * this.BLOCK_SIZE;
-      let pixelY = y * this.BLOCK_SIZE;
+      let pixelX = x * this.BLOCK_SIZE + y * this.BLOCK_SIZE;
+      let pixelY = y * (this.BLOCK_SIZE / 2) - x * (this.BLOCK_SIZE / 2);
       return {
         x: pixelX,
         y: pixelY

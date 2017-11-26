@@ -1,13 +1,12 @@
 import { WorldModule } from '../worldModule';
 import { Tile, World } from '../../common/models';
 import { Tiles } from '../../common/data/tiles';
-import { Automaton, PRNG, Perlin } from '../../common/utils';
+import { Automaton, PRNG, Noise } from '../../common/utils';
 
 export class MapManager {
     worldModule: WorldModule;
     world: World;
     random: PRNG;
-    perlin: Perlin;
     tileMap: Tile[][] = [];
     heatMap: number[][] = [];
     heightMap: number[][] = [];
@@ -24,7 +23,6 @@ export class MapManager {
     createMap (world: World) {
         this.world = world;
         this.random = new PRNG(this.world.seed);
-        this.perlin = new Perlin();
 
         this.generateAutomaton();
         this.generateHeatMap();
@@ -39,18 +37,20 @@ export class MapManager {
         this.automatonMap = this.automaton.map;
     }
     generateHeatMap () {
+        let heatNoise = new Noise(5, 1);
         for (let x = 0; x < this.world.width; x++) {
             this.heatMap[x] = [];
             for (let y = 0; y < this.world.height; y++) {
-                this.heatMap[x][y] = this.perlin.noise2d(x, y);
+                this.heatMap[x][y] = heatNoise.noise2d(x, y);
             }
         }
     }
     generateHeightMap () {
+        let heightNoise = new Noise(10, 32);
         for (let x = 0; x < this.world.width; x++) {
             this.heightMap[x] = [];
             for (let y = 0; y < this.world.height; y++) {
-                this.heightMap[x][y] = this.perlin.noise2d(x, y);
+                this.heightMap[x][y] = Math.floor(heightNoise.noise2d(x, y));
             }
         }
     }
@@ -60,7 +60,20 @@ export class MapManager {
             for (let y = 0; y < this.world.height; y++) {
                 let tile: Tile;
                 if (this.automatonMap[x][y]) {
-                    let tileIndex = Math.floor(this.random.range(0, Tiles.length - 1));
+                    // there is land!
+                    let heat = this.heatMap[x][y];
+                    let height = this.heightMap[x][y];
+
+                    let tileIndex: number;
+                    if (height > 30) {
+                        tileIndex = 3;
+                    } else if (height > 20) {
+                        tileIndex = 1;
+                    } else if (height > 10) {
+                        tileIndex = 4;
+                    } else {
+                        tileIndex = 2;
+                    }
                     tile = Tiles[tileIndex];
                 } else {
                     tile = Tiles[0];

@@ -157,17 +157,21 @@ export class WorldModule {
     let newLocation = this.parsePosition(sEntity.entity.x, sEntity.entity.y, data);
 
     let location = this.maps.getLocation(newLocation.x,  newLocation.y);
-    if (!location || !location.tile || location.tile.name === 'rock') return;
+    if (!location
+      || !location.land
+      || !location.tile
+      || location.tile.name === 'rock'
+      || location.tile.name === 'water') return;
 
     sEntity.move(newLocation.x, newLocation.y);
     sEntity.send('world/map', this.maps.getRegionAt(newLocation.x, newLocation.y));
 
     // get entities in range
     let entities = this.entities.find((e) => {
-      if (e.entity.x < newLocation.x + 10
-        && e.entity.x > newLocation.x - 10
-        && e.entity.y < newLocation.y + 10
-      && e.entity.y > newLocation.y - 10) return true;
+      if (e.entity.x < newLocation.x + 8
+        && e.entity.x > newLocation.x - 8
+        && e.entity.y < newLocation.y + 8
+      && e.entity.y > newLocation.y - 8) return true;
       return false;
     });
 

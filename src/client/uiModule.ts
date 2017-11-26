@@ -162,17 +162,26 @@ export class UIModule {
     }
     parseMouseDirection (x: number, y: number) {
         let direction = '';
-        let mouseX = x;
-        let mouseY = y;
         let width = window.innerWidth;
         let height = window.innerHeight;
 
-        if (mouseY <= Math.floor(height * (1 / 3))) direction += 'n';
-        if (mouseY >= Math.floor(height * (2 / 3))) direction += 's';
-        if (mouseX >= Math.floor(width * (2 / 3))) direction += 'e';
-        if (mouseX <= Math.floor(width * (1 / 3))) direction += 'w';
+        if (y <= Math.floor(height * (1 / 3))) direction += 'n';
+        if (y >= Math.floor(height * (2 / 3))) direction += 's';
+        if (x >= Math.floor(width * (2 / 3))) direction += 'e';
+        if (x <= Math.floor(width * (1 / 3))) direction += 'w';
         return direction;
     }
+    isNorth(x: number, y: number) {
+        let x1 = 0;
+        let y1 = 0;
+        let x2 = window.innerWidth;
+        let y2 = 0;
+        let x3 = 0;
+        let y3 = window.innerHeight;
+    }
+    isEast(x: number, y: number) {}
+    isWest(x: number, y: number) {}
+    isSouth(x: number, y: number) {}
 }
 
 interface InterfaceEvent {
