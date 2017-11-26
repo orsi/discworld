@@ -1,4 +1,4 @@
-import { Entity, EntitySpeech } from '../models';
+import { Entity, EntitySpeech, WorldLocation } from '../models';
 import { uuid } from '../utils/uuid';
 
 export class BaseEntity {
@@ -18,9 +18,8 @@ export class BaseEntity {
         if (this.currentSpeech
             && this.totalTime - this.currentSpeech.createdAt.getTime() > 5000) this.currentSpeech = undefined;
     }
-    move (x: number, y: number) {
-        this.entity.x = x;
-        this.entity.y = y;
+    move (location: WorldLocation) {
+        this.entity.location = location;
     }
     speak (speech: string) {
         let newSpeech = new EntitySpeech();

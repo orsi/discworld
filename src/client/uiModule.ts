@@ -114,15 +114,15 @@ export class UIModule {
         this.interfaceEvents.length = 0;
     }
     emit () {
-        if (this.move && this.time - this.lastMove >= 200) {
+        if (this.move && this.time - this.lastMove >= 100) {
             this.lastMove = this.time;
             this.socket.emit('move', this.move);
         }
     }
     render (interpolation: number) {
         let agent = this.world.getAgentEntity();
-        if (agent) {
-            let viewPosition = this.renderer.view.mapWorldLocationToPixel(agent.entity.x, agent.entity.y);
+        if (agent && agent.entity.location) {
+            let viewPosition = this.renderer.view.mapWorldLocationToPixel(agent.entity.location.x, agent.entity.location.y, agent.entity.location.z);
             this.renderer.view.center(viewPosition.x, viewPosition.y);
         }
         this.renderer.render(interpolation);

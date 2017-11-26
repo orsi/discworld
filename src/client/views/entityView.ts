@@ -1,22 +1,21 @@
 import { Entity } from '../../common/models';
 import { RendererView } from './rendererView';
+import { Point } from '../../common/data/point';
 
 export class EntityView {
     constructor () {}
 
     draw(ctx: CanvasRenderingContext2D, view: RendererView, entity: Entity) {
-        let viewPosition = view.mapWorldLocationToPixel(entity.x, entity.y);
+        if (!entity.location) return;
+        let viewPosition = view.mapWorldLocationToPixel(entity.location.x, entity.location.y, entity.location.z);
         let x = viewPosition.x + view.xOffset + view.xCenter;
         let y = viewPosition.y + view.yOffset + view.yCenter;
 
-        ctx.fillStyle = 'red';
+        let center = new Point(0, view.BLOCK_SIZE / 2);
+
+        ctx.fillStyle = 'rgba(255,0,255,.3)';
         ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + view.BLOCK_SIZE, y + (view.BLOCK_SIZE / 2));
-        ctx.lineTo(x, y + view.BLOCK_SIZE);
-        ctx.lineTo(x - view.BLOCK_SIZE, y + (view.BLOCK_SIZE / 2));
-        ctx.lineTo(x, y);
-        ctx.stroke();
+        ctx.arc(x + center.x, y + center.y, view.BLOCK_SIZE / 4, 0, 2 * Math.PI);
         ctx.fill();
     }
 }

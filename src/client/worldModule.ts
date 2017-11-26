@@ -1,6 +1,7 @@
 import { Client } from './client';
 import { EventChannel } from '../common/services/eventChannel';
 import { World, Entity, WorldLocation } from '../common/models';
+import { Tiles } from '../common/data/tiles';
 import { EntityManager } from './world/entityManager';
 import { WorldView } from './views/worldView';
 
@@ -10,7 +11,7 @@ export class WorldModule {
   entities: EntityManager;
   agentEntitySerial: string;
   world: World;
-  map: any[][] = [];
+  map: WorldLocation[][] = [];
   view: WorldView;
   constructor  (client: Client) {
     const events = this.events = client.events;
@@ -48,13 +49,6 @@ export class WorldModule {
     console.log('got agent', serial);
     this.agentEntitySerial = serial;
   }
-  getAgentEntity () {
-    if (this.agentEntitySerial) return this.findEntity(this.agentEntitySerial);
-  }
-  findEntity (serial: string) {
-    let entity = this.entities.get(serial);
-    return entity;
-  }
   onEntityInfo (entityInfo: Entity) {
     let entity = this.entities.get(entityInfo.serial);
     if (!entity) entity = this.entities.create(entityInfo);
@@ -70,7 +64,7 @@ export class WorldModule {
     console.log('>> move entity ', data);
     let entity = this.entities.get(data.serial);
     if (!entity) entity = this.entities.create(data);
-    entity.move(data.x, data.y);
+    entity.move(data.location);
   }
 
   lastMouseEvent: MouseEvent;
@@ -80,5 +74,31 @@ export class WorldModule {
   }
   onMouseUp (e: MouseEvent) {
     this.lastMouseEvent = e;
+  }
+  isLocation(x: number, y: number) {
+      return x >= 0 && x < this.world.width && y >= 0 && y < this.world.height;
+  }
+  getLocation (x: number, y: number) {
+    let location;
+    for (let ix = 0; ix < this.map.length; ix++) {
+      for (let iy = 0; iy < this.map[ix].length; iy++) {
+        if (this.map[ix][iy].x === x && this.map[ix][iy].y === y) location = this.map[ix][iy];
+      }
+    }
+    return location ? location : new WorldLocation(
+        x,
+        y,
+        -1,
+        false,
+        Tiles[0],
+        0
+    );
+  }
+  getAgentEntity () {
+    if (this.agentEntitySerial) return this.findEntity(this.agentEntitySerial);
+  }
+  findEntity (serial: string) {
+    let entity = this.entities.get(serial);
+    return entity;
   }
 }

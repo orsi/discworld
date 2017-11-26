@@ -64,8 +64,8 @@ export class WorldModule {
 
       let x = Math.floor(Math.random() * this.world.width);
       let y = Math.floor(Math.random() * this.world.height);
-
-      entity.move(x, y);
+      let location = this.maps.getLocation(x, y);
+      entity.move(location);
       entity.send('world/info', this.world);
       entity.send('world/map', this.maps.getRegionAt(x, y));
       entity.send('entity/info', entity.entity);
@@ -88,30 +88,24 @@ export class WorldModule {
 
     let x = Math.floor(Math.random() * this.world.width);
     let y = Math.floor(Math.random() * this.world.height);
-    entity.move(x, y);
+    let location = this.maps.getLocation(x, y);
+    entity.move(location);
 
     entity.send('world/info', this.world);
     entity.send('world/map', this.maps.getRegionAt(x, y));
     // get entities in range
     let entities = this.entities.find((e) => {
-      if (e.entity.x < x + 10
-        && e.entity.x > x - 10
-        && e.entity.y < y + 10
-      && e.entity.y > y - 10) return true;
-      return false;
+      return this.maps.isLocationInRegion(e.entity.location, location);
     });
     for (let e of entities) {
       entity.send('entity/info', e.entity);
     }
   }
   onEntityDisconnect (sEntity: SocketEntity, data: any) {
+    if (!this.world) return;
     // get entities in range
     let entities = this.entities.find((e) => {
-      if (e.entity.x < sEntity.entity.x + 10
-        && e.entity.x > sEntity.entity.x - 10
-        && e.entity.y < sEntity.entity.y + 10
-      && e.entity.y > sEntity.entity.y - 10) return true;
-      return false;
+      return this.maps.isLocationInRegion(sEntity.entity.location, e.entity.location);
     });
     for (let e of entities) {
       (<SocketEntity>e).send('entity/remove', sEntity.entity.serial);
@@ -154,7 +148,7 @@ export class WorldModule {
 
     if (!this.world) return;
 
-    let newLocation = this.parsePosition(sEntity.entity.x, sEntity.entity.y, data);
+    let newLocation = this.parsePosition(sEntity.entity.location.x, sEntity.entity.location.y, data);
 
     let location = this.maps.getLocation(newLocation.x,  newLocation.y);
     if (!location
@@ -163,16 +157,12 @@ export class WorldModule {
       || location.tile.name === 'rock'
       || location.tile.name === 'water') return;
 
-    sEntity.move(newLocation.x, newLocation.y);
+    sEntity.move(location);
     sEntity.send('world/map', this.maps.getRegionAt(newLocation.x, newLocation.y));
 
     // get entities in range
     let entities = this.entities.find((e) => {
-      if (e.entity.x < newLocation.x + 8
-        && e.entity.x > newLocation.x - 8
-        && e.entity.y < newLocation.y + 8
-      && e.entity.y > newLocation.y - 8) return true;
-      return false;
+      return this.maps.isLocationInRegion(e.entity.location, sEntity.entity.location);
     });
 
     // emit to entities in range this entities new movement

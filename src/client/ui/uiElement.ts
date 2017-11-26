@@ -61,7 +61,7 @@ export class UIElement extends HTMLElement {
         this.ui.addEvent(this, e);
     }
     onMouseMove (e: MouseEvent) {
-        console.log(this.serial + ' mouse move');
+        // console.log(this.serial + ' mouse move');
         this.ui.addEvent(this, e);
     }
     hasPoint (x: number, y: number) {

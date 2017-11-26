@@ -1,3 +1,4 @@
+import { WorldLocation } from './';
 import { EntityType } from './entityType';
 import { Skill } from './skill';
 
@@ -11,8 +12,6 @@ export class Entity {
     strength: number;
     dexterity: number;
     intelligence: number;
-    x: number;
-    y: number;
-    z: number;
+    location: WorldLocation;
     constructor () {}
 }

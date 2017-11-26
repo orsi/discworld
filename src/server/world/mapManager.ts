@@ -1,5 +1,5 @@
 import { WorldModule } from '../worldModule';
-import { Tile, World } from '../../common/models';
+import { Tile, World, WorldLocation } from '../../common/models';
 import { Tiles } from '../../common/data/tiles';
 import { Automaton, PRNG, Noise } from '../../common/utils';
 
@@ -12,9 +12,10 @@ export class MapManager {
     heightMap: number[][] = [];
     automaton: Automaton;
     automatonMap: boolean[][] = [];
+    map: WorldLocation[][] = [];
 
-    regionWidth = 16;
-    regionHeight = 16;
+    regionWidth = 32;
+    regionHeight = 32;
 
     constructor (worldModule: WorldModule) {
         this.worldModule = worldModule;
@@ -28,6 +29,7 @@ export class MapManager {
         this.generateHeatMap();
         this.generateHeightMap();
         this.generateTileMap();
+        this.generateMap();
     }
     generateAutomaton () {
         this.automaton = new Automaton(this.world.width, this.world.height, {
@@ -65,9 +67,9 @@ export class MapManager {
                     let height = this.heightMap[x][y];
 
                     let tileIndex: number;
-                    if (height > 30) {
+                    if (height > 20) {
                         tileIndex = 3;
-                    } else if (height > 20) {
+                    } else if (height > 15) {
                         tileIndex = 1;
                     } else if (height > 10) {
                         tileIndex = 4;
@@ -82,27 +84,48 @@ export class MapManager {
             }
         }
     }
+    generateMap() {
+        for (let x = 0; x < this.world.width; x++) {
+            this.map[x] = [];
+            for (let y = 0; y < this.world.height; y++) {
+                this.map[x][y] = new WorldLocation(
+                    x,
+                    y,
+                    this.heightMap[x][y] ? this.heightMap[x][y] : 0,
+                    this.automatonMap[x][y] ? this.automatonMap[x][y] : false,
+                    this.tileMap[x][y] ? this.tileMap[x][y] : Tiles[0],
+                    this.heatMap[x][y] ? this.heatMap[x][y] : 0,
+                );
+            }
+        }
+    }
     isLocation(x: number, y: number) {
         return x >= 0 && x < this.world.width && y >= 0 && y < this.world.height;
     }
     getLocation (x: number, y: number) {
-        return {
-            x: x,
-            y: y,
-            land:   this.isLocation(x, y) ? this.automatonMap[x][y] : undefined,
-            height: this.isLocation(x, y) ? this.heightMap[x][y] : undefined,
-            tile:   this.isLocation(x, y) ? this.tileMap[x][y] : undefined,
-            heat:   this.isLocation(x, y) ? this.heatMap[x][y] : undefined,
-        };
+        return this.isLocation(x, y) ? this.map[x][y] : new WorldLocation(
+            x,
+            y,
+            0,
+            false,
+            Tiles[0],
+            0
+        );
     }
     getRegionAt (x: number, y: number) {
         let region: any[][] = [];
-        for (let i = 0, ix = x - 8; i < this.regionWidth; i++, ix++) {
+        for (let i = 0, ix = x - this.regionWidth / 2; i < this.regionWidth; i++, ix++) {
             region[i] = [];
-            for (let j = 0, iy = y - 8; j < this.regionHeight; j++, iy++) {
+            for (let j = 0, iy = y - this.regionHeight / 2; j < this.regionHeight; j++, iy++) {
                 region[i][j] = this.getLocation(ix, iy);
             }
         }
         return region;
+    }
+    isLocationInRegion (location: WorldLocation, worldLocation: WorldLocation) {
+        return location.x < worldLocation.x + (this.regionWidth / 2)
+            &&  location.x > worldLocation.x - (this.regionWidth / 2)
+            && location.y < worldLocation.y + (this.regionHeight / 2)
+            && location.y > worldLocation.y - (this.regionHeight / 2);
     }
 }

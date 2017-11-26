@@ -20,8 +20,8 @@ export class Renderer {
     this.ctxBuffer = <CanvasRenderingContext2D>bufferCanvas.getContext('2d');
     this.view = new RendererView(0, 0, this.canvas.width, this.canvas.height);
   }
-  centerMap (x: number, y: number) {
-    let viewPosition = this.view.mapWorldLocationToPixel(x, y);
+  centerMap (x: number, y: number, z: number) {
+    let viewPosition = this.view.mapWorldLocationToPixel(x, y, z);
     this.view.center(viewPosition.x, viewPosition.y);
   }
   render (interpolation: number) {

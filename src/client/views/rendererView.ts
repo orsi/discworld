@@ -8,7 +8,7 @@ export class RendererView {
     zoomScale: number;
     xOffset: number;
     yOffset: number;
-    BLOCK_SIZE = 32;
+    BLOCK_SIZE = 16;
     constructor (top: number, left: number, width: number, height: number) {
       this.top = 0;
       this.left = 0;
@@ -27,9 +27,9 @@ export class RendererView {
       this.xOffset = -x;
       this.yOffset = -y;
     }
-    mapWorldLocationToPixel (x: number, y: number) {
+    mapWorldLocationToPixel (x: number, y: number, z: number) {
       let pixelX = x * this.BLOCK_SIZE + y * this.BLOCK_SIZE;
-      let pixelY = y * (this.BLOCK_SIZE / 2) - x * (this.BLOCK_SIZE / 2);
+      let pixelY = y * (this.BLOCK_SIZE / 2) - x * (this.BLOCK_SIZE / 2) - z * (this.BLOCK_SIZE / 2);
       return {
         x: pixelX,
         y: pixelY

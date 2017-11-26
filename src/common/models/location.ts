@@ -1,10 +1,18 @@
-import { WorldRegion } from './region';
+import { Tile } from './';
 
 export class WorldLocation {
-    region: WorldRegion;
-    tile: string;
+    tile: Tile;
     x: number;
     y: number;
     z: number;
-    constructor () {}
+    heat: number;
+    land: boolean;
+    constructor (x: number, y: number, z: number, land: boolean, tile: Tile, heat: number) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.land = land;
+        this.tile = tile;
+        this.heat = heat;
+    }
 }
