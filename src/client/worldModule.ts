@@ -1,7 +1,7 @@
 import { Client } from './client';
 import { EventChannel } from '../common/services/eventChannel';
 import { World, Entity, WorldLocation } from '../common/models';
-import { Tiles } from '../common/data/tiles';
+import { Tile } from '../common/data/tiles';
 import { EntityManager } from './world/entityManager';
 import { WorldView } from './views/worldView';
 
@@ -90,7 +90,7 @@ export class WorldModule {
         y,
         -1,
         false,
-        Tiles[0],
+        Tile.NULL,
         0
     );
   }

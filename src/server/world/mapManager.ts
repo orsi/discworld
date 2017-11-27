@@ -1,6 +1,6 @@
 import { WorldModule } from '../worldModule';
-import { Tile, World, WorldLocation } from '../../common/models';
-import { Tiles } from '../../common/data/tiles';
+import { World, WorldLocation } from '../../common/models';
+import { Tile } from '../../common/data/tiles';
 import { Automaton, PRNG, Noise } from '../../common/utils';
 
 export class MapManager {
@@ -48,11 +48,11 @@ export class MapManager {
         }
     }
     generateHeightMap () {
-        let heightNoise = new Noise(10, 32);
+        let heightNoise = new Noise(5, 128);
         for (let x = 0; x < this.world.width; x++) {
             this.heightMap[x] = [];
             for (let y = 0; y < this.world.height; y++) {
-                this.heightMap[x][y] = Math.floor(heightNoise.noise2d(x, y));
+                this.heightMap[x][y] = heightNoise.noise2d(x, y);
             }
         }
     }
@@ -66,19 +66,17 @@ export class MapManager {
                     let heat = this.heatMap[x][y];
                     let height = this.heightMap[x][y];
 
-                    let tileIndex: number;
-                    if (height > 20) {
-                        tileIndex = 3;
-                    } else if (height > 15) {
-                        tileIndex = 1;
-                    } else if (height > 10) {
-                        tileIndex = 4;
+                    if (height > 90) {
+                        tile = Tile.ROCK;
+                    } else if (height > 60) {
+                        tile = Tile.GRASS;
+                    } else if (height > 30) {
+                        tile = Tile.DIRT;
                     } else {
-                        tileIndex = 2;
+                        tile = Tile.WATER;
                     }
-                    tile = Tiles[tileIndex];
                 } else {
-                    tile = Tiles[0];
+                    tile = Tile.NULL;
                 }
                 this.tileMap[x][y] = tile;
             }
@@ -93,7 +91,7 @@ export class MapManager {
                     y,
                     this.heightMap[x][y] ? this.heightMap[x][y] : 0,
                     this.automatonMap[x][y] ? this.automatonMap[x][y] : false,
-                    this.tileMap[x][y] ? this.tileMap[x][y] : Tiles[0],
+                    this.tileMap[x][y] ? this.tileMap[x][y] : Tile.NULL,
                     this.heatMap[x][y] ? this.heatMap[x][y] : 0,
                 );
             }
@@ -108,9 +106,12 @@ export class MapManager {
             y,
             0,
             false,
-            Tiles[0],
+            Tile.NULL,
             0
         );
+    }
+    canTravelToLocation (location: WorldLocation) {
+        return location.land && location.tile !== Tile.ROCK;
     }
     getRegionAt (x: number, y: number) {
         let region: any[][] = [];

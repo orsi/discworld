@@ -1,6 +1,7 @@
 import { WorldModule } from '../worldModule';
 import { EntityView } from './entityView';
 import { RendererView } from './rendererView';
+import { Tile } from '../../common/data/tiles';
 
 export class WorldView {
     worldModule: WorldModule;
@@ -15,22 +16,22 @@ export class WorldView {
             for (let ix = 0; ix < this.worldModule.map[iy].length - 1; ix++) {
                 if (this.worldModule.map[ix][iy].land) {
                     // tiles
-                    let tile = this.worldModule.map[ix][iy].tile ? this.worldModule.map[ix][iy].tile.name : 'null';
+                    let tile = this.worldModule.map[ix][iy].tile;
                     let color = '';
                     switch (tile) {
-                        case 'rock':
+                        case Tile.ROCK:
                             color = '150,150,150';
                             break;
-                        case 'grass':
+                        case Tile.GRASS:
                             color = '0,150,0';
                             break;
-                        case 'water':
+                        case Tile.WATER:
                             color = '0,0,150';
                             break;
-                        case 'dirt':
+                        case Tile.DIRT:
                             color = '150,120,0';
                             break;
-                        case 'null':
+                        case Tile.NULL:
                             color = '45,45,45';
                             break;
                     }
@@ -68,7 +69,7 @@ export class WorldView {
                     leftSkew += nw && nw.z >= 0 ? (z - nw.z) * view.BLOCK_SIZE * 0.5 * 0.3 : 0;
                     leftSkew += n && n.z >= 0 ? (z - n.z) * view.BLOCK_SIZE * 0.5 * 0.3 : 0;
 
-                    ctx.fillStyle = `rgba(${color},${ z / 32 })`;
+                    ctx.fillStyle = `rgba(${color},${ z / 128 })`;
                     ctx.beginPath();
                     ctx.moveTo(x, y + topSkew); // top
                     ctx.lineTo(x + view.BLOCK_SIZE, y + (view.BLOCK_SIZE / 2) + rightSkew); // right

@@ -1,4 +1,4 @@
-import { Tile } from './';
+import { Tile } from '../data/tiles';
 
 export class WorldLocation {
     tile: Tile;

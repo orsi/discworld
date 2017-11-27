@@ -5,15 +5,17 @@ export class PRNG {
   private seed: number = new Date().getTime();
 
   constructor  (seed: string | number) {
-    if (seed && typeof seed === 'string') {
+    if (typeof seed === 'string') {
         const values = [];
         for (let i = 0; i < seed.length; i++) {
           values.push(seed.charCodeAt(i));
         }
         this.seed = parseInt(values.join('') + 0);
-    } else if (seed && typeof seed === 'number') {
+    }
+    if (typeof seed === 'number') {
       this.seed = seed;
     }
+    if (!seed) console.error(`no seed for prng this: ${this.seed}, given: ${seed}`);
   }
 
   next () {
@@ -22,7 +24,6 @@ export class PRNG {
   }
 
   range (min: number, max: number) {
-    const normalize = this.next() * (max - min);
-    return normalize + min;
+    return this.next() * (max - min) + min;
   }
 }

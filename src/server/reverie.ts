@@ -13,7 +13,7 @@ export class Reverie {
     readonly version = {
         major: 0,
         minor: 0,
-        patch: 18
+        patch: 19
     };
 
     // root = ~/server/

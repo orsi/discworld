@@ -62,8 +62,8 @@ export class WorldModule {
     for (let e in entities) {
       let entity = <SocketEntity>entities[e];
 
-      let x = Math.floor(Math.random() * this.world.width);
-      let y = Math.floor(Math.random() * this.world.height);
+      let x = 5;
+      let y = 5;
       let location = this.maps.getLocation(x, y);
       entity.move(location);
       entity.send('world/info', this.world);
@@ -86,8 +86,8 @@ export class WorldModule {
 
     if (!this.world) return;
 
-    let x = Math.floor(Math.random() * this.world.width);
-    let y = Math.floor(Math.random() * this.world.height);
+    let x = 5;
+    let y = 5;
     let location = this.maps.getLocation(x, y);
     entity.move(location);
 
@@ -151,11 +151,7 @@ export class WorldModule {
     let newLocation = this.parsePosition(sEntity.entity.location.x, sEntity.entity.location.y, data);
 
     let location = this.maps.getLocation(newLocation.x,  newLocation.y);
-    if (!location
-      || !location.land
-      || !location.tile
-      || location.tile.name === 'rock'
-      || location.tile.name === 'water') return;
+    if (!this.maps.canTravelToLocation(location)) return;
 
     sEntity.move(location);
     sEntity.send('world/map', this.maps.getRegionAt(newLocation.x, newLocation.y));

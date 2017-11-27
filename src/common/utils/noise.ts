@@ -5,8 +5,7 @@ export class Noise {
   amplitude: number;
   persistence: number;
   octaves: number;
-  samples1d: number[] = [];
-  samples2d: number[][] = [];
+  samples: number[] = [];
   constructor(frequency: number, amplitude: number, octaves?: number, persistence?: number) {
     this.frequency = frequency;
     this.amplitude = amplitude;
@@ -24,12 +23,12 @@ export class Noise {
     return result;
   }
   get1dValue (x: number) {
-    let value = this.samples1d[x];
+    let value = this.samples[x];
     // cache value if not available
     if (!value) {
       let prng = new PRNG(x);
       value = prng.range(0, this.amplitude);
-      this.samples1d[x] = value;
+      this.samples[x] = value;
     }
     return value;
   }
@@ -60,22 +59,21 @@ export class Noise {
     return result;
   }
   get2dValue (x: number, y: number) {
-    let xAxis = this.samples2d[x];
-    if (!xAxis) this.samples2d[x] = [];
-    let value = this.samples2d[x][y];
-
-    // cache value if not available
-    if (!value) {
+    let xValue = this.samples[x];
+    if (!xValue) {
+      // cache value if not available
       let xRandom = new PRNG(x);
-      let xValue = xRandom.range(0, this.amplitude);
-      let yRandom = new PRNG(y);
-      let yValue = yRandom.range(0, this.amplitude);
-      value = (xValue + yValue) / 2;
-      this.samples2d[x][y] = value;
+      xValue = this.samples[x] = xRandom.range(0, this.amplitude);
     }
+
+    let yValue = this.samples[y];
+    if (!yValue) {
+      // cache value if not available
+      let yRandom = new PRNG(y);
+      yValue = this.samples[y] = yRandom.range(0, this.amplitude);
+    }
+
+    let value = (xValue + yValue) * 0.5;
     return value;
-  }
-  fade (f: number) {
-    return f * f * f * (f * (f * 6 - 15) + 10);
   }
 }
