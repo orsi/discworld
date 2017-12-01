@@ -3,11 +3,11 @@
 import { EventChannel } from '../common/services/eventChannel';
 import { WorldModule } from './worldModule';
 import { NetworkModule } from './networkModule';
-import { UIModule } from './uiModule';
+import { DOMRenderer } from './dom';
 
 export class Client {
   events: EventChannel;
-  ui: UIModule;
+  dom: DOMRenderer;
   network: NetworkModule;
   world: WorldModule;
 
@@ -21,9 +21,11 @@ export class Client {
   constructor() {
     const events = this.events = new EventChannel();
 
+    // dom needs to be initiated before components
+    this.dom = new DOMRenderer(this);
+
     this.network = new NetworkModule(this);
     this.world = new WorldModule(this);
-    this.ui = new UIModule(this);
   }
   update () {
     if (this.running) {
@@ -47,8 +49,8 @@ export class Client {
         this.accumulator -= delta;
       }
 
-      // update ui
-      this.ui.update(delta);
+      // send render to dom elements
+      this.dom.render(delta / this.tickTime);
 
       requestAnimationFrame(() => this.update());
     }

@@ -3,7 +3,7 @@ import { EventChannel } from '../common/services/eventChannel';
 import { World, Entity, WorldLocation } from '../common/models';
 import { Tile } from '../common/data/tiles';
 import { EntityManager } from './world/entityManager';
-import { WorldView } from './views/worldView';
+import { WorldComponent, TerminalComponent, Component } from './components/';
 
 export class WorldModule {
   events: EventChannel;
@@ -12,11 +12,17 @@ export class WorldModule {
   agentEntitySerial: string;
   world: World;
   map: WorldLocation[][] = [];
-  view: WorldView;
+  worldComponent: WorldComponent;
+  terminalComponent: TerminalComponent;
+  interfaceComponents: Component[] = [];
+  locations: { [key: string]: WorldLocation } = {};
+
   constructor  (client: Client) {
     const events = this.events = client.events;
     this.entities = new EntityManager(this);
-    this.view = new WorldView(this);
+
+    this.worldComponent = client.dom.addComponent<WorldComponent>(new WorldComponent(this));
+    this.terminalComponent = client.dom.addComponent<TerminalComponent>(new TerminalComponent(this));
 
     events.on('connect', (data) => this.onServerConnect(data));
   }
@@ -24,56 +30,44 @@ export class WorldModule {
 
   onServerConnect (socket: SocketIO.Socket) {
     this.socket = socket;
-    socket.on('client/entity', (data) => this.onAgentEntity(data));
-    socket.on('world/info', (data) => this.onWorldInfo(data));
-    socket.on('world/map', (data) => this.onWorldMap(data));
-    socket.on('world/update', (data) => this.onWorldUpdate(data));
-    socket.on('entity/info', (data) => this.onEntityInfo(data));
+    socket.on('client/entity', (data) => this.onClientEntity(data));
+    socket.on('world/info', (data) => this.onInfo(data));
+    socket.on('world/location', (data) => this.onLocation(data));
     socket.on('entity/move', (data) => this.onEntityMove(data));
-    socket.on('entity/destroy', (data) => this.onRemoveEntity(data));
+    socket.on('entity/remove', (data) => this.onEntityRemove(data));
   }
 
   destroy () {}
 
   // Events
-  onWorldInfo (world: World) {
-    console.log('world info', world);
-    this.world = world;
-  }
-  onWorldMap (map: any[][]) {
-    console.log('world map', map);
-    this.map = map;
-  }
-  onWorldUpdate (worldModel: World) {}
-  onAgentEntity (serial: string) {
+  onClientEntity (serial: string) {
     console.log('got agent', serial);
     this.agentEntitySerial = serial;
   }
-  onEntityInfo (entityInfo: Entity) {
-    let entity = this.entities.get(entityInfo.serial);
-    if (!entity) entity = this.entities.create(entityInfo);
-
-    entity.entity = entityInfo;
-    console.log('>> entity info: ', entityInfo, entity);
+  onInfo (world: World) {
+    console.log('world info', world);
+    this.world = world;
   }
-  onRemoveEntity (serial: string) {
+  onLocation (location: WorldLocation) {
+    this.locations[location.serial] = location;
+    this.worldComponent.addLocationComponent(location);
+  }
+  onMap (map: WorldLocation[][]) {
+    console.log('world map', map);
+    this.map = map;
+  }
+  onEntityRemove (serial: string) {
     console.log('remove entity', serial);
     this.entities.remove(serial);
   }
   onEntityMove(data: Entity) {
     console.log('>> move entity ', data);
     let entity = this.entities.get(data.serial);
-    if (!entity) entity = this.entities.create(data);
+    if (!entity) {
+      entity = this.entities.create(data);
+      this.worldComponent.addEntityComponent(entity.entity);
+    }
     entity.move(data.location);
-  }
-
-  lastMouseEvent: MouseEvent;
-  onMouseDown (e: MouseEvent) {
-    console.log('click on world', e);
-    this.lastMouseEvent = e;
-  }
-  onMouseUp (e: MouseEvent) {
-    this.lastMouseEvent = e;
   }
   isLocation(x: number, y: number) {
       return x >= 0 && x < this.world.width && y >= 0 && y < this.world.height;
@@ -95,10 +89,14 @@ export class WorldModule {
     );
   }
   getAgentEntity () {
-    if (this.agentEntitySerial) return this.findEntity(this.agentEntitySerial);
+    return this.findEntity(this.agentEntitySerial);
   }
   findEntity (serial: string) {
     let entity = this.entities.get(serial);
     return entity;
+  }
+  onTerminalMessage (message: string) {
+      console.log('>> message sent: ', message);
+      this.socket.emit('message', message);
   }
 }

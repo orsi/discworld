@@ -67,8 +67,11 @@ export class WorldModule {
       let location = this.maps.getLocation(x, y);
       entity.move(location);
       entity.send('world/info', this.world);
-      entity.send('world/map', this.maps.getRegionAt(x, y));
-      entity.send('entity/info', entity.entity);
+      let map = this.maps.getRegionAt(x, y);
+      map.forEach(x => {
+        x.forEach(location => entity.send('world/location', location));
+      });
+      entity.send('entity/move', entity.entity);
     }
   }
   destroy () {
@@ -82,7 +85,6 @@ export class WorldModule {
     // check if other entities are in view, send entities
     let entity = this.entities.createSocketEntity(socket);
     entity.send('client/entity', entity.entity.serial);
-    entity.send('entity/info', entity.entity);
 
     if (!this.world) return;
 
@@ -92,13 +94,16 @@ export class WorldModule {
     entity.move(location);
 
     entity.send('world/info', this.world);
-    entity.send('world/map', this.maps.getRegionAt(x, y));
+    let map = this.maps.getRegionAt(x, y);
+    map.forEach(x => {
+      x.forEach(location => entity.send('world/location', location));
+    });
     // get entities in range
     let entities = this.entities.find((e) => {
       return this.maps.isLocationInRegion(e.entity.location, location);
     });
     for (let e of entities) {
-      entity.send('entity/info', e.entity);
+      entity.send('entity/move', e.entity);
     }
   }
   onEntityDisconnect (sEntity: SocketEntity, data: any) {
@@ -154,7 +159,10 @@ export class WorldModule {
     if (!this.maps.canTravelToLocation(location)) return;
 
     sEntity.move(location);
-    sEntity.send('world/map', this.maps.getRegionAt(newLocation.x, newLocation.y));
+    let map = this.maps.getRegionAt(newLocation.x, newLocation.y);
+    map.forEach(x => {
+      x.forEach(location => sEntity.send('world/location', location));
+    });
 
     // get entities in range
     let entities = this.entities.find((e) => {

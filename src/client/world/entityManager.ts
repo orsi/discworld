@@ -2,6 +2,7 @@ import { EntityType, Entity } from '../../common/models';
 import { uuid } from '../../common/utils/uuid';
 import { BaseEntity } from '../../common/entities/baseEntity';
 import { WorldModule } from './../worldModule';
+import { EntityComponent } from '../components/entity.component';
 
 export class EntityManager {
     private entityTypes: EntityType[] = [];
@@ -18,6 +19,8 @@ export class EntityManager {
         }
     }
     create (entity?: Entity) {
+        if (!entity) entity = new Entity();
+
         let newEntity = new BaseEntity(entity);
         this.entities[newEntity.entity.serial] = newEntity;
         return newEntity;

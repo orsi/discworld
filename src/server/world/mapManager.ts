@@ -1,7 +1,7 @@
 import { WorldModule } from '../worldModule';
 import { World, WorldLocation } from '../../common/models';
 import { Tile } from '../../common/data/tiles';
-import { Automaton, PRNG, Noise } from '../../common/utils';
+import { Automaton, PRNG, Noise, uuid } from '../../common/utils';
 
 export class MapManager {
     worldModule: WorldModule;
@@ -94,6 +94,7 @@ export class MapManager {
                     this.tileMap[x][y] ? this.tileMap[x][y] : Tile.NULL,
                     this.heatMap[x][y] ? this.heatMap[x][y] : 0,
                 );
+                this.map[x][y].serial = uuid();
             }
         }
     }

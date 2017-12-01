@@ -1,4 +1,4 @@
-export class RendererView {
+export class Viewport {
     top: number;
     left: number;
     width: number;
@@ -21,9 +21,9 @@ export class RendererView {
       this.zoomScale = 1;
     }
     move (x: number, y: number) {
-      this.center(x, y);
+      this.setOrigin(x, y);
     }
-    center (x: number, y: number) {
+    setOrigin (x: number, y: number) {
       this.xOffset = -x;
       this.yOffset = -y;
     }

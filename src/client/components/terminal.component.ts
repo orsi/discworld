@@ -1,31 +1,42 @@
+import { Component } from './';
+import { WorldModule } from '../worldModule';
 import { EventChannel } from '../../common/services/eventChannel';
-import { UIModule } from '../uiModule';
-import { UIElement } from './uiElement';
-
-export class TerminalElement extends UIElement {
-  events: EventChannel;
+export class TerminalComponent extends Component {
   historyIndex = -1;
   history: string[] = [];
   value = '';
+  worldModule: WorldModule;
 
-  constructor (ui: UIModule) {
-    super('terminal', ui);
+  constructor (worldModule: WorldModule) {
+    super();
+    this.worldModule = worldModule;
+  }
 
-    // hook into input events
-    this.events = ui.events;
+  connectedCallback () {
+    super.connectedCallback();
 
     // style
     this.style.position = 'absolute';
     this.style.bottom = '0';
     this.style.left = '0';
     this.style.right = '0';
-    this.style.height = '1em';
+    this.style.height = '1.5em';
     this.style.lineHeight = '1em';
     this.style.fontFamily = 'Courier New';
     this.style.padding = '3px';
     this.style.whiteSpace = 'nowrap';
     this.style.outline = 'none';
+
+    window.addEventListener('keydown', (e) => this.onKeyDown(e));
   }
+  onKeyDown (e: KeyboardEvent) {
+    if (e.ctrlKey || e.altKey || e.metaKey) {
+        // do command
+    } else {
+        this.onKey(e.key);
+    }
+  }
+  onKeyUp (e: KeyboardEvent) {}
 
   onKey (key: string) {
     if (key === 'ArrowUp') {
@@ -78,7 +89,7 @@ export class TerminalElement extends UIElement {
       this.historyIndex = -1;
 
       // emit message event
-      this.ui.onTerminalMessage(this.value);
+      this.worldModule.onTerminalMessage(this.value);
 
       this.reset();
     }
@@ -89,9 +100,13 @@ export class TerminalElement extends UIElement {
   }
   update() {
     // update input to reflect value
-    if (this.innerHTML !== this.value) {
-      this.innerHTML = this.value;
+    if (this.shadow.innerHTML !== this.value) {
+      this.shadow.innerHTML = this.value;
     }
   }
+  resize (width: number, height: number) {
+    this.width = width;
+    this.style.width = width + 'px';
+  }
 }
-window.customElements.define('reverie-terminal', TerminalElement);
+customElements.define('reverie-terminal', TerminalComponent);

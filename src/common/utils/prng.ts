@@ -15,7 +15,7 @@ export class PRNG {
     if (typeof seed === 'number') {
       this.seed = seed;
     }
-    if (!seed) console.error(`no seed for prng this: ${this.seed}, given: ${seed}`);
+    if (seed === 'undefined') console.error(`no seed for prng this: ${this.seed}, given: ${seed}`);
   }
 
   next () {

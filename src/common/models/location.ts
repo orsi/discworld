@@ -1,6 +1,7 @@
 import { Tile } from '../data/tiles';
 
 export class WorldLocation {
+    serial: string;
     tile: Tile;
     x: number;
     y: number;
