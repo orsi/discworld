@@ -2,17 +2,18 @@ import { Reverie } from './reverie';
 import { EventChannel } from '../common/services/eventChannel';
 import { EntityManager } from './world/entityManager';
 import { World, WorldState, WorldRegion, WorldLocation, Tile } from '../common/models';
-import { PRNG } from '../common/utils/prng';
+import { PRNG, uuid } from '../common/utils';
 import { MapManager } from './world/mapManager';
-import { SocketEntity } from './world/entities/socketEntity';
+import { Client } from './world/entities/socketEntity';
 
 export class WorldModule {
   reverie: Reverie;
   events: EventChannel;
-  world: World | void;
+  model: World | void;
   maps: MapManager;
   regions: WorldRegion[] = [];
   entities: EntityManager;
+  clients: { [serial: string]: Client } = {};
 
   // Update properties
   startTime = new Date();
@@ -30,7 +31,7 @@ export class WorldModule {
     this.maps = new MapManager(this);
 
     // from network
-    events.on('connection', (data) => this.onEntityConnection(data));
+    events.on('connection', (data) => this.onClientConnection(data));
   }
   update (delta: number) {
     this.cycles++;
@@ -40,6 +41,9 @@ export class WorldModule {
     // main update
     this.entities.update(delta);
   }
+  destroy () {
+    this.model = undefined;
+  }
 
   // Eventing Routes
   onCreate (seed: string = 'reverie') {
@@ -48,88 +52,109 @@ export class WorldModule {
     // if entity can create world, and world doesn't exist, create world
     // if entity can't, or world exists, reject
 
-    this.world = new World();
-    this.world.seed = seed;
-    this.world.width = 192;
-    this.world.height = 192;
+    this.model = new World();
+    this.model.seed = seed;
+    this.model.width = 192;
+    this.model.height = 192;
 
-    this.maps.createMap(this.world);
+    this.maps.createMap(this.model);
 
-    this.world.state = WorldState.SIMULATING;
+    this.model.state = WorldState.SIMULATING;
 
-    // give all entities a position and send info
-    let entities = this.entities.getAll();
-    for (let e in entities) {
-      let entity = <SocketEntity>entities[e];
+    // give all clients an entity and send info
+    for (let serial in this.clients) {
+      let client = this.clients[serial];
 
+      // create entity for client
+      let entity = this.entities.create();
+      client.entity = entity;
+      // find location for client
       let x = 5;
       let y = 5;
       let location = this.maps.getLocation(x, y);
-      entity.move(location);
-      entity.send('world/info', this.world);
-      let map = this.maps.getRegionAt(x, y);
+      client.entity.moveTo(location);
+      client.send('client/entity', client.entity.model);
+    }
+
+    // all clients have a position, now send region data
+    for (let serial in this.clients) {
+      let client = this.clients[serial];
+
+      // send new world
+      client.send('world/info', this.model);
+
+      // send region to client
+      let map = this.maps.getRegionAt(client.entity.location.x, client.entity.location.y);
       map.forEach(x => {
-        x.forEach(location => entity.send('world/location', location));
+        x.forEach(location => client.send('world/location', location));
       });
-      entity.send('entity/move', entity.entity);
+
+      // send other entities in range
+      for (let serial in this.clients) {
+        let c = this.clients[serial];
+        if (this.maps.isLocationInRegion(c.entity.location, client.entity.location)) client.send('entity/move', c.entity.model);
+      }
     }
   }
-  destroy () {
-    this.world = undefined;
-  }
-  onEntityConnection (socket: SocketIO.Socket) {
+  onClientConnection (socket: SocketIO.Socket) {
     // new client has connected to world
     // create entity for client
     // return entity information for client
     // find location of entity, send world data in view
     // check if other entities are in view, send entities
-    let entity = this.entities.createSocketEntity(socket);
-    entity.send('client/entity', entity.entity.serial);
+    let client = new Client(socket, this);
+    this.clients[client.serial] = client;
 
-    if (!this.world) return;
+    if (!this.model) return;
+
+    // world exists, create entity for client
+    client.send('world/info', this.model);
+
+    let entity = client.entity = this.entities.create();
 
     let x = 5;
     let y = 5;
     let location = this.maps.getLocation(x, y);
-    entity.move(location);
+    entity.moveTo(location);
+    client.send('client/entity', client.entity.model);
 
-    entity.send('world/info', this.world);
     let map = this.maps.getRegionAt(x, y);
     map.forEach(x => {
-      x.forEach(location => entity.send('world/location', location));
+      x.forEach(location => client.send('world/location', location));
     });
-    // get entities in range
-    let entities = this.entities.find((e) => {
-      return this.maps.isLocationInRegion(e.entity.location, location);
-    });
-    for (let e of entities) {
-      entity.send('entity/move', e.entity);
+
+    // send new entity to clients in range
+    for (let serial in this.clients) {
+      let c = this.clients[serial];
+      if (this.maps.isLocationInRegion(location, c.entity.location)) c.send('entity/move', client.entity.model);
     }
   }
-  onEntityDisconnect (sEntity: SocketEntity, data: any) {
-    if (!this.world) return;
-    // get entities in range
-    let entities = this.entities.find((e) => {
-      return this.maps.isLocationInRegion(sEntity.entity.location, e.entity.location);
-    });
-    for (let e of entities) {
-      (<SocketEntity>e).send('entity/remove', sEntity.entity.serial);
+  onEntityDisconnect (client: Client) {
+    if (!this.model) return;
+
+    // send remove entity to clients in region
+    for (let serial in this.clients) {
+      let c = this.clients[serial];
+      if (this.maps.isLocationInRegion(client.entity.location, c.entity.location)) c.send('entity/remove', client.entity.serial);
     }
-    this.entities.remove(sEntity.entity.serial);
+
+    // remove entity/client
+    this.entities.remove(client.entity.serial);
+    delete this.clients[client.entity.serial];
   }
-  onEntityMessage (sEntity: SocketEntity, message: string) {
+  onClientMessage (client: Client, message: string) {
     console.log(message);
     // get entity
     // check if entity can perform action
     switch (message) {
-      case 'generate':
+      case '/generate':
         this.onCreate();
         break;
-      case 'destroy':
+      case '/destroy':
         this.destroy();
         break;
       default:
-        sEntity.speak(message);
+        if (client.entity) client.entity.speak(message);
         break;
     }
   }
@@ -143,50 +168,44 @@ export class WorldModule {
       y: y
     };
   }
-  onEntityMove (sEntity: SocketEntity, data: any) {
+  onEntityMove (client: Client, data: any) {
     // get entity current location
     // get request world location they wish to move to
     // check if entity can move to location
     // if they can, move entity to location
     // if they can't, reject movement
-    console.log('>> move request - ', sEntity.entity.serial, data);
 
-    if (!this.world) return;
+    if (!this.model) return;
 
-    let newLocation = this.parsePosition(sEntity.entity.location.x, sEntity.entity.location.y, data);
+    let newLocation = this.parsePosition(client.entity.location.x, client.entity.location.y, data);
 
     let location = this.maps.getLocation(newLocation.x,  newLocation.y);
     if (!this.maps.canTravelToLocation(location)) return;
 
-    sEntity.move(location);
+    client.entity.moveTo(location);
     let map = this.maps.getRegionAt(newLocation.x, newLocation.y);
     map.forEach(x => {
-      x.forEach(location => sEntity.send('world/location', location));
+      x.forEach(location => client.send('world/location', location));
     });
 
-    // get entities in range
-    let entities = this.entities.find((e) => {
-      return this.maps.isLocationInRegion(e.entity.location, sEntity.entity.location);
-    });
-
-    // emit to entities in range this entities new movement
-    for (let e of entities) {
-      // emit to this 'e', the entities movement...
-      (<SocketEntity>e).send('entity/move', sEntity.entity);
+    // send client location to clients in range
+    for (let serial in this.clients) {
+      let c = this.clients[serial];
+      if (this.maps.isLocationInRegion(c.entity.location, client.entity.location)) c.send('entity/move', client.entity.model);
     }
   }
-  onEntityAction (sEntity: SocketEntity, data: any) {
+  onEntityAction (sEntity: Client, data: any) {
     // get entity
     // check if entity can perform action
   }
-  onEntityInteract (sEntity: SocketEntity, data: any) {
+  onEntityInteract (sEntity: Client, data: any) {
     // get entity
     // get object entity wants to interact with
     // check if entity cna interact with it
     // if entity can, perform interaction with object
     // if entity can't, reject
   }
-  onEntityFocus (sEntity: SocketEntity, data: any) {
+  onEntityFocus (sEntity: Client, data: any) {
     // get entity
     // get object entity wants to focus
     // check if entity can focus on object

@@ -1,17 +1,19 @@
-import { Component, EntityComponent, LocationComponent } from './';
+import { Component, WorldElement, EntityComponent, LocationComponent } from './';
 import { World, WorldLocation, Entity } from '../../common/models';
 import { WorldModule } from '../worldModule';
 import { Tile } from '../../common/data/tiles';
-import { Viewport } from '../viewport';
+import { WorldRenderer } from '../world/worldRenderer';
 
-export class WorldComponent extends Component {
+export class WorldComponent extends WorldElement {
     canvas: HTMLCanvasElement;
     bufferCanvas: HTMLCanvasElement;
     controller: WorldModule;
-    components: Component[] = [];
-    constructor (worldModule: WorldModule) {
-        super();
-
+    renderer: WorldRenderer;
+    locations: { [key: string]: WorldLocation } = {};
+    entities: { [key: string]: Entity } = {};
+    components: WorldElement[] = [];
+    constructor (worldModule: WorldModule, renderer: WorldRenderer) {
+        super(renderer);
         this.controller = worldModule;
     }
     connectedCallback () {
@@ -20,49 +22,46 @@ export class WorldComponent extends Component {
         this.style.position = 'relative';
         this.style.overflow = 'hidden';
         this.style.display = 'block';
+        // render viewport setup
         this.resize(window.innerWidth, window.innerHeight);
+        this.registerEvents();
     }
     addLocationComponent (location: WorldLocation) {
-        let lComponent = new LocationComponent(location);
+        if (this.locations[location.serial]) return;
+
+        this.locations[location.serial] = location;
+        let lComponent = new LocationComponent(location, this.renderer);
         this.components.push(lComponent);
         this.shadow.appendChild(lComponent);
     }
     addEntityComponent (entity: Entity) {
-        let eComponent = new EntityComponent(entity);
+        if (this.entities[entity.serial]) return;
+
+        this.entities[entity.serial] = entity;
+        let eComponent = new EntityComponent(entity, this.renderer);
         this.components.push(eComponent);
         this.shadow.appendChild(eComponent);
     }
-    render (viewport: Viewport) {
-        if (!this.controller.world) return;
-        let clientEntity = this.controller.getAgentEntity();
-        if (!clientEntity) return;
-        let origin = viewport.mapWorldLocationToPixel(clientEntity.entity.location.x, clientEntity.entity.location.y, clientEntity.entity.location.z);
-        viewport.setOrigin(origin.x, origin.y);
-
-        this.components.forEach(c => c.render(viewport));
+    removeEntityComponent (serial: string) {
+        for (let c of this.components) {
+            if ((<EntityComponent>c).entity.serial === serial) c.remove();
+        }
     }
-    update () {
-          //   // do event parse
-          //   if (iEvent.element.name === 'world') {
-          //     if (iEvent.event.type === 'mousedown') {
-          //         let e = <MouseEvent>iEvent.event;
-          //         // world click
-          //         if (e.button === 2) this.move = this.parseMouseDirection(e.x, e.y);
-          //     }
-          // }
-          // if (iEvent.event.type === 'mouseup') {
-          //     let e = <MouseEvent>iEvent.event;
-          //     // world click
-          //     if (e.button === 2) this.move = undefined;
-          // }
-          // if (iEvent.event.type === 'mousemove') {
-          //     let e = <MouseEvent>iEvent.event;
-          //     // if moving
-          //     if (this.move) this.move = this.parseMouseDirection(e.x, e.y);
-          // }
+    didIt = false;
+    render () {
+        if (!this.controller.world) return;
+        // render all components
+        this.components.forEach(c => c.render());
+    }
+    move: any;
+    registerEvents () {
+        this.addEventListener('mousedown', (e) => {
+            if (e.button === 2) this.controller.socket.emit('move', this.parseMouseDirection(e.x, e.y));
+        });
     }
     resize (width: number, height: number) {
         super.resize(width, height);
+        this.renderer.setSize(this.width, this.height);
     }
     parseMouseDirection (x: number, y: number) {
         let direction = '';

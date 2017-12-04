@@ -1,10 +1,9 @@
 import { WorldLocation } from './';
-import { EntityType } from './entityType';
 import { Skill } from './skill';
 
 export class Entity {
     serial: string;
-    type: EntityType;
+    type: string;
     name: string;
     health: number;
     mana: number;

@@ -1,13 +1,13 @@
-import { Component } from './';
+import { WorldElement } from './';
 import { WorldLocation } from '../../common/models';
-import { Point } from '../../common/data/point';
+import { Point2D } from '../../common/data/point2d';
 import { Tile } from '../../common/data/tiles';
-import { Viewport } from '../viewport';
+import { WorldRenderer } from '../world/worldRenderer';
 
-export class LocationComponent extends Component {
+export class LocationComponent extends WorldElement {
     location: WorldLocation;
-    constructor (location: WorldLocation) {
-        super();
+    constructor (location: WorldLocation, renderer: WorldRenderer) {
+        super(renderer);
         this.location = location;
     }
     connectedCallback () {
@@ -16,27 +16,27 @@ export class LocationComponent extends Component {
         let color = '';
         switch (this.location.tile) {
             case Tile.ROCK:
-                color = '150,150,150';
+                color = '150,150,150,.8';
                 break;
             case Tile.GRASS:
-                color = '0,150,0';
+                color = '0,150,0,.8';
                 break;
             case Tile.WATER:
-                color = '0,0,150';
+                color = '0,0,150,.8';
                 break;
             case Tile.DIRT:
-                color = '150,120,0';
+                color = '150,120,0,.8';
                 break;
             case Tile.NULL:
-                color = '45,45,45';
+                color = '0,0,0,.1';
                 break;
         }
 
         this.style.display = 'inline-block';
         this.style.position = 'absolute';
-        this.style.backgroundColor = `rgb(${color})`;
-        this.style.width = '16px';
-        this.style.height = '16px';
+        this.style.backgroundColor = `rgba(${color})`;
+        this.style.width = this.renderer.BLOCK_SIZE + 'px';
+        this.style.height = this.renderer.BLOCK_SIZE + 'px';
 
         // // neighbouring tiles
         // let n = map[ix] ? map[ix][iy - 1] : undefined;
@@ -77,13 +77,18 @@ export class LocationComponent extends Component {
         // viewport.ctx.stroke();
         // viewport.ctx.fill();
     }
-    render (viewport: Viewport) {
-        let viewPosition = viewport.mapWorldLocationToPixel(this.location.x, this.location.y, this.location.z);
-        let x = viewPosition.x + viewport.xOffset + viewport.xCenter;
-        let y = viewPosition.y + viewport.yOffset + viewport.yCenter;
-        let z = this.location.z;
-        this.style.left = x + 'px';
-        this.style.top = y + 'px';
+    render () {
+        let viewPosition = this.renderer.mapWorldLocationToPixel(this.location.x, this.location.y, this.location.z);
+        if (!this.renderer.isOnScreen(this.location.x, this.location.y, this.location.z)) {
+            this.style.display = 'none';
+            return;
+        }
+        // let x = viewPosition.x + this.viewport.xOffset + this.viewport.xCenter;
+        // let y = viewPosition.y + this.viewport.yOffset + this.viewport.yCenter;
+        // let z = this.location.z;
+        this.style.display = 'inline-block';
+        this.style.transform = `translate(${viewPosition.x}px, ${viewPosition.y}px) rotateX(60deg) rotateY(0deg) rotateZ(-45deg)`;
+        this.style.zIndex = this.location.z + '';
     }
 }
 customElements.define('reverie-location', LocationComponent);

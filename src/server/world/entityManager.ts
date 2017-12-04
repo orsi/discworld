@@ -1,8 +1,7 @@
+import { WorldModule } from '../worldModule';
 import { EntityType, Entity } from '../../common/models';
 import { uuid } from '../../common/utils/uuid';
-import { SocketEntity } from './entities/socketEntity';
 import { BaseEntity } from '../../common/entities/baseEntity';
-import { WorldModule } from '../worldModule';
 
 export class EntityManager {
     private entityTypes: EntityType[] = [];
@@ -19,14 +18,11 @@ export class EntityManager {
         }
     }
     create () {
-        let newEntity = new BaseEntity();
-        this.entities[newEntity.entity.serial] = newEntity;
-        return newEntity;
-    }
-    createSocketEntity (socket: SocketIO.Socket) {
-        let newEntity = new SocketEntity(socket, this.world);
-        this.entities[newEntity.entity.serial] = newEntity;
-        return newEntity;
+        let newEntity = new Entity();
+        newEntity.serial = uuid();
+        let base = new BaseEntity(newEntity);
+        this.entities[base.serial] = base;
+        return base;
     }
     remove (serial: string) {
         return delete this.entities[serial];

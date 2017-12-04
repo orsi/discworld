@@ -1,11 +1,10 @@
 import { uuid } from '../../common/utils/uuid';
-import { Point } from '../../common/data/point';
-import { Viewport } from '../viewport';
+import { Point2D } from '../../common/data/point2d';
 export class Component extends HTMLElement {
     serial: string;
     width: number;
     height: number;
-    center: Point;
+    center: Point2D;
     shadow: ShadowRoot;
     constructor () {
         super();
@@ -16,12 +15,12 @@ export class Component extends HTMLElement {
         // Create a shadow root
         this.shadow = this.attachShadow({mode: 'open'});
     }
-    render (viewport: Viewport) {}
+    render () {}
     resize (width: number, height: number) {
         this.width = width;
         this.height = height;
         this.style.width = width + 'px';
         this.style.height = height + 'px';
-        this.center = new Point(width / 2, height / 2);
+        this.center = new Point2D(width / 2, height / 2);
     }
 }

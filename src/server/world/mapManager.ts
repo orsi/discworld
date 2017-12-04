@@ -124,10 +124,10 @@ export class MapManager {
         }
         return region;
     }
-    isLocationInRegion (location: WorldLocation, worldLocation: WorldLocation) {
-        return location.x < worldLocation.x + (this.regionWidth / 2)
-            &&  location.x > worldLocation.x - (this.regionWidth / 2)
-            && location.y < worldLocation.y + (this.regionHeight / 2)
-            && location.y > worldLocation.y - (this.regionHeight / 2);
+    isLocationInRegion (location: WorldLocation, regionOf: WorldLocation) {
+        return location.x < regionOf.x + (this.regionWidth / 2)
+            &&  location.x > regionOf.x - (this.regionWidth / 2)
+            && location.y < regionOf.y + (this.regionHeight / 2)
+            && location.y > regionOf.y - (this.regionHeight / 2);
     }
 }

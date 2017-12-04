@@ -1,6 +1,7 @@
 import { Tile } from '../data/tiles';
+import { Point3D } from '../data/point3d';
 
-export class WorldLocation {
+export class WorldLocation implements Point3D {
     serial: string;
     tile: Tile;
     x: number;
@@ -15,5 +16,8 @@ export class WorldLocation {
         this.land = land;
         this.tile = tile;
         this.heat = heat;
+    }
+    distanceTo (point: Point3D) {
+        return 0;
     }
 }

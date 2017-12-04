@@ -1,15 +1,13 @@
 import { Client } from './client';
 import { WorldModule } from './worldModule';
 import { EventChannel } from '../common/services/eventChannel';
-import { Point } from '../common/data/point';
+import { Point2D } from '../common/data/point2d';
 import * as Components from './components/';
-import { Viewport } from './viewport';
 export class DOMRenderer {
     client: Client;
     root: Element;
     events: EventChannel;
     socket: SocketIO.Socket;
-    viewport: Viewport;
     components: Components.Component[] = [];
     width: number;
     height: number;
@@ -24,14 +22,11 @@ export class DOMRenderer {
         window.addEventListener('resize',       (e: Event) => this.onWindowResize(e));
         window.addEventListener('contextmenu',  (e) => e.preventDefault()); // prevents context menu
 
-        // render viewport setup
-        this.viewport = new Viewport(0, 0, window.innerWidth, window.innerHeight);
-
         // socket
         events.on('connect', (socket) => this.socket = socket);
     }
     render (interpolation: number) {
-        this.components.forEach(c => c.render(this.viewport));
+        this.components.forEach(c => c.render());
     }
     addComponent <T extends Components.Component> (comp: T) {
         this.components.push(comp);
@@ -52,7 +47,6 @@ export class DOMRenderer {
         let window = <Window>e.currentTarget;
         this.width = window.innerWidth;
         this.height = window.innerHeight;
-        this.viewport.setSize(this.width, this.height);
         this.components.forEach(c => c.resize(window.innerWidth, window.innerHeight));
     }
 }
