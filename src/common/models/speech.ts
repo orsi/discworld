@@ -1,6 +1,6 @@
 import { Entity } from './';
 
-export class EntitySpeech {
+export class Speech {
     entity: Entity;
     text: string;
     createdAt: Date;

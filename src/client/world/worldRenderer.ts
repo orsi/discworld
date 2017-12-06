@@ -1,19 +1,33 @@
 import { Point2D } from '../../common/data/point2d';
 import { Point3D } from '../../common/data/point3d';
+import { WorldModule } from '../worldModule';
+import { WorldLocation } from '../../common/models';
+import { Agent } from '../agent';
 
 export class WorldRenderer {
-    top: number = 0;
-    left: number = 0;
-    width: number;
-    height: number;
-    zoomScale: number;
-    originPixel: Point2D = new Point2D(0, 0);
-    originWorld: Point3D = new Point3D(0, 0, 0);
-    BLOCK_SIZE = 32;
-    constructor () {
-      this.top = 0;
-      this.left = 0;
-      this.zoomScale = 1;
+  controller: WorldModule;
+  locations: { [serial: string]: WorldLocation } = {};
+  mainAgent: Agent;
+  elapsedTime = 0;
+  top = 0;
+  left = 0;
+  width: number;
+  height: number;
+  zoomScale = 1;
+  originPixel: Point2D = new Point2D(0, 0);
+  originWorld: Point3D = new Point3D(0, 0, 0);
+  BLOCK_SIZE = 32;
+    constructor (controller: WorldModule) {
+      this.controller = controller;
+      this.locations = controller.locations;
+    }
+    update (delta: number) {
+      this.elapsedTime += delta;
+      // update origin of client location
+      if (this.mainAgent) this.setWorldCenter(this.mainAgent.entity.location);
+    }
+    follow (agent: Agent) {
+      this.mainAgent = agent;
     }
     setWorldCenter (point: Point3D) {
       this.originWorld.x = point.x;
@@ -102,5 +116,11 @@ export class WorldRenderer {
 
       // if (bx % 10 === 0 && by % 10 === 0 ) console.log(viewportVisible, faceVisible);
       return viewportVisible && faceVisible;
+    }
+    getMapLocation (x: number, y: number) {
+      for (let serial in this.locations) {
+        let location = this.locations[serial];
+        if (location.x === x && location.y === y) return location;
+      }
     }
   }

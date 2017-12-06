@@ -38,35 +38,6 @@ export class LocationComponent extends WorldElement {
         this.style.width = this.renderer.BLOCK_SIZE + 'px';
         this.style.height = this.renderer.BLOCK_SIZE + 'px';
 
-        // // neighbouring tiles
-        // let n = map[ix] ? map[ix][iy - 1] : undefined;
-        // let ne = map[ix + 1] ? map[ix + 1][iy - 1] : undefined;
-        // let e = map[ix + 1] ? map[ix + 1][iy] : undefined;
-        // let se = map[ix + 1] ? map[ix + 1][iy + 1] : undefined;
-        // let s = map[ix] ? map[ix][iy + 1] : undefined;
-        // let sw = map[ix - 1] ? map[ix - 1][iy + 1] : undefined;
-        // let w = map[ix - 1] ? map[ix - 1][iy] : undefined;
-        // let nw = map[ix - 1] ? map[ix - 1][iy - 1] : undefined;
-
-        // // find the average of the 3 surrounding corner tiles
-        // let topSkew = 0, rightSkew = 0, bottomSkew = 0, leftSkew = 0;
-        // // top corner
-        // topSkew += n && n.z >= 0 ? (z - n.z) * viewport.view.BLOCK_SIZE * 0.5 * 0.3 : 0;
-        // topSkew += ne && ne.z >= 0 ? (z - ne.z) * viewport.view.BLOCK_SIZE * 0.5 * 0.3 : 0;
-        // topSkew += e && e.z >= 0 ? (z - e.z) * viewport.view.BLOCK_SIZE * 0.5 * 0.3 : 0;
-        // // right corner
-        // rightSkew += e && e.z >= 0 ? (z - e.z) * viewport.view.BLOCK_SIZE * 0.5 * 0.3 : 0;
-        // rightSkew += se && se.z >= 0 ? (z - se.z) * viewport.view.BLOCK_SIZE * 0.5 * 0.3 : 0;
-        // rightSkew += s && s.z >= 0 ? (z - s.z) * viewport.view.BLOCK_SIZE * 0.5 * 0.3 : 0;
-        // // bottom corner
-        // bottomSkew += s && s.z >= 0 ? (z - s.z) * viewport.view.BLOCK_SIZE * 0.5 * 0.3 : 0;
-        // bottomSkew += sw && sw.z >= 0 ? (z - sw.z) * viewport.view.BLOCK_SIZE * 0.5 * 0.3 : 0;
-        // bottomSkew += w && w.z >= 0 ? (z - w.z) * viewport.view.BLOCK_SIZE * 0.5 * 0.3 : 0;
-        // // left corner
-        // leftSkew += w && w.z >= 0 ? (z - w.z) * viewport.view.BLOCK_SIZE * 0.5 * 0.3 : 0;
-        // leftSkew += nw && nw.z >= 0 ? (z - nw.z) * viewport.view.BLOCK_SIZE * 0.5 * 0.3 : 0;
-        // leftSkew += n && n.z >= 0 ? (z - n.z) * viewport.view.BLOCK_SIZE * 0.5 * 0.3 : 0;
-
         // viewport.ctx.fillStyle = `rgba(${color},${ z / 128 })`;
         // viewport.ctx.beginPath();
         // viewport.ctx.moveTo(x, y + topSkew); // top
@@ -83,11 +54,19 @@ export class LocationComponent extends WorldElement {
             this.style.display = 'none';
             return;
         }
-        // let x = viewPosition.x + this.viewport.xOffset + this.viewport.xCenter;
-        // let y = viewPosition.y + this.viewport.yOffset + this.viewport.yCenter;
-        // let z = this.location.z;
+
+        // neighbouring tiles
+        // let n =     this.renderer.getMapLocation(this.location.x, this.location.y - 1);
+        // let ne =    this.renderer.getMapLocation(this.location.x + 1, this.location.y - 1);
+        // let e =     this.renderer.getMapLocation(this.location.x + 1, this.location.y);
+        // let se =    this.renderer.getMapLocation(this.location.x + 1, this.location.y + 1);
+        // let s =     this.renderer.getMapLocation(this.location.x, this.location.y + 1);
+        // let sw =    this.renderer.getMapLocation(this.location.x - 1, this.location.y + 1);
+        // let w =     this.renderer.getMapLocation(this.location.x - 1, this.location.y);
+        // let nw =    this.renderer.getMapLocation(this.location.x - 1, this.location.y - 1);
+
         this.style.display = 'inline-block';
-        this.style.transform = `translate(${viewPosition.x}px, ${viewPosition.y}px) rotateX(60deg) rotateY(0deg) rotateZ(-45deg)`;
+        this.style.transform = `translate(${viewPosition.x}px, ${viewPosition.y}px) scale(1.45) rotateX(60deg) rotateY(0deg) rotateZ(-45deg)`;
         this.style.zIndex = this.location.z + '';
     }
 }

@@ -1,5 +1,5 @@
-import { BaseEntity } from '../../../common/entities/baseEntity';
-import { WorldModule } from '../../worldModule';
+import { BaseEntity } from '../common/entities/baseEntity';
+import { WorldModule } from './worldModule';
 
 export class Client {
     serial: string;

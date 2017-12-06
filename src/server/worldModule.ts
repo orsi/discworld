@@ -4,7 +4,7 @@ import { EntityManager } from './world/entityManager';
 import { World, WorldState, WorldRegion, WorldLocation, Tile } from '../common/models';
 import { PRNG, uuid } from '../common/utils';
 import { MapManager } from './world/mapManager';
-import { Client } from './world/entities/socketEntity';
+import { Client } from './client';
 
 export class WorldModule {
   reverie: Reverie;
@@ -73,7 +73,7 @@ export class WorldModule {
       let y = 5;
       let location = this.maps.getLocation(x, y);
       client.entity.moveTo(location);
-      client.send('client/entity', client.entity.model);
+      client.send('client/entity', client.entity);
     }
 
     // all clients have a position, now send region data
@@ -92,7 +92,7 @@ export class WorldModule {
       // send other entities in range
       for (let serial in this.clients) {
         let c = this.clients[serial];
-        if (this.maps.isLocationInRegion(c.entity.location, client.entity.location)) client.send('entity/move', c.entity.model);
+        if (this.maps.isLocationInRegion(c.entity.location, client.entity.location)) client.send('entity/move', c.entity);
       }
     }
   }
@@ -116,7 +116,7 @@ export class WorldModule {
     let y = 5;
     let location = this.maps.getLocation(x, y);
     entity.moveTo(location);
-    client.send('client/entity', client.entity.model);
+    client.send('client/entity', client.entity);
 
     let map = this.maps.getRegionAt(x, y);
     map.forEach(x => {
@@ -126,7 +126,7 @@ export class WorldModule {
     // send new entity to clients in range
     for (let serial in this.clients) {
       let c = this.clients[serial];
-      if (this.maps.isLocationInRegion(location, c.entity.location)) c.send('entity/move', client.entity.model);
+      if (this.maps.isLocationInRegion(location, c.entity.location)) c.send('entity/move', client.entity);
     }
   }
   onEntityDisconnect (client: Client) {
@@ -191,7 +191,7 @@ export class WorldModule {
     // send client location to clients in range
     for (let serial in this.clients) {
       let c = this.clients[serial];
-      if (this.maps.isLocationInRegion(c.entity.location, client.entity.location)) c.send('entity/move', client.entity.model);
+      if (this.maps.isLocationInRegion(c.entity.location, client.entity.location)) c.send('entity/move', client.entity);
     }
   }
   onEntityAction (sEntity: Client, data: any) {

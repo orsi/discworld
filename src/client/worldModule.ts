@@ -5,49 +5,57 @@ import { Tile } from '../common/data/tiles';
 import { WorldComponent, TerminalComponent, Component, EntityComponent } from './components/';
 import { BaseEntity } from '../common/entities/baseEntity';
 import { WorldRenderer } from './world/worldRenderer';
+import { Agent } from './agent';
 
 export class WorldModule {
   events: EventChannel;
   socket: SocketIO.Socket;
-  clientEntity: BaseEntity;
+  mainAgent: Agent;
   world: World;
   renderer: WorldRenderer;
   worldComponent: WorldComponent;
   terminalComponent: TerminalComponent;
   interfaceComponents: Component[] = [];
   locations: { [key: string]: WorldLocation } = {};
-  entities: { [key: string]: BaseEntity } = {};
+  entities: { [key: string]: Agent } = {};
+  elapsedTime = 0;
 
   constructor  (client: Client) {
     const events = this.events = client.events;
-    this.renderer = new WorldRenderer();
+    this.renderer = new WorldRenderer(this);
     this.worldComponent = client.dom.addComponent<WorldComponent>(new WorldComponent(this, this.renderer));
     this.terminalComponent = client.dom.addComponent<TerminalComponent>(new TerminalComponent(this));
 
     events.on('connect', (data) => this.onServerConnect(data));
   }
   update (delta: number) {
+    this.elapsedTime += delta;
     for (let serial in this.entities) {
-      this.entities[serial].update(delta);
+      this.entities[serial].entity.update(delta);
     }
+    this.renderer.update(delta);
   }
   destroy () {}
 
   // Events
   onServerConnect (socket: SocketIO.Socket) {
     this.socket = socket;
-    socket.on('client/entity', (data) => this.onClientEntity(data));
+    socket.on('client/entity', (data) => this.onAgentEntity(data));
     socket.on('world/info', (data) => this.onInfo(data));
     socket.on('world/location', (data) => this.onLocation(data));
-    socket.on('entity/move', (data) => this.onEntityMove(data));
-    socket.on('entity/remove', (data) => this.onEntityRemove(data));
+    socket.on('entity/move', (data) => this.onAgentMove(data));
+    socket.on('entity/remove', (data) => this.onAgentRemove(data));
   }
-  onClientEntity (entity: Entity) {
+  onAgentEntity (entity: Entity) {
     console.log('got client', entity.serial);
-    // set origin to client entity
-    this.clientEntity = this.getEntity(entity.serial);
-    if (!this.clientEntity) this.clientEntity = this.createEntity(entity);
-    this.renderer.setWorldCenter(this.clientEntity.location);
+
+    // find base entity by serial or create
+    let agent = this.getAgent(entity.serial);
+    if (!agent) agent = this.createAgent(entity);
+
+    // set main agent and follow
+    this.mainAgent = agent;
+    this.renderer.follow(this.mainAgent);
   }
   onInfo (world: World) {
     console.log('world info', world);
@@ -57,15 +65,14 @@ export class WorldModule {
     this.locations[location.serial] = location;
     this.worldComponent.addLocationComponent(location);
   }
-  onEntityRemove (serial: string) {
+  onAgentRemove (serial: string) {
     console.log('remove entity', serial);
     this.removeEntity(serial);
   }
-  onEntityMove(entity: Entity) {
-    let movedEntity = this.getEntity(entity.serial);
-    if (!movedEntity) movedEntity = this.createEntity(entity);
-    movedEntity.moveTo(entity.location);
-    if (movedEntity === this.clientEntity) this.renderer.setWorldCenter(this.clientEntity.location);
+  onAgentMove(entity: Entity) {
+    let movedAgent = this.getAgent(entity.serial);
+    if (!movedAgent) movedAgent = this.createAgent(entity);
+    movedAgent.entity.moveTo(entity.location);
   }
   onTerminalMessage (message: string) {
       console.log('>> message sent: ', message);
@@ -78,16 +85,18 @@ export class WorldModule {
     }
 
     // Entity based functions
-    createEntity (entity: Entity) {
-      let newEntity = this.entities[entity.serial] = new BaseEntity(entity);
-      // create component for entity
-      this.worldComponent.addEntityComponent(newEntity);
-      return newEntity;
+    createAgent (entity: Entity) {
+      let newEntity = new BaseEntity(entity);
+      let newComponent = this.worldComponent.addEntityComponent(newEntity);
+      // attach entity and component to client
+      let newAgent = this.entities[entity.serial] = new Agent(this, newEntity, newComponent);
+      return newAgent;
     }
     removeEntity (serial: string) {
+      this.worldComponent.removeEntityComponent(serial);
       return delete this.entities[serial];
     }
-    getEntity (serial: string) {
+    getAgent (serial: string) {
       return this.entities[serial];
     }
 }

@@ -1,9 +1,11 @@
-import { WorldLocation } from './';
-import { Skill } from './skill';
+import { WorldLocation, Skill, Speech } from './';
+import { EntityTypes } from '../data/entityTypes';
 
 export class Entity {
     serial: string;
-    type: string;
+    type: EntityTypes;
+    location: WorldLocation;
+    speech: Speech[];
     name: string;
     health: number;
     mana: number;
@@ -11,6 +13,10 @@ export class Entity {
     strength: number;
     dexterity: number;
     intelligence: number;
-    location: WorldLocation;
-    constructor () {}
+    createdAt: Date;
+    deletedAt: Date;
+    elapsedTime: number;
+    constructor () {
+        this.createdAt = new Date();
+    }
 }

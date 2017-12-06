@@ -1,10 +1,9 @@
 import { WorldModule } from '../worldModule';
-import { EntityType, Entity } from '../../common/models';
+import { Entity } from '../../common/models';
 import { uuid } from '../../common/utils/uuid';
 import { BaseEntity } from '../../common/entities/baseEntity';
 
 export class EntityManager {
-    private entityTypes: EntityType[] = [];
     private entities: { [key: string]: BaseEntity } = {};
     world: WorldModule;
     time = 0;
@@ -18,11 +17,10 @@ export class EntityManager {
         }
     }
     create () {
-        let newEntity = new Entity();
+        let newEntity = new BaseEntity(new Entity());
         newEntity.serial = uuid();
-        let base = new BaseEntity(newEntity);
-        this.entities[base.serial] = base;
-        return base;
+        this.entities[newEntity.serial] = newEntity;
+        return newEntity;
     }
     remove (serial: string) {
         return delete this.entities[serial];

@@ -1,18 +1,23 @@
 import { WorldElement } from './';
-import { Entity } from '../../common/models';
+import { BaseEntity } from '../../common/entities/baseEntity';
 import { Point2D } from '../../common/data/point2d';
 import { WorldRenderer } from '../world/worldRenderer';
 
 export class EntityComponent extends WorldElement {
-    entity: Entity;
-    constructor (entity: Entity, renderer: WorldRenderer) {
+    entity: BaseEntity;
+    avatar: HTMLElement;
+    speech: HTMLElement;
+    constructor (entity: BaseEntity, renderer: WorldRenderer) {
         super(renderer);
         this.entity = entity;
     }
     connectedCallback() {
         super.connectedCallback();
-        let text = document.createTextNode(':)');
-        this.shadow.appendChild(text);
+        this.avatar = document.createElement('div');
+        this.avatar.appendChild(document.createTextNode(':)'));
+        this.speech = document.createElement('p');
+        this.shadow.appendChild(this.avatar);
+        this.shadow.appendChild(this.speech);
         this.style.position = 'absolute';
     }
     render () {
@@ -23,6 +28,8 @@ export class EntityComponent extends WorldElement {
         // let y = viewPosition.y + this.viewport.yOffset + this.viewport.yCenter;
         this.style.left = viewPosition.x + 'px';
         this.style.top = viewPosition.y + 'px';
+
+        this.speech.innerText = this.entity.lastSpeech ? this.entity.lastSpeech.text : '';
     }
 }
 customElements.define('reverie-entity', EntityComponent);

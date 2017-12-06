@@ -1,7 +1,8 @@
 import { Component, WorldElement, EntityComponent, LocationComponent } from './';
-import { World, WorldLocation, Entity } from '../../common/models';
+import { World, WorldLocation } from '../../common/models';
 import { WorldModule } from '../worldModule';
 import { Tile } from '../../common/data/tiles';
+import { BaseEntity } from '../../common/entities/baseEntity';
 import { WorldRenderer } from '../world/worldRenderer';
 
 export class WorldComponent extends WorldElement {
@@ -9,8 +10,10 @@ export class WorldComponent extends WorldElement {
     bufferCanvas: HTMLCanvasElement;
     controller: WorldModule;
     renderer: WorldRenderer;
+    locationContainer: HTMLElement;
+    entityContainer: HTMLElement;
     locations: { [key: string]: WorldLocation } = {};
-    entities: { [key: string]: Entity } = {};
+    entities: { [key: string]: BaseEntity } = {};
     components: WorldElement[] = [];
     constructor (worldModule: WorldModule, renderer: WorldRenderer) {
         super(renderer);
@@ -22,9 +25,22 @@ export class WorldComponent extends WorldElement {
         this.style.position = 'relative';
         this.style.overflow = 'hidden';
         this.style.display = 'block';
+
+        // setup containers
+        this.locationContainer = document.createElement('div');
+        this.locationContainer.style.zIndex = '0';
+        this.shadow.appendChild(this.locationContainer);
+        this.entityContainer = document.createElement('div');
+        this.entityContainer.style.zIndex = '1';
+        this.shadow.appendChild(this.entityContainer);
         // render viewport setup
         this.resize(window.innerWidth, window.innerHeight);
         this.registerEvents();
+    }
+    getLocationComponent (serial: string) {
+        for (let l of this.components) {
+            if (l.serial === serial) return l;
+        }
     }
     addLocationComponent (location: WorldLocation) {
         if (this.locations[location.serial]) return;
@@ -32,15 +48,24 @@ export class WorldComponent extends WorldElement {
         this.locations[location.serial] = location;
         let lComponent = new LocationComponent(location, this.renderer);
         this.components.push(lComponent);
-        this.shadow.appendChild(lComponent);
+        this.locationContainer.appendChild(lComponent);
+        return lComponent;
     }
-    addEntityComponent (entity: Entity) {
-        if (this.entities[entity.serial]) return;
+    addEntityComponent (entity: BaseEntity) {
+        let eComponent;
+        // check if component for entity already exists
+        for (let c of this.components) {
+            if (c.serial === entity.serial) eComponent = <EntityComponent>c;
+        }
 
-        this.entities[entity.serial] = entity;
-        let eComponent = new EntityComponent(entity, this.renderer);
-        this.components.push(eComponent);
-        this.shadow.appendChild(eComponent);
+        // create component
+        if (!eComponent) {
+            this.entities[entity.serial] = entity;
+            eComponent = new EntityComponent(entity, this.renderer);
+            this.components.push(eComponent);
+            this.entityContainer.appendChild(eComponent);
+        }
+        return eComponent;
     }
     removeEntityComponent (serial: string) {
         for (let c of this.components) {
