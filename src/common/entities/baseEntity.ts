@@ -18,21 +18,21 @@ export class BaseEntity extends Entity {
         this.dexterity = model.dexterity;
         this.intelligence = model.intelligence;
         this.location = model.location;
-        this.createdAt = model.createdAt;
         this.deletedAt = model.deletedAt;
-        this.elapsedTime = model.elapsedTime;
     }
     update (delta: number) {
         this.elapsedTime += delta;
         if (this.lastSpeech
-            && this.elapsedTime - this.lastSpeech.createdAt.getTime() > 5000) this.lastSpeech = undefined;
+            && (this.createdAt.getTime() + this.elapsedTime) - this.lastSpeech.createdAt.getTime() > 5000) {
+            this.lastSpeech = undefined;
+            console.log(this);
+        }
     }
     moveTo (location: WorldLocation) {
         this.location = location;
     }
     speak (text: string) {
-        let newSpeech = this.lastSpeech = new Speech();
-        newSpeech.text = text;
+        let newSpeech = this.lastSpeech = new Speech(text);
         this.speech.push(newSpeech);
     }
 }

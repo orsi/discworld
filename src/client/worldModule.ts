@@ -43,6 +43,7 @@ export class WorldModule {
     socket.on('client/entity', (data) => this.onAgentEntity(data));
     socket.on('world/info', (data) => this.onInfo(data));
     socket.on('world/location', (data) => this.onLocation(data));
+    socket.on('entity/speech', (entity, speech) => this.onAgentSpeech(entity, speech));
     socket.on('entity/move', (data) => this.onAgentMove(data));
     socket.on('entity/remove', (data) => this.onAgentRemove(data));
   }
@@ -74,9 +75,16 @@ export class WorldModule {
     if (!movedAgent) movedAgent = this.createAgent(entity);
     movedAgent.entity.moveTo(entity.location);
   }
-  onTerminalMessage (message: string) {
-      console.log('>> message sent: ', message);
-      this.socket.emit('message', message);
+  onAgentSpeech (from: string, speech: string) {
+    console.log('received entity speech');
+    console.log(arguments);
+    let e = this.getAgent(from);
+    if (!e) return;
+    e.entity.speak(speech);
+  }
+  onTerminalMessage (speech: string) {
+      console.log('>> speech sent: ', speech);
+      this.socket.emit('speech', speech);
   }
 
     // Location based functions

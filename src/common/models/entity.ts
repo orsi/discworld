@@ -5,7 +5,7 @@ export class Entity {
     serial: string;
     type: EntityTypes;
     location: WorldLocation;
-    speech: Speech[];
+    speech: Speech[] = [];
     name: string;
     health: number;
     mana: number;
@@ -15,7 +15,7 @@ export class Entity {
     intelligence: number;
     createdAt: Date;
     deletedAt: Date;
-    elapsedTime: number;
+    elapsedTime = 0;
     constructor () {
         this.createdAt = new Date();
     }

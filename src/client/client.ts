@@ -46,7 +46,7 @@ export class Client {
       this.accumulator += delta;
       while (this.accumulator > this.tickTime) {
         this.world.update(this.tickTime);
-        this.accumulator -= delta;
+        this.accumulator -= this.tickTime;
       }
 
       // send render to dom elements

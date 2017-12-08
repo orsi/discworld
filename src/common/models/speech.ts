@@ -1,10 +1,10 @@
 import { Entity } from './';
 
 export class Speech {
-    entity: Entity;
     text: string;
     createdAt: Date;
-    constructor () {
+    constructor (text: string) {
+        this.text = text;
         this.createdAt = new Date();
     }
 }

@@ -142,11 +142,11 @@ export class WorldModule {
     this.entities.remove(client.entity.serial);
     delete this.clients[client.entity.serial];
   }
-  onClientMessage (client: Client, message: string) {
-    console.log(message);
+  onClientSpeech (client: Client, speech: string) {
+    console.log(speech);
     // get entity
     // check if entity can perform action
-    switch (message) {
+    switch (speech) {
       case '/generate':
         this.onCreate();
         break;
@@ -154,7 +154,16 @@ export class WorldModule {
         this.destroy();
         break;
       default:
-        if (client.entity) client.entity.speak(message);
+        if (!client.entity) return;
+        client.entity.speak(speech);
+        // send speech to all clients in region
+        for (let serial in this.clients) {
+          let to = this.clients[serial];
+          if (this.maps.isLocationInRegion(to.entity.location, client.entity.location)) {
+            to.send('entity/speech', client.entity.serial, speech);
+            console.log(`sent entity/speech '${speech}' to ${to.serial}`);
+          }
+        }
         break;
     }
   }
@@ -190,8 +199,8 @@ export class WorldModule {
 
     // send client location to clients in range
     for (let serial in this.clients) {
-      let c = this.clients[serial];
-      if (this.maps.isLocationInRegion(c.entity.location, client.entity.location)) c.send('entity/move', client.entity);
+      let to = this.clients[serial];
+      if (this.maps.isLocationInRegion(to.entity.location, client.entity.location)) to.send('entity/move', client.entity);
     }
   }
   onEntityAction (sEntity: Client, data: any) {
