@@ -1,32 +1,22 @@
 import { Entity, Speech, WorldLocation } from '../models';
-
+const MAX_TALK_TIME = 5000;
 /**
  * Base Entity
  * Used to manipulate and control entity model data.
  */
 export class BaseEntity extends Entity {
     lastSpeech: Speech | void;
-    constructor (model: Entity) {
+    constructor (model?: Entity) {
         super();
-        this.serial = model.serial;
-        this.name = model.name;
-        this.type = model.type;
-        this.health = model.health;
-        this.mana = model.mana;
-        this.stamina = model.stamina;
-        this.strength = model.strength;
-        this.dexterity = model.dexterity;
-        this.intelligence = model.intelligence;
-        this.location = model.location;
-        this.deletedAt = model.deletedAt;
+        if (model) {
+            Object.assign(this, model);
+            this.createdAt = new Date(this.createdAt);
+        }
     }
     update (delta: number) {
         this.elapsedTime += delta;
-        if (this.lastSpeech
-            && (this.createdAt.getTime() + this.elapsedTime) - this.lastSpeech.createdAt.getTime() > 5000) {
-            this.lastSpeech = undefined;
-            console.log(this);
-        }
+        let talkExpired = this.lastSpeech && (this.createdAt.getTime() + this.elapsedTime) - this.lastSpeech.createdAt.getTime() > MAX_TALK_TIME;
+        if (talkExpired) this.lastSpeech = undefined;
     }
     moveTo (location: WorldLocation) {
         this.location = location;

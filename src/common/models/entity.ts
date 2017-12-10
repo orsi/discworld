@@ -15,8 +15,9 @@ export class Entity {
     intelligence: number;
     createdAt: Date;
     deletedAt: Date;
-    elapsedTime = 0;
+    elapsedTime: number;
     constructor () {
         this.createdAt = new Date();
+        this.elapsedTime = 0;
     }
 }

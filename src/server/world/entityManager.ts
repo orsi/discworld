@@ -17,7 +17,7 @@ export class EntityManager {
         }
     }
     create () {
-        let newEntity = new BaseEntity(new Entity());
+        let newEntity = new BaseEntity();
         newEntity.serial = uuid();
         this.entities[newEntity.serial] = newEntity;
         return newEntity;

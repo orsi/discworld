@@ -94,6 +94,7 @@ export class WorldModule {
 
     // Entity based functions
     createAgent (entity: Entity) {
+      console.log('create agent', entity);
       let newEntity = new BaseEntity(entity);
       let newComponent = this.worldComponent.addEntityComponent(newEntity);
       // attach entity and component to client

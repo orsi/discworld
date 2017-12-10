@@ -12,12 +12,12 @@ export class Client {
         this.world = world;
 
         // attach socket events
-        socket.on('disconnect', (data) => this.world.onEntityDisconnect(this));
-        socket.on('speech', (data) => this.world.onClientSpeech(this, data));
-        socket.on('move', (data) => this.world.onEntityMove(this, data));
-        socket.on('focus', (data) => this.world.onEntityFocus(this, data));
-        socket.on('interact', (data) => this.world.onEntityInteract(this, data));
-        socket.on('action', (data) => this.world.onEntityAction(this, data));
+        socket.on('disconnect', () => this.world.onEntityDisconnect(this));
+        socket.on('speech', (text: string) => this.world.onClientSpeech(this, text));
+        socket.on('move', (dir: string) => this.world.onEntityMove(this, dir));
+        // socket.on('focus', ( ...args: any[]) => this.world.onEntityFocus(this, ...args));
+        // socket.on('interact', ( ...args: any[]) => this.world.onEntityInteract(this, ...args));
+        // socket.on('action', ( ...args: any[]) => this.world.onEntityAction(this, ...args));
     }
     send (event: string, ...args: any[]) {
         this.socket.emit(event, ...args);
