@@ -36,4 +36,4 @@ function copyFolderRecursiveSync( source, target ) {
         } );
     }
 }
-copyFolderRecursiveSync('./src/client/public', './dist');
+copyFolderRecursiveSync('./src/public', './dist');

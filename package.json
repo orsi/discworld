@@ -9,15 +9,14 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run build && npm run serve",
-    "prebuild": "npm run clean:dist",
-    "build": "npm run tslint && npm run build-ts",
-    "postbuild": "npm run copy:static && npm run bundle-js",
-    "build-ts": "tsc",
-    "bundle-js": "browserify ./dist/client/client.js > ./dist/public/js/reverie.js",
-    "serve": "node dist/index.js",
+    "prebuild": "npm run clean",
+    "build": "npm run tslint && npm run build-ts && npm run build-client",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
-    "clean:dist": "node scripts/cleanDist.js",
-    "copy:static": "node scripts/copyClient.js"
+    "build-ts": "tsc",
+    "build-client": "npm run copy && browserify ./dist/client/client.js > ./dist/public/js/reverie.js",
+    "serve": "node dist/index.js",
+    "clean": "node scripts/clean.js",
+    "copy": "node scripts/copy-static.js"
   },
   "author": "Jonathon Orsi",
   "license": "MIT",
@@ -32,7 +31,6 @@
     "@types/node": "^8.0.45",
     "@types/socket.io": "^1.4.31",
     "browserify": "^14.4.0",
-    "nodemon": "^1.12.1",
     "tslint": "^5.7.0",
     "typescript": "^2.5.3"
   }
