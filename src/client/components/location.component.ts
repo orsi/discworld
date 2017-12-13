@@ -36,8 +36,9 @@ export class LocationComponent extends WorldElement {
         this.style.position = 'absolute';
         this.style.border = '1px solid black';
         this.style.backgroundColor = `rgba(${color})`;
-        this.style.width = this.renderer.BLOCK_SIZE + 'px';
-        this.style.height = this.renderer.BLOCK_SIZE + 'px';
+        this.width = this.height = this.renderer.BLOCK_SIZE;
+        this.style.width = this.width + 'px';
+        this.style.height = this.height + 'px';
 
         // viewport.ctx.fillStyle = `rgba(${color},${ z / 128 })`;
         // viewport.ctx.beginPath();
@@ -67,7 +68,7 @@ export class LocationComponent extends WorldElement {
         // let w =     this.renderer.getMapLocation(this.location.x - 1, this.location.y);
         // let nw =    this.renderer.getMapLocation(this.location.x - 1, this.location.y - 1);
 
-        this.style.transform = `translate(${viewPosition.x}px, ${viewPosition.y}px)`;
+        this.style.transform = `translate(${viewPosition.x - (this.width / 2)}px, ${viewPosition.y - (this.height / 2)}px)`;
         // this.style.zIndex = this.location.z + '';
     }
 }
