@@ -26,6 +26,7 @@ export class TerminalComponent extends Component {
     this.style.padding = '3px';
     this.style.whiteSpace = 'nowrap';
     this.style.outline = 'none';
+    this.style.overflow = 'hidden';
 
     window.addEventListener('keydown', (e) => this.onKeyDown(e));
   }
