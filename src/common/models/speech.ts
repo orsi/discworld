@@ -1,6 +1,5 @@
-import { Entity } from './';
-
 export class Speech {
+    serial: string;
     text: string;
     createdAt: Date;
     constructor (text: string) {
