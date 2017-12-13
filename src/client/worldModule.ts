@@ -30,6 +30,12 @@ export class WorldModule {
   }
   update (delta: number) {
     this.elapsedTime += delta;
+
+    if (this.agentMoving && this.elapsedTime - this.lastMove > 200) {
+      this.socket.emit('move', this.parseMouseDirection(this.currentMouse.x, this.currentMouse.y));
+      this.lastMove = this.elapsedTime;
+    }
+
     for (let serial in this.entities) {
       this.entities[serial].entity.update(delta);
     }
@@ -108,4 +114,57 @@ export class WorldModule {
     getAgent (serial: string) {
       return this.entities[serial];
     }
+    lastMove: number = 0;
+    agentMoving: boolean = false;
+    currentMouse: {x: number, y: number} = {x: 0, y: 0};
+    onMoveStart (e: MouseEvent) {
+      this.agentMoving = true;
+      this.currentMouse.x = e.x;
+      this.currentMouse.y = e.y;
+    }
+    onMoveEnd(e: MouseEvent) {
+      this.agentMoving = false;
+      this.currentMouse.x = e.x;
+      this.currentMouse.y = e.y;
+    }
+    onMouseMove (e: MouseEvent) {
+      this.currentMouse.x = e.x;
+      this.currentMouse.y = e.y;
+    }
+    parseMouseDirection (x: number, y: number) {
+      let direction = '';
+
+      if (this.isNorth(x, y)) direction += 'n';
+      if (this.isEast(x, y)) direction += 'e';
+      if (this.isWest(x, y)) direction += 'w';
+      if (this.isSouth(x, y)) direction += 's';
+      return direction;
+  }
+  getTheta (x: number, y: number) {
+      // translate around origin
+      x = x - this.worldComponent.center.x;
+      y = y - this.worldComponent.center.y;
+      // get angle
+      let rad = Math.atan2(-1, 1) - Math.atan2(x, y);
+      rad =  rad * 360 / (2 * Math.PI);
+      if (rad < 0) rad += 360;
+      return rad;
+  }
+  isNorth(x: number, y: number) {
+      let theta = this.getTheta(x, y);
+      return  theta >= 30 && theta <= 175;
+  }
+  isEast(x: number, y: number) {
+      let theta = this.getTheta(x, y);
+      return theta >= 110 && theta <= 245;
+  }
+  isWest(x: number, y: number) {
+      let theta = this.getTheta(x, y);
+      return theta >= 0 && theta <= 55
+          || theta >= 280 && theta <= 360;
+  }
+  isSouth(x: number, y: number) {
+      let theta = this.getTheta(x, y);
+      return theta >= 225 && theta <= 315;
+  }
 }
