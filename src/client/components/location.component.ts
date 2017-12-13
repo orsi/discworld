@@ -34,6 +34,7 @@ export class LocationComponent extends WorldElement {
 
         this.style.display = 'inline-block';
         this.style.position = 'absolute';
+        this.style.border = '1px solid black';
         this.style.backgroundColor = `rgba(${color})`;
         this.style.width = this.renderer.BLOCK_SIZE + 'px';
         this.style.height = this.renderer.BLOCK_SIZE + 'px';
@@ -49,11 +50,12 @@ export class LocationComponent extends WorldElement {
         // viewport.ctx.fill();
     }
     render () {
-        let viewPosition = this.renderer.mapWorldLocationToPixel(this.location.x, this.location.y, this.location.z);
+        let viewPosition = this.renderer.mapToPixel(this.location);
         if (!this.renderer.isOnScreen(this.location.x, this.location.y, this.location.z)) {
             this.style.display = 'none';
             return;
         }
+        this.style.display = 'inline-block';
 
         // neighbouring tiles
         // let n =     this.renderer.getMapLocation(this.location.x, this.location.y - 1);
@@ -65,9 +67,8 @@ export class LocationComponent extends WorldElement {
         // let w =     this.renderer.getMapLocation(this.location.x - 1, this.location.y);
         // let nw =    this.renderer.getMapLocation(this.location.x - 1, this.location.y - 1);
 
-        this.style.display = 'inline-block';
-        this.style.transform = `translate(${viewPosition.x}px, ${viewPosition.y}px) scale(1.45) rotateX(60deg) rotateY(0deg) rotateZ(-45deg)`;
-        this.style.zIndex = this.location.z + '';
+        this.style.transform = `translate(${viewPosition.x}px, ${viewPosition.y}px)`;
+        // this.style.zIndex = this.location.z + '';
     }
 }
 customElements.define('reverie-location', LocationComponent);

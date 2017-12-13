@@ -32,6 +32,9 @@ export class WorldModule {
 
     // from network
     events.on('connection', (data) => this.onClientConnection(data));
+
+    // create world
+    this.onCreate();
   }
   update (delta: number) {
     this.cycles++;
