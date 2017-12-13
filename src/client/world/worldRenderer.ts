@@ -24,7 +24,7 @@ export class WorldRenderer {
     update (delta: number) {
       this.elapsedTime += delta;
       // update origin of client location
-      if (this.mainAgent) this.setWorldCenter(this.mainAgent.entity.location);
+      if (this.mainAgent) this.setWorldCenter(this.mainAgent.entity.currentLocation);
     }
     follow (agent: Agent) {
       this.mainAgent = agent;

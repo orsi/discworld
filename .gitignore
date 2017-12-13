@@ -7,6 +7,9 @@ node_modules
 # build directory
 dist
 
+# vscode
+.vscode
+
 # ignore npm debug files
 npm-debug.log
 

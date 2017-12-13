@@ -22,12 +22,12 @@ export class EntityComponent extends WorldElement {
     }
     render () {
         if (!this.entity.location) return;
-        if (!this.renderer.isOnScreen(this.entity.location.x, this.entity.location.y, this.entity.location.z)) {
+        if (!this.renderer.isOnScreen(this.entity.currentLocation.x, this.entity.currentLocation.y, this.entity.currentLocation.z)) {
             this.style.display = 'none';
             return;
         }
 
-        let viewPosition = this.renderer.mapToPixel(this.entity.location);
+        let viewPosition = this.renderer.mapToPixel(this.entity.currentLocation);
         // let x = viewPosition.x + this.viewport.xOffset + this.viewport.xCenter;
         // let y = viewPosition.y + this.viewport.yOffset + this.viewport.yCenter;
         this.style.left = viewPosition.x + 'px';
