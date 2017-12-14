@@ -28,21 +28,10 @@ export class LocationComponent extends WorldElement {
         this.svg.appendChild(this.tileSvg);
 
         // isometric
-
-        // calculate points
-        // let n =     this.renderer.getMapLocation(this.location.x, this.location.y - 1);
-        // let ne =    this.renderer.getMapLocation(this.location.x + 1, this.location.y - 1);
-        // let e =     this.renderer.getMapLocation(this.location.x + 1, this.location.y);
-        // let se =    this.renderer.getMapLocation(this.location.x + 1, this.location.y + 1);
-        // let s =     this.renderer.getMapLocation(this.location.x, this.location.y + 1);
-        // let sw =    this.renderer.getMapLocation(this.location.x - 1, this.location.y + 1);
-        // let w =     this.renderer.getMapLocation(this.location.x - 1, this.location.y);
-        // let nw =    this.renderer.getMapLocation(this.location.x - 1, this.location.y - 1);
-
-        let top = new Point2D(0, -(this.renderer.BLOCK_SIZE / 2));
-        let right = new Point2D(this.renderer.BLOCK_SIZE, 0);
-        let bottom = new Point2D(0, this.renderer.BLOCK_SIZE / 2);
-        let left = new Point2D(-(this.renderer.BLOCK_SIZE), 0);
+        let top = new Point2D(0, -(this.renderer.BLOCK_SIZE / 2) - (this.location.slants.top * this.renderer.BLOCK_SIZE / 2));
+        let right = new Point2D(this.renderer.BLOCK_SIZE, 0 - (this.location.slants.right * this.renderer.BLOCK_SIZE / 2));
+        let bottom = new Point2D(0, (this.renderer.BLOCK_SIZE / 2) - (this.location.slants.bottom * this.renderer.BLOCK_SIZE / 2));
+        let left = new Point2D(-(this.renderer.BLOCK_SIZE), 0 - (this.location.slants.left * this.renderer.BLOCK_SIZE / 2));
         this.tileSvg.setAttribute('d',
             `M ${top.x} ${top.y} L ${right.x} ${right.y} L ${bottom.x} ${bottom.y} L ${left.x} ${left.y}`);
 
@@ -66,19 +55,6 @@ export class LocationComponent extends WorldElement {
                 break;
         }
         this.tileSvg.setAttribute('fill', `rgba(${color})`);
-
-        // this.style.width = this.width + 'px';
-        // this.style.height = this.height + 'px';
-
-        // viewport.ctx.fillStyle = `rgba(${color},${ z / 128 })`;
-        // viewport.ctx.beginPath();
-        // viewport.ctx.moveTo(x, y + topSkew); // top
-        // viewport.ctx.lineTo(x + viewport.view.BLOCK_SIZE, y + (viewport.view.BLOCK_SIZE / 2) + rightSkew); // right
-        // viewport.ctx.lineTo(x, y + viewport.view.BLOCK_SIZE + bottomSkew); // bottom
-        // viewport.ctx.lineTo(x - viewport.view.BLOCK_SIZE, y + (viewport.view.BLOCK_SIZE / 2) + leftSkew); // left
-        // viewport.ctx.lineTo(x, y + topSkew); // top
-        // viewport.ctx.stroke();
-        // viewport.ctx.fill();
     }
     render () {
         let viewPosition = this.renderer.mapToPixel(this.location);

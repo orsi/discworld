@@ -72,9 +72,7 @@ export class WorldModule {
       let entity = this.entities.create();
       client.entity = entity;
       // find location for client
-      let x = 5;
-      let y = 5;
-      let location = this.maps.getLocation(x, y);
+      let location = this.maps.getRandomLocation();
       client.entity.moveTo(location);
       client.send('client/entity', client.entity);
     }
@@ -88,9 +86,7 @@ export class WorldModule {
 
       // send region to client
       let map = this.maps.getRegionAt(client.entity.location.x, client.entity.location.y);
-      map.forEach(x => {
-        x.forEach(location => client.send('world/location', location));
-      });
+      map.forEach(location => client.send('world/location', location));
 
       // send other entities in range
       for (let serial in this.clients) {
@@ -115,16 +111,12 @@ export class WorldModule {
 
     let entity = client.entity = this.entities.create();
 
-    let x = 5;
-    let y = 5;
-    let location = this.maps.getLocation(x, y);
+    let location = this.maps.getRandomLocation();
     entity.moveTo(location);
     client.send('client/entity', client.entity);
 
-    let map = this.maps.getRegionAt(x, y);
-    map.forEach(x => {
-      x.forEach(location => client.send('world/location', location));
-    });
+    let region = this.maps.getRegionAt(location.x, location.y);
+    region.forEach(location => client.send('world/location', location));
 
     // send new entity to clients in range
     for (let serial in this.clients) {
@@ -192,13 +184,11 @@ export class WorldModule {
     let newLocation = this.parsePosition(client.entity.location.x, client.entity.location.y, data);
 
     let location = this.maps.getLocation(newLocation.x,  newLocation.y);
-    if (!this.maps.canTravelToLocation(location)) return;
+    if (!location || !this.maps.canTravelToLocation(location)) return;
 
     client.entity.moveTo(location);
     let map = this.maps.getRegionAt(newLocation.x, newLocation.y);
-    map.forEach(x => {
-      x.forEach(location => client.send('world/location', location));
-    });
+    map.forEach(location => client.send('world/location', location));
 
     // send client location to clients in range
     for (let serial in this.clients) {

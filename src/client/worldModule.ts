@@ -70,7 +70,7 @@ export class WorldModule {
   }
   onLocation (location: WorldLocation) {
     this.locations[location.serial] = location;
-    this.worldComponent.addLocationComponent(location);
+    if (location.land) this.worldComponent.addLocationComponent(location);
   }
   onAgentRemove (serial: string) {
     console.log('remove entity', serial);

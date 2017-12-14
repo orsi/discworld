@@ -65,7 +65,6 @@ export class MapManager {
                     // there is land!
                     let heat = this.heatMap[x][y];
                     let height = this.heightMap[x][y];
-
                     if (height > 90) {
                         tile = Tile.ROCK;
                     } else if (height > 60) {
@@ -86,13 +85,96 @@ export class MapManager {
         for (let x = 0; x < this.world.width; x++) {
             this.map[x] = [];
             for (let y = 0; y < this.world.height; y++) {
+                let land = this.automatonMap[x][y] ? this.automatonMap[x][y] : false;
+
+                // if land, do height and tile calculation
+                let z, tile, slants;
+                if (land) {
+                    // calculate heigh
+                    z = this.heightMap[x][y] ? this.heightMap[x][y] : 0;
+
+                    // neighbours heights
+                    let n = this.heightMap[x][y - 1];
+                    let ne = x + 1 < this.world.height ? this.heightMap[x + 1][y - 1] : undefined;
+                    let e = x + 1 < this.world.height ? this.heightMap[x + 1][y] : undefined;
+                    let se = x + 1 < this.world.height ? this.heightMap[x + 1][y + 1] : undefined;
+                    let s = this.heightMap[x][y + 1];
+                    let sw = x - 1 >= 0 ? this.heightMap[x - 1][y + 1] : undefined;
+                    let w = x - 1 >= 0 ? this.heightMap[x - 1][y] : undefined;
+                    let nw = x - 1 >= 0 ? this.heightMap[x - 1][y - 1] : undefined;
+
+                    // neighbouring z height calculations
+                    let topNeighbourCount = 0;
+                    let rightNeighbourCount = 0;
+                    let bottomNeighbourCount = 0;
+                    let leftNeighbourCount = 0;
+                    let topSlant = 0;
+                    let rightSlant = 0;
+                    let bottomSlant = 0;
+                    let leftSlant = 0;
+                    if (n) {
+                        topSlant += (n - z);
+                        topNeighbourCount++;
+                        leftSlant += (n - z);
+                        leftNeighbourCount++;
+                    }
+                    if (ne) {
+                        topSlant += (ne - z);
+                        topNeighbourCount++;
+                    }
+                    if (e) {
+                        topSlant += (e - z);
+                        topNeighbourCount++;
+                        rightSlant += (e - z);
+                        rightNeighbourCount++;
+                    }
+                    if (se) {
+                        rightSlant += (se - z);
+                        rightNeighbourCount++;
+                    }
+                    if (s) {
+                        rightSlant += (s - z);
+                        rightNeighbourCount++;
+                        bottomSlant += (s - z);
+                        bottomNeighbourCount++;
+                    }
+                    if (sw) {
+                        bottomSlant += (sw - z);
+                        bottomNeighbourCount++;
+                    }
+                    if (w) {
+                        bottomSlant += (w - z);
+                        bottomNeighbourCount++;
+                        leftSlant += (w - z);
+                        leftNeighbourCount++;
+                    }
+                    if (nw) {
+                        leftSlant += (nw - z);
+                        leftNeighbourCount++;
+                    }
+                    // divide Slants by neighbour count for average
+                    topSlant /= topNeighbourCount > 0 ? topNeighbourCount : 1;
+                    rightSlant /= rightNeighbourCount > 0 ? rightNeighbourCount : 1;
+                    bottomSlant /= bottomNeighbourCount > 0 ? bottomNeighbourCount : 1;
+                    leftSlant /= leftNeighbourCount > 0 ? leftNeighbourCount : 1;
+                    slants = {
+                        top: topSlant,
+                        right: rightSlant,
+                        bottom: bottomSlant,
+                        left: leftSlant
+                    };
+                    tile = this.tileMap[x][y];
+                }
+
+                let heat = this.heatMap[x][y] ? this.heatMap[x][y] : 0;
                 this.map[x][y] = new WorldLocation(
                     x,
                     y,
-                    this.heightMap[x][y] ? this.heightMap[x][y] : 0,
-                    this.automatonMap[x][y] ? this.automatonMap[x][y] : false,
-                    this.tileMap[x][y] ? this.tileMap[x][y] : Tile.NULL,
-                    this.heatMap[x][y] ? this.heatMap[x][y] : 0,
+                    z,
+                    land,
+                    heat,
+                    tile,
+                    slants
                 );
                 this.map[x][y].serial = uuid();
             }
@@ -101,25 +183,21 @@ export class MapManager {
     isLocation(x: number, y: number) {
         return x >= 0 && x < this.world.width && y >= 0 && y < this.world.height;
     }
+    getRandomLocation() {
+        return this.map[5][5];
+    }
     getLocation (x: number, y: number) {
-        return this.isLocation(x, y) ? this.map[x][y] : new WorldLocation(
-            x,
-            y,
-            0,
-            false,
-            Tile.NULL,
-            0
-        );
+        return this.isLocation(x, y) ? this.map[x][y] : undefined;
     }
     canTravelToLocation (location: WorldLocation) {
         return location.land && location.tile !== Tile.ROCK;
     }
     getRegionAt (x: number, y: number) {
-        let region: any[][] = [];
+        let region: WorldLocation[] = [];
         for (let i = 0, ix = x - this.regionWidth / 2; i < this.regionWidth; i++, ix++) {
-            region[i] = [];
             for (let j = 0, iy = y - this.regionHeight / 2; j < this.regionHeight; j++, iy++) {
-                region[i][j] = this.getLocation(ix, iy);
+                let location = this.getLocation(ix, iy);
+                if (location) region.push(location);
             }
         }
         return region;
