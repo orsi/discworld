@@ -4,8 +4,6 @@ import { Point2D } from '../../common/data/point2d';
 import { WorldRenderer } from '../world/worldRenderer';
 
 export class EntityComponent extends WorldElement {
-    height: number = 32;
-    width: number = 32;
     entity: BaseEntity;
     speechElements: { [spechSerial: string]: HTMLElement} = {};
     avatarElement: HTMLElement;
@@ -13,9 +11,16 @@ export class EntityComponent extends WorldElement {
     constructor (entity: BaseEntity, renderer: WorldRenderer) {
         super(renderer);
         this.entity = entity;
+        this.width = this.height = this.renderer.BLOCK_SIZE;
     }
     connectedCallback() {
         super.connectedCallback();
+        // entity location
+        this.style.position = 'absolute';
+        this.style.width = this.width + 'px';
+        this.style.height = this.height + 'px';
+
+        // entity text
         this.speechElement = document.createElement('div');
         this.speechElement.style.position = 'absolute';
         this.speechElement.style.bottom = '100%';
@@ -23,14 +28,13 @@ export class EntityComponent extends WorldElement {
         this.speechElement.style.transform = 'translateX(-50%)';
         this.speechElement.style.width = '240px';
         this.speechElement.style.textAlign = 'center';
+
+        // entity avatar
         this.avatarElement = document.createElement('div');
         this.avatarElement.style.textAlign = 'center';
         this.avatarElement.appendChild(document.createTextNode('😀'));
         this.shadow.appendChild(this.speechElement);
         this.shadow.appendChild(this.avatarElement);
-        this.style.position = 'absolute';
-        this.style.width = this.width + 'px';
-        this.style.height = this.height + 'px';
     }
     render () {
         if (!this.entity.location) return;
@@ -42,8 +46,7 @@ export class EntityComponent extends WorldElement {
         let viewPosition = this.renderer.mapToPixel(this.entity.currentLocation);
         // let x = viewPosition.x + this.viewport.xOffset + this.viewport.xCenter;
         // let y = viewPosition.y + this.viewport.yOffset + this.viewport.yCenter;
-        this.style.left = (viewPosition.x - (this.width / 2)) + 'px';
-        this.style.top = (viewPosition.y - (this.height / 2)) + 'px';
+        this.style.transform = `translate(${(viewPosition.x - this.width)}px, ${(viewPosition.y - this.height)}px)`;
 
         // add new speech if they don't exist
         for (let i = 0; i < this.entity.currentSpeech.length; i++) {
