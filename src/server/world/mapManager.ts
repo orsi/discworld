@@ -39,7 +39,7 @@ export class MapManager {
         this.automatonMap = this.automaton.map;
     }
     generateHeatMap () {
-        let heatNoise = new Noise(5, 1);
+        let heatNoise = new Noise();
         for (let x = 0; x < this.world.width; x++) {
             this.heatMap[x] = [];
             for (let y = 0; y < this.world.height; y++) {
@@ -48,11 +48,13 @@ export class MapManager {
         }
     }
     generateHeightMap () {
-        let heightNoise = new Noise(5, 128);
+        let heightNoise = new Noise();
+        let frequency = 96;
+        let amplitude = 128;
         for (let x = 0; x < this.world.width; x++) {
             this.heightMap[x] = [];
             for (let y = 0; y < this.world.height; y++) {
-                this.heightMap[x][y] = heightNoise.noise2d(x, y);
+                this.heightMap[x][y] = heightNoise.noise2d(x / frequency, y / frequency) * amplitude;
             }
         }
     }
@@ -87,83 +89,13 @@ export class MapManager {
             for (let y = 0; y < this.world.height; y++) {
                 let land = this.automatonMap[x][y] ? this.automatonMap[x][y] : false;
 
-                // if land, do height and tile calculation
-                let z, tile, slants;
+                // if land, do tile, z, and midpoints calculations
+                let z, tile, midpoints;
                 if (land) {
                     // calculate heigh
-                    z = this.heightMap[x][y] ? this.heightMap[x][y] : 0;
-
-                    // neighbours heights
-                    let n = this.heightMap[x][y - 1];
-                    let ne = x + 1 < this.world.height ? this.heightMap[x + 1][y - 1] : undefined;
-                    let e = x + 1 < this.world.height ? this.heightMap[x + 1][y] : undefined;
-                    let se = x + 1 < this.world.height ? this.heightMap[x + 1][y + 1] : undefined;
-                    let s = this.heightMap[x][y + 1];
-                    let sw = x - 1 >= 0 ? this.heightMap[x - 1][y + 1] : undefined;
-                    let w = x - 1 >= 0 ? this.heightMap[x - 1][y] : undefined;
-                    let nw = x - 1 >= 0 ? this.heightMap[x - 1][y - 1] : undefined;
-
-                    // neighbouring z height calculations
-                    let topNeighbourCount = 0;
-                    let rightNeighbourCount = 0;
-                    let bottomNeighbourCount = 0;
-                    let leftNeighbourCount = 0;
-                    let topSlant = 0;
-                    let rightSlant = 0;
-                    let bottomSlant = 0;
-                    let leftSlant = 0;
-                    if (n) {
-                        topSlant += (n - z);
-                        topNeighbourCount++;
-                        leftSlant += (n - z);
-                        leftNeighbourCount++;
-                    }
-                    if (ne) {
-                        topSlant += (ne - z);
-                        topNeighbourCount++;
-                    }
-                    if (e) {
-                        topSlant += (e - z);
-                        topNeighbourCount++;
-                        rightSlant += (e - z);
-                        rightNeighbourCount++;
-                    }
-                    if (se) {
-                        rightSlant += (se - z);
-                        rightNeighbourCount++;
-                    }
-                    if (s) {
-                        rightSlant += (s - z);
-                        rightNeighbourCount++;
-                        bottomSlant += (s - z);
-                        bottomNeighbourCount++;
-                    }
-                    if (sw) {
-                        bottomSlant += (sw - z);
-                        bottomNeighbourCount++;
-                    }
-                    if (w) {
-                        bottomSlant += (w - z);
-                        bottomNeighbourCount++;
-                        leftSlant += (w - z);
-                        leftNeighbourCount++;
-                    }
-                    if (nw) {
-                        leftSlant += (nw - z);
-                        leftNeighbourCount++;
-                    }
-                    // divide Slants by neighbour count for average
-                    topSlant /= topNeighbourCount > 0 ? topNeighbourCount : 1;
-                    rightSlant /= rightNeighbourCount > 0 ? rightNeighbourCount : 1;
-                    bottomSlant /= bottomNeighbourCount > 0 ? bottomNeighbourCount : 1;
-                    leftSlant /= leftNeighbourCount > 0 ? leftNeighbourCount : 1;
-                    slants = {
-                        top: topSlant,
-                        right: rightSlant,
-                        bottom: bottomSlant,
-                        left: leftSlant
-                    };
                     tile = this.tileMap[x][y];
+                    z = this.heightMap[x][y] ? this.heightMap[x][y] : 0;
+                    midpoints = this.getMidpoints(x, y, z);
                 }
 
                 let heat = this.heatMap[x][y] ? this.heatMap[x][y] : 0;
@@ -174,11 +106,106 @@ export class MapManager {
                     land,
                     heat,
                     tile,
-                    slants
+                    midpoints
                 );
                 this.map[x][y].serial = uuid();
             }
         }
+    }
+    midpoints: { [key: string]: number } = {};
+    getMidpoints (x: number, y: number, z: number) {
+        // check for pre-calculated vertices
+        let leftMidpoint = this.midpoints['x' + x + 'y' + y];
+        let topMidpoint = this.midpoints['x' + (x + 1) + 'y' + y];
+        let rightMidpoint = this.midpoints['x' + (x + 1) + 'y' + (y + 1)];
+        let bottomMidpoint = this.midpoints['x' + x + 'y' + (y + 1)];
+
+        if (typeof leftMidpoint === 'undefined') {
+            leftMidpoint = z;
+            let leftCount = 1;
+            let n = this.heightMap[x][y - 1];
+            let w = x - 1 >= 0 ? this.heightMap[x - 1][y] : undefined;
+            let nw = x - 1 >= 0 ? this.heightMap[x - 1][y - 1] : undefined;
+            if (n) {
+                leftMidpoint += n;
+                leftCount++;
+            }
+            if (w) {
+                leftMidpoint += w;
+                leftCount++;
+            }
+            if (nw) {
+                leftMidpoint += nw;
+                leftCount++;
+            }
+            this.midpoints['x' + x + 'y' + y] = leftMidpoint /= leftCount;
+        }
+        if (typeof topMidpoint === 'undefined') {
+            topMidpoint = z;
+            let topCount = 1;
+            let n = this.heightMap[x][y - 1];
+            let ne = x + 1 < this.world.height ? this.heightMap[x + 1][y - 1] : undefined;
+            let e = x + 1 < this.world.height ? this.heightMap[x + 1][y] : undefined;
+            if (n) {
+                topMidpoint += n;
+                topCount++;
+            }
+            if (ne) {
+                topMidpoint += ne;
+                topCount++;
+            }
+            if (e) {
+                topMidpoint += e;
+                topCount++;
+            }
+            this.midpoints['x' + (x + 1) + 'y' + y] = topMidpoint /= topCount;
+        }
+        if (typeof rightMidpoint === 'undefined') {
+            rightMidpoint = z;
+            let rightCount = 1;
+            let e = x + 1 < this.world.width ? this.heightMap[x + 1][y] : undefined;
+            let se = x + 1 < this.world.width ? this.heightMap[x + 1][y + 1] : undefined;
+            let s = this.heightMap[x][y + 1];
+            if (e) {
+                rightMidpoint += e;
+                rightCount++;
+            }
+            if (se) {
+                rightMidpoint += se;
+                rightCount++;
+            }
+            if (s) {
+                rightMidpoint += s;
+                rightCount++;
+            }
+            this.midpoints['x' + (x + 1) + 'y' + (y + 1)] = rightMidpoint /= rightCount;
+        }
+        if (typeof bottomMidpoint === 'undefined') {
+            bottomMidpoint = z;
+            let bottomCount = 1;
+            let s = this.heightMap[x][y + 1];
+            let sw = x - 1 >= 0 ? this.heightMap[x - 1][y + 1] : undefined;
+            let w = x - 1 >= 0 ? this.heightMap[x - 1][y] : undefined;
+            if (s) {
+                bottomMidpoint += s;
+                bottomCount++;
+            }
+            if (sw) {
+                bottomMidpoint += sw;
+                bottomCount++;
+            }
+            if (w) {
+                bottomMidpoint += w;
+                bottomCount++;
+            }
+            this.midpoints['x' + x + 'y' + (y + 1)] = bottomMidpoint /= bottomCount;
+        }
+        return {
+            left: leftMidpoint - z,
+            top: topMidpoint - z,
+            right: rightMidpoint - z,
+            bottom: bottomMidpoint - z
+        };
     }
     isLocation(x: number, y: number) {
         return x >= 0 && x < this.world.width && y >= 0 && y < this.world.height;

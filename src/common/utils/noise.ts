@@ -1,24 +1,13 @@
 import { PRNG } from './';
 
 export class Noise {
-  frequency: number;
-  amplitude: number;
-  persistence: number;
-  octaves: number;
-  samples: number[] = [];
-  constructor(frequency: number, amplitude: number, octaves?: number, persistence?: number) {
-    this.frequency = frequency;
-    this.amplitude = amplitude;
-    this.octaves = octaves ? octaves : 1;
-    this.persistence = persistence ? persistence : 1;
-  }
+  samples: { [key: string]: number } = {};
   noise1d (x: number) {
-    let point = x / this.frequency;
-    let previousPoint = Math.floor(point);
-    let nextPoint = Math.ceil(point);
+    let previousPoint = Math.floor(x);
+    let nextPoint = Math.ceil(x);
     let previousPointValue = this.get1dValue(previousPoint);
     let nextPointValue = this.get1dValue(nextPoint);
-    let distance = point - previousPoint;
+    let distance = x - previousPoint;
     let result = previousPointValue * (1 - distance) + nextPointValue * (distance);
     return result;
   }
@@ -27,27 +16,23 @@ export class Noise {
     // cache value if not available
     if (!value) {
       let prng = new PRNG(x);
-      value = prng.range(0, this.amplitude);
-      this.samples[x] = value;
+      value = this.samples[x] = prng.next();
     }
     return value;
   }
   noise2d(x: number, y: number) {
-    let xLocation = x / this.frequency;
-    let yLocation = y / this.frequency;
-
-    let xLeftLocation = Math.floor(xLocation);
-    let xRightLocation = Math.ceil(xLocation);
-    let yTopLocation = Math.floor(yLocation);
-    let yBottomLocation = Math.ceil(yLocation);
+    let xLeftLocation = Math.floor(x);
+    let xRightLocation = Math.ceil(x);
+    let yTopLocation = Math.floor(y);
+    let yBottomLocation = Math.ceil(y);
 
     let topLeftValue = this.get2dValue(xLeftLocation, yTopLocation);
     let topRightValue = this.get2dValue(xRightLocation, yTopLocation);
     let bottomLeftValue = this.get2dValue(xLeftLocation, yBottomLocation);
     let bottomRightValue = this.get2dValue(xRightLocation, yBottomLocation);
 
-    let xDistance = xLocation - xLeftLocation;
-    let yDistance = yLocation - yTopLocation;
+    let xDistance = x - xLeftLocation;
+    let yDistance = y - yTopLocation;
 
     // how much does each corner influence the value
     let topLeftInfluence = topLeftValue * ((1 - xDistance) * (1 - yDistance));
@@ -59,21 +44,14 @@ export class Noise {
     return result;
   }
   get2dValue (x: number, y: number) {
-    let xValue = this.samples[x];
-    if (!xValue) {
+    let seed = 'x' + x + 'y' + y;
+    let value = this.samples[seed];
+    if (!value) {
       // cache value if not available
-      let xRandom = new PRNG(x);
-      xValue = this.samples[x] = xRandom.range(0, this.amplitude);
+      let rand = new PRNG(seed);
+      value = this.samples[seed] = rand.next();
     }
-
-    let yValue = this.samples[y];
-    if (!yValue) {
-      // cache value if not available
-      let yRandom = new PRNG(y);
-      yValue = this.samples[y] = yRandom.range(0, this.amplitude);
-    }
-
-    let value = (xValue + yValue) * 0.5;
+    // console.log(`seed: ${seed} value: ${value}`);
     return value;
   }
 }

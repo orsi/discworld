@@ -28,10 +28,12 @@ export class LocationComponent extends WorldElement {
         this.svg.appendChild(this.tileSvg);
 
         // isometric
-        let top = new Point2D(0, -(this.renderer.BLOCK_SIZE / 2) - (this.location.slants.top * this.renderer.BLOCK_SIZE / 2));
-        let right = new Point2D(this.renderer.BLOCK_SIZE, 0 - (this.location.slants.right * this.renderer.BLOCK_SIZE / 2));
-        let bottom = new Point2D(0, (this.renderer.BLOCK_SIZE / 2) - (this.location.slants.bottom * this.renderer.BLOCK_SIZE / 2));
-        let left = new Point2D(-(this.renderer.BLOCK_SIZE), 0 - (this.location.slants.left * this.renderer.BLOCK_SIZE / 2));
+        // console.log(`x: ${this.location.x} y: ${this.location.y}`);
+        // console.log(this.location.vertices);
+        let top = new Point2D(0, -(this.renderer.BLOCK_SIZE / 2) - (this.location.midpoints.top * this.renderer.BLOCK_SIZE / 2));
+        let right = new Point2D(this.renderer.BLOCK_SIZE, 0 - (this.location.midpoints.right * this.renderer.BLOCK_SIZE / 2));
+        let bottom = new Point2D(0, (this.renderer.BLOCK_SIZE / 2) - (this.location.midpoints.bottom * this.renderer.BLOCK_SIZE / 2));
+        let left = new Point2D(-(this.renderer.BLOCK_SIZE), 0 - (this.location.midpoints.left * this.renderer.BLOCK_SIZE / 2));
         this.tileSvg.setAttribute('d',
             `M ${top.x} ${top.y} L ${right.x} ${right.y} L ${bottom.x} ${bottom.y} L ${left.x} ${left.y}`);
 
@@ -64,7 +66,7 @@ export class LocationComponent extends WorldElement {
         }
         this.style.display = 'inline-block';
 
-        this.style.transform = `translate(${viewPosition.x - (this.width / 2)}px, ${viewPosition.y - (this.height / 2)}px)`;
+        this.style.transform = `translate(${viewPosition.x - (this.renderer.BLOCK_SIZE / 2)}px, ${viewPosition.y - (this.renderer.BLOCK_SIZE / 2)}px)`;
         // this.style.zIndex = this.location.z + '';
     }
 }
