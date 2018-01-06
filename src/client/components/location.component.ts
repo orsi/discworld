@@ -1,15 +1,17 @@
-import { WorldElement } from './';
+import { Component } from './';
 import { WorldLocation } from '../../common/models';
 import { Point2D } from '../../common/data/point2d';
-import { Tile } from '../../common/data/tiles';
+import { ELEMENTS } from '../../common/data/static/elements';
 import { WorldRenderer } from '../world/worldRenderer';
 
-export class LocationComponent extends WorldElement {
+export class LocationComponent extends Component {
+    renderer: WorldRenderer;
     location: WorldLocation;
     svg: SVGSVGElement;
     tileSvg: SVGPathElement;
     constructor (location: WorldLocation, renderer: WorldRenderer) {
-        super(renderer);
+        super();
+        this.renderer = renderer;
         this.location = location;
     }
     connectedCallback () {
@@ -30,36 +32,36 @@ export class LocationComponent extends WorldElement {
         // isometric
         // console.log(`x: ${this.location.x} y: ${this.location.y}`);
         // console.log(this.location.vertices);
-        let top = new Point2D(0, -(this.renderer.BLOCK_SIZE / 2) - (this.location.midpoints.top * this.renderer.BLOCK_SIZE / 2));
-        let right = new Point2D(this.renderer.BLOCK_SIZE, 0 - (this.location.midpoints.right * this.renderer.BLOCK_SIZE / 2));
-        let bottom = new Point2D(0, (this.renderer.BLOCK_SIZE / 2) - (this.location.midpoints.bottom * this.renderer.BLOCK_SIZE / 2));
-        let left = new Point2D(-(this.renderer.BLOCK_SIZE), 0 - (this.location.midpoints.left * this.renderer.BLOCK_SIZE / 2));
-        this.tileSvg.setAttribute('d',
-            `M ${top.x} ${top.y} L ${right.x} ${right.y} L ${bottom.x} ${bottom.y} L ${left.x} ${left.y}`);
+        // let top = new Point2D(0, -(this.renderer.BLOCK_SIZE / 2) - (this.location.midpoints.top * this.renderer.BLOCK_SIZE / 2));
+        // let right = new Point2D(this.renderer.BLOCK_SIZE, 0 - (this.location.midpoints.right * this.renderer.BLOCK_SIZE / 2));
+        // let bottom = new Point2D(0, (this.renderer.BLOCK_SIZE / 2) - (this.location.midpoints.bottom * this.renderer.BLOCK_SIZE / 2));
+        // let left = new Point2D(-(this.renderer.BLOCK_SIZE), 0 - (this.location.midpoints.left * this.renderer.BLOCK_SIZE / 2));
+        // this.tileSvg.setAttribute('d',
+        //     `M ${top.x} ${top.y} L ${right.x} ${right.y} L ${bottom.x} ${bottom.y} L ${left.x} ${left.y}`);
 
-        // color
-        let color = '';
-        switch (this.location.tile) {
-            case Tile.ROCK:
-                color = '150,150,150,.8';
-                break;
-            case Tile.GRASS:
-                color = '0,150,0,.8';
-                break;
-            case Tile.WATER:
-                color = '0,0,150,.8';
-                break;
-            case Tile.DIRT:
-                color = '150,120,0,.8';
-                break;
-            case Tile.NULL:
-                color = '0,0,0,.1';
-                break;
-        }
-        this.tileSvg.setAttribute('fill', `rgba(${color})`);
+        // // color
+        // let color = '';
+        // switch (this.location.element) {
+            // case Tile.ROCK:
+            //     color = '150,150,150,.8';
+            //     break;
+            // case Tile.GRASS:
+            //     color = '0,150,0,.8';
+            //     break;
+            // case Tile.WATER:
+            //     color = '0,0,150,.8';
+            //     break;
+            // case Tile.DIRT:
+            //     color = '150,120,0,.8';
+            //     break;
+        //     default:
+        //         color = '0,0,0,.1';
+        //         break;
+        // }
+        // this.tileSvg.setAttribute('fill', `rgba(${color})`);
     }
     render () {
-        let viewPosition = this.renderer.mapToPixel(this.location);
+        let viewPosition = this.renderer.mapWorldLocationToPixel(this.location.x, this.location.y, this.location.z);
         if (!this.renderer.isOnScreen(this.location.x, this.location.y, this.location.z)) {
             this.style.display = 'none';
             return;

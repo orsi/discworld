@@ -1,34 +1,39 @@
 import { Component } from './';
-import { WorldModule } from '../worldModule';
-import { EventChannel } from '../../common/services/eventChannel';
+import { Client } from '../client';
 export class TerminalComponent extends Component {
   historyIndex = -1;
   history: string[] = [];
-  value = '';
-  worldModule: WorldModule;
-
-  constructor (worldModule: WorldModule) {
-    super();
-    this.worldModule = worldModule;
+  _value = '';
+  set value (val: string) {
+    this._value = val;
+    this.stateChange = true;
   }
-
+  get value () { return this._value; }
+  constructor () {
+    super();
+  }
   connectedCallback () {
     super.connectedCallback();
-
-    // style
-    this.style.position = 'absolute';
-    this.style.bottom = '0';
-    this.style.left = '0';
-    this.style.right = '0';
-    this.style.height = '1.5em';
-    this.style.lineHeight = '1em';
-    this.style.fontFamily = 'Courier New';
-    this.style.padding = '3px';
-    this.style.whiteSpace = 'nowrap';
-    this.style.outline = 'none';
-    this.style.overflow = 'hidden';
-
     window.addEventListener('keydown', (e) => this.onKeyDown(e));
+  }
+  get template () {
+    return `
+    <style>
+      div {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 1.5em;
+        line-height: 1em;
+        font-family: 'Courier New';
+        padding: 3px;
+        whitespace: nowrap;
+        overflow: hidden;
+      }
+    </style>
+    <div>${this.value}</div>
+    `;
   }
   onKeyDown (e: KeyboardEvent) {
     if (e.ctrlKey || e.altKey || e.metaKey) {
@@ -56,8 +61,6 @@ export class TerminalComponent extends Component {
       // limit of 100 characters
       this.value += key;
     }
-
-    this.update();
   }
   prevHistory () {
     if (this.history.length > 0 && this.historyIndex < this.history.length - 1) {
@@ -90,19 +93,12 @@ export class TerminalComponent extends Component {
       this.historyIndex = -1;
 
       // emit message event
-      this.worldModule.onTerminalMessage(this.value);
+      this.dispatchEvent(new CustomEvent('terminal-message', {
+          detail: this.value
+        })
+      );
 
-      this.reset();
-    }
-  }
-  reset () {
-    this.value = '';
-    this.update();
-  }
-  update() {
-    // update input to reflect value
-    if (this.shadow.innerHTML !== this.value) {
-      this.shadow.innerHTML = this.value;
+      this.value = '';
     }
   }
   resize (width: number, height: number) {

@@ -1,13 +1,10 @@
 import { Point2D } from '../../common/data/point2d';
 import { Point3D } from '../../common/data/point3d';
-import { WorldModule } from '../worldModule';
 import { WorldLocation } from '../../common/models';
-import { Agent } from '../agent';
+import { WorldComponent } from '../components';
 
 export class WorldRenderer {
-  controller: WorldModule;
-  locations: { [serial: string]: WorldLocation } = {};
-  mainAgent: Agent;
+  controller: WorldComponent;
   elapsedTime = 0;
   top = 0;
   left = 0;
@@ -17,17 +14,16 @@ export class WorldRenderer {
   originPixel: Point2D = new Point2D(0, 0);
   originWorld: Point3D = new Point3D(0, 0, 0);
   BLOCK_SIZE = 32;
-    constructor (controller: WorldModule) {
+  REGION_SIZE = this.BLOCK_SIZE * 32;
+    constructor (controller: WorldComponent) {
       this.controller = controller;
-      this.locations = controller.locations;
     }
     update (delta: number) {
       this.elapsedTime += delta;
+
       // update origin of client location
-      if (this.mainAgent) this.setWorldCenter(this.mainAgent.entity.currentLocation);
-    }
-    follow (agent: Agent) {
-      this.mainAgent = agent;
+      // let entity = this.controller.getClientEntity();
+      // if (entity) this.setWorldOrigin(entity.currentX, entity.currentY, entity.currentZ);
     }
     setWorldCenter (point: Point3D) {
       this.originWorld.x = point.x;
@@ -46,6 +42,16 @@ export class WorldRenderer {
       let pixelY = (y - this.originWorld.y) * (this.BLOCK_SIZE / 2)
                   - (x - this.originWorld.x) * (this.BLOCK_SIZE / 2)
                   - (z - this.originWorld.z) * (this.BLOCK_SIZE / 2)
+                  + this.originPixel.y;
+      return new Point2D(pixelX, pixelY);
+    }
+    mapRegionToPixel (x: number, y: number, z: number) {
+      let pixelX = (x - this.originWorld.x) * this.REGION_SIZE
+                  + (y - this.originWorld.y) * this.REGION_SIZE
+                  + this.originPixel.x;
+      let pixelY = (y - this.originWorld.y) * (this.REGION_SIZE / 2)
+                  - (x - this.originWorld.x) * (this.REGION_SIZE / 2)
+                  - (z - this.originWorld.z) * (this.REGION_SIZE / 2)
                   + this.originPixel.y;
       return new Point2D(pixelX, pixelY);
     }
@@ -118,9 +124,9 @@ export class WorldRenderer {
       return viewportVisible && faceVisible;
     }
     getMapLocation (x: number, y: number) {
-      for (let serial in this.locations) {
-        let location = this.locations[serial];
-        if (location.x === x && location.y === y) return location;
-      }
+      // for (let serial in this.locations) {
+      //   let location = this.locations[serial];
+      //   if (location.x === x && location.y === y) return location;
+      // }
     }
   }

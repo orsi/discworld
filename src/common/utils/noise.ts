@@ -1,7 +1,11 @@
-import { PRNG } from './';
+import { Pseudo } from './';
 
 export class Noise {
+  pseudo: Pseudo;
   samples: { [key: string]: number } = {};
+  constructor (seed: string) {
+    this.pseudo = new Pseudo(seed);
+  }
   noise1d (x: number) {
     let previousPoint = Math.floor(x);
     let nextPoint = Math.ceil(x);
@@ -14,43 +18,48 @@ export class Noise {
   get1dValue (x: number) {
     let value = this.samples[x];
     // cache value if not available
-    if (!value) {
-      let prng = new PRNG(x);
-      value = this.samples[x] = prng.next();
-    }
+    if (!value) value = this.samples[x] = this.pseudo.next();
     return value;
   }
   noise2d(x: number, y: number) {
-    let xLeftLocation = Math.floor(x);
-    let xRightLocation = Math.ceil(x);
-    let yTopLocation = Math.floor(y);
-    let yBottomLocation = Math.ceil(y);
+    let x0 = Math.floor(x);
+    let x1 = x0 + 1;
+    let y0 = Math.floor(y);
+    let y1 = y0 + 1;
 
-    let topLeftValue = this.get2dValue(xLeftLocation, yTopLocation);
-    let topRightValue = this.get2dValue(xRightLocation, yTopLocation);
-    let bottomLeftValue = this.get2dValue(xLeftLocation, yBottomLocation);
-    let bottomRightValue = this.get2dValue(xRightLocation, yBottomLocation);
+    // weight of interpolation along axis
+    let xWeight = x - x0;
+    let yWeight = y - y0;
 
-    let xDistance = x - xLeftLocation;
-    let yDistance = y - yTopLocation;
+    // the four grid point values bounding x, y
+    let a = this.get2dValue(x0, y0);
+    let b = this.get2dValue(x1, y0);
+    let c = this.get2dValue(x1, y1);
+    let d = this.get2dValue(x0, y1);
 
     // how much does each corner influence the value
-    let topLeftInfluence = topLeftValue * ((1 - xDistance) * (1 - yDistance));
-    let topRightInfluence = topRightValue * ((xDistance) * (1 - yDistance));
-    let bottomLeftInfluence = bottomLeftValue * ((1 - xDistance) * (yDistance));
-    let bottomRightInfluence = bottomRightValue * ((xDistance) * (yDistance));
+    let c1 = this.cosInterp(a, b, xWeight);
+    let c2 = this.cosInterp(c, d, xWeight);
+    let ix0 = this.lerp(c1, c2, xWeight);
+    let c3 = this.cosInterp(a, c, yWeight);
+    let c4 = this.cosInterp(b, d, yWeight);
+    let ix1 = this.lerp(c3, c4, yWeight);
 
-    let result = topLeftInfluence + topRightInfluence + bottomLeftInfluence + bottomRightInfluence;
-    return result;
+    let value = ix0 + ix1;
+    return value;
+  }
+  lerp (x0: number, x1: number, w: number) {
+    return (1 - w) * x0 + w * x1;
+  }
+  cosInterp (v1: number, v2: number, mu: number) {
+    const mu2 = (1 - Math.cos(mu * Math.PI)) / 2;
+    return (v1 * (1 - mu2)) + (v2 * mu2);
   }
   get2dValue (x: number, y: number) {
     let seed = 'x' + x + 'y' + y;
     let value = this.samples[seed];
-    if (!value) {
-      // cache value if not available
-      let rand = new PRNG(seed);
-      value = this.samples[seed] = rand.next();
-    }
+    // cache value if not available
+    if (!value) value = this.samples[seed] = this.pseudo.next();
     // console.log(`seed: ${seed} value: ${value}`);
     return value;
   }

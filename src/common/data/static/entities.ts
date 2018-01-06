@@ -1,7 +1,7 @@
-export enum EntityTypes {
+export enum ENTITIES {
     HUMAN = 'human',
     DOG = 'dog',
     CAT = 'cat',
     FOX = 'fox',
-    WOLF = 'wolf'
+    HORSE = 'horse'
 }

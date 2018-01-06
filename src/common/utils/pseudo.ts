@@ -1,4 +1,4 @@
-export class PRNG {
+export class Pseudo {
   private a: number = 9301;
   private b: number = 49297;
   private m: number = 233280;

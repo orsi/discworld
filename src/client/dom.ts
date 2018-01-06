@@ -1,8 +1,9 @@
 import { Client } from './client';
-import { WorldModule } from './worldModule';
 import { EventChannel } from '../common/services/eventChannel';
 import { Point2D } from '../common/data/point2d';
-import * as Components from './components/';
+import * as Components from './components';
+import { Component } from './components/component';
+
 export class DOMRenderer {
     client: Client;
     root: Element;
@@ -28,14 +29,14 @@ export class DOMRenderer {
     render (interpolation: number) {
         this.components.forEach(c => c.render());
     }
-    addComponent <T extends Components.Component> (comp: T) {
+    addComponent <T extends Component> (comp: T) {
         this.components.push(comp);
         this.root.appendChild(comp);
         return comp;
     }
     removeComponent (serial: string) {
-        let htmlElement = <Components.Component>document.querySelector('#' + serial);
-        if (htmlElement) htmlElement.remove();
+        let htmlElement = <Component>document.getElementById(serial);
+        if (htmlElement) htmlElement.fadeOut();
         for (let i = 0; i < this.components.length; i++) {
             if (this.components[i].serial === serial) {
                 this.components.splice(i, 1);

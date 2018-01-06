@@ -1,16 +1,18 @@
-import { WorldElement } from './';
-import { BaseEntity } from '../../common/entities/baseEntity';
+import { Component } from './';
+import { EntityController } from '../world/entityController';
 import { Point2D } from '../../common/data/point2d';
 import { WorldRenderer } from '../world/worldRenderer';
 
-export class EntityComponent extends WorldElement {
-    entity: BaseEntity;
+export class EntityComponent extends Component {
+    renderer: WorldRenderer;
+    entity: EntityController;
     speechElements: { [spechSerial: string]: HTMLElement} = {};
     avatarElement: HTMLElement;
     speechElement: HTMLElement;
-    constructor (entity: BaseEntity, renderer: WorldRenderer) {
-        super(renderer);
+    constructor (entity: EntityController, renderer: WorldRenderer) {
+        super();
         this.entity = entity;
+        this.renderer = renderer;
         this.width = this.height = this.renderer.BLOCK_SIZE;
     }
     connectedCallback() {
@@ -37,13 +39,12 @@ export class EntityComponent extends WorldElement {
         this.shadow.appendChild(this.avatarElement);
     }
     render () {
-        if (!this.entity.location) return;
-        if (!this.renderer.isOnScreen(this.entity.currentLocation.x, this.entity.currentLocation.y, this.entity.currentLocation.z)) {
+        if (!this.renderer.isOnScreen(this.entity.currentX, this.entity.currentY, this.entity.currentZ)) {
             this.style.display = 'none';
             return;
         }
 
-        let viewPosition = this.renderer.mapToPixel(this.entity.currentLocation);
+        let viewPosition = this.renderer.mapWorldLocationToPixel(this.entity.currentX, this.entity.currentY, this.entity.currentZ);
         // let x = viewPosition.x + this.viewport.xOffset + this.viewport.xCenter;
         // let y = viewPosition.y + this.viewport.yOffset + this.viewport.yCenter;
         this.style.transform = `translate(${(viewPosition.x - this.width)}px, ${(viewPosition.y - this.height)}px)`;

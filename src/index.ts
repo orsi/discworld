@@ -22,6 +22,5 @@ process.on('SIGINT', function () {
     process.exit();
 });
 
-import { Reverie } from './server/reverie';
-const reverie = new Reverie();
+import * as reverie from './server/reverie';
 reverie.run();

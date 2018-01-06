@@ -1,5 +1,4 @@
-export { Entity } from './entity';
-export { Speech } from './speech';
+export { Entity, Speech } from './entity';
 export { Skill } from './skill';
 export { World } from './world';
 export { WorldState } from './worldState';
