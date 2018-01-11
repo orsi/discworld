@@ -11,73 +11,32 @@ import { DIRECTION } from '../common/data/static';
 export class Client {
     socket: SocketIO.Socket;
     entity: Entity;
+    state: any = {
+        inWorld: false as boolean,
+    };
+    isInWorld: boolean = false;
     constructor (socket: SocketIO.Socket) {
         this.socket = socket;
 
-        // socket.on('client/message', (p: Packets.Client.Message) => this.onChat(p));
-        socket.on('move', (p: Packets.Client.Move) => this.onMove(p));
-        socket.on('interact', (p: Packets.Client.Interact) => this.onInteract(p));
-        socket.on('focus', (p: Packets.Client.Focus) => this.onFocus(p));
+        socket.on('client/message', (p: Packets.Client.Message) => this.onMessage(p));
+        socket.on('client/move', (p: Packets.Client.Move) => this.onMove(p));
+        socket.on('client/interact', (p: Packets.Client.Interact) => this.onInteract(p));
+        socket.on('client/focus', (p: Packets.Client.Focus) => this.onFocus(p));
     }
     send (packet: Packet) {
         this.socket.emit(packet.event, packet);
     }
 
     // incoming packets
-    // onChat (p: Packets.Client.Message) {
-    //     console.log(p);
-    //     let message = p.message;
-    //     let isCommand = message.substring(0, 1) === '/';
-
-    //     if (isCommand) {
-    //         // let command = speech.split(' ');
-    //         // switch (command[0]) {
-    //         //   case '/generate':
-    //         //     this.onCreate();
-    //         //     break;
-    //         //   case '/destroy':
-    //         //     this.destroy();
-    //         //     break;
-    //         //   case '/move':
-    //         //     if (!client.entity) return;
-    //         //     let x, y;
-    //         //     if (command[1]) x = parseInt(command[1]);
-    //         //     if (command[2]) y = parseInt(command[2]);
-
-    //         //     if (x && y && !isNaN(x) && !isNaN(y)) {
-    //         //       let location = this.maps.getLocation(x, y);
-    //         //       if (!location) return;
-
-    //         //       client.entity.moveTo(location);
-    //         //       let map = this.maps.getRegionAt(location.x, location.y);
-    //         //       map.forEach(location => client.send('world/location', location));
-
-    //         //       // send client locations to clients in range
-    //         //       for (let serial in this.clients) {
-    //         //         let to = this.clients[serial];
-    //         //         if (this.maps.isLocationInRegion(to.entity.location, client.entity.location)) {
-    //         //           to.send('entity/move', client.entity);
-    //         //           client.send('entity/move', to.entity);
-    //         //         }
-    //         //       }
-    //         //     }
-    //         //     break;
-    //         //   default:
-    //         //     break;
-    //         // }
-    //     } else {
-    //         // if (!client.entity) return;
-    //         // client.entity.speak(speech);
-    //         // // send speech to all clients in region
-    //         // for (let serial in this.clients) {
-    //         //   let to = this.clients[serial];
-    //         //   if (this.regions.isPositionInRegion(to.entity.position, client.entity.position)) {
-    //         //     to.send('entity/speech', client.entity.serial, speech);
-    //         //     console.log(`sent entity/speech '${speech}' to ${to.serial}`);
-    //         //   }
-    //         // }
-    //     }
-    // }
+    onMessage (p: Packets.Client.Message) {
+        console.log(p);
+        const message = p.message;
+        if (this.state.inWorld && this.entity) {
+            reverie.getWorld().onEntityMessage(this.entity, message);
+        } else {
+            reverie.onClientMessage(this, message);
+        }
+    }
     /**
      * Moves client to a new position if possible and sends
      * new position information to client and all clients

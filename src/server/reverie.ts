@@ -83,21 +83,21 @@ function getAverageTickTime() {
 
 function onNetworkConnection (socket: SocketIO.Socket) {
     console.log(`reverie connection: ${socket.id}`);
-    clients[socket.id] = new Client(socket);
+    const client = clients[socket.id] = new Client(socket);
 
-    // attach socket events
-    socket.on('client/message', (p: Packets.Client.Message) => onClientMessage(socket.id, p));
+    if (world) world.createClientEntity(client);
 }
 function onNetworkDisconnect (...args: any[]) {
     console.log(...args);
 }
-function onClientMessage (id: string, p: Packets.Client.Message) {
-    const words = p.message.split(' ');
+export function onClientMessage (client: Client, message: string) {
+    const words = message.split(' ');
     if (words.length === 0) return;
     const command = words.shift();
-    if (!world) {
-        switch (command) {
-            case 'create':
+
+    switch (command) {
+        case 'create':
+            if (!world) {
                 if (words.length >= 3) {
                     const seed = words.shift();
                     if (!seed) return;
@@ -109,12 +109,28 @@ function onClientMessage (id: string, p: Packets.Client.Message) {
                     let h = parseInt(height);
                     world = new WorldSystem(seed, w, h);
 
-                    console.log(`world created: `, world);
+                    // create entities for all connected clients
+                    for (let serial in clients) {
+                        world.createClientEntity(clients[serial]);
+                    }
+
+                    client.send(new Packets.Server.Message('You are filled with imagination.'));
+                } else {
+                    client.send(new Packets.Server.Message('You can\'t seem to picture anything.'));
                 }
+            } else {
+                client.send(new Packets.Server.Message('You feel a longing for more.'));
+            }
+        break;
+        default:
+
+            // send to other clients
+            for (let serial in clients) {
+                // if (serial === client.socket.id) continue;
+                let c = clients[serial];
+                c.send(new Packets.Server.Message(`A voice echoes in the distance... "${message}"`));
+            }
             break;
-        }
-    } else {
-        console.log('world is created...', id, p);
     }
 }
 function onTerminalCommand (data: any) {

@@ -1,12 +1,19 @@
 // Reverie client
 // Created by Jonathon Orsi
-import { EventChannel } from '../common/services/eventChannel';
+
+/** Services */
 import * as server from './reverieServer';
-import { DOMRenderer } from './dom';
+import { EventChannel } from '../common/services/eventChannel';
+
+/** Data */
 import { State } from './states/state';
 import { WorldState, RegionState, LocationState } from './states';
-import { TerminalComponent } from './components';
 import * as Packets from '../common/data/net';
+
+/** DOM Components  */
+import { DOMRenderer } from './dom';
+import { TerminalComponent } from './components';
+import { ConscienceComponent } from './components/conscience';
 
 export class Client {
   events: EventChannel;
@@ -22,6 +29,7 @@ export class Client {
   ticks = 0;
 
   terminal: TerminalComponent;
+  conscience: ConscienceComponent;
   constructor() {
     const events = this.events = new EventChannel();
 
@@ -32,7 +40,11 @@ export class Client {
     this.terminal = this.dom.addComponent(new TerminalComponent());
     this.terminal.addEventListener('terminal-message', (e: Event) => this.onTerminalMessage(<CustomEvent>e));
 
+    // create server message window
+    this.conscience = this.dom.addComponent(new ConscienceComponent());
+
     // register incoming server events
+    server.on('server/message', (p: Packets.Server.Message) => this.conscience.print(p.message));
     server.on('client/entity', (p: Packets.Server.ClientEntityPacket) => this.onClientEntity(p));
     server.on('connect', (s: SocketIOClient.Socket) => this.onServerConnect(s));
     server.on('disconnect', (s: SocketIOClient.Socket) => this.onServerDisconnect(s));

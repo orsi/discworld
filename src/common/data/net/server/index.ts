@@ -1,3 +1,4 @@
+export { Message } from './message';
 export { WorldStatusPacket } from './worldStatusPacket';
 export { WorldDataPacket } from './worldDataPacket';
 export { ClientEntityPacket } from './clientEntityPacket';

@@ -1,17 +1,18 @@
 /**
  * Event Service for Reverie.
  */
-let queue: { event: string; data?: any; }[] = [];
-let events: { [event: string]: Function[] } = {};
+let queue: { eventName: string; sender: any; args: any[]; }[] = [];
+let events: { [eventName: string]: Function[] } = {};
 
-export function on (event: string, callback: (data?: any) => void) {
-  if (!events[event]) events[event] = [];
-  events[event].push(callback);
+export function on (eventName: string, callback: (data?: any) => void) {
+  if (!events[eventName]) events[eventName] = [];
+  events[eventName].push(callback);
 }
-export function emit (event: string, data?: any) {
+export function emit (eventName: string, sender: any, ...args: any[]) {
   queue.push({
-    event: event,
-    data: data
+    eventName: eventName,
+    sender: sender,
+    args: args
   });
 }
 export function process () {
@@ -20,16 +21,16 @@ export function process () {
   // the data given to it
   while (queue.length > 0) {
     // dequeue first event
-    const queuedEvent = queue.shift()!;
-    const callbacks = events[queuedEvent.event];
+    const event = queue.shift()!;
+    const callbacks = events[event.eventName];
 
     if (!callbacks || callbacks.length === 0) {
-      console.log(`No handlers for event "${queuedEvent.event}".`);
+      console.log(`No handlers for event "${event.eventName}".`);
       return;
     }
 
     for (let cb of callbacks) {
-      cb(queuedEvent.data);
+      cb(...event.args);
     }
   }
 }
