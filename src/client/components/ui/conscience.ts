@@ -7,6 +7,10 @@ export class Conscience extends Component {
   }
   connectedCallback () {
     super.connectedCallback();
+    this.addEventListener('thought-finished', (e: Event) => {
+      console.log(e);
+      (<CustomEvent>e).detail.remove();
+    });
   }
   get template () {
     let html = `
@@ -24,9 +28,6 @@ export class Conscience extends Component {
   }
   print (text: string) {
     let t = new Thought(text);
-    t.addEventListener('thought-finished', (e: Event) => {
-      (<Component>e.target).remove();
-    });
     this.shadow.appendChild(t);
   }
 }
