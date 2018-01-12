@@ -2,16 +2,16 @@ import * as server from '../reverieServer';
 import { Client } from '../client';
 import { State } from './state';
 import * as Packets from '../../common/data/net';
-import { TitleComponent, WorldComponent } from '../components';
+import * as Components from '../components';
 
 export class WorldState extends State {
-    title: TitleComponent;
-    world: WorldComponent;
+    title: Components.Title;
+    world: Components.World;
     constructor (client: Client) {
         super(client);
 
-        this.title = this.client.dom.addComponent(new TitleComponent());
-        this.world = this.client.dom.addComponent(new WorldComponent());
+        this.title = this.client.dom.addComponent(new Components.Title());
+        this.world = this.client.dom.addComponent(new Components.World());
         this.world.addEventListener('world-click', (e: Event) => this.onWorldClick(<CustomEvent>e));
 
         // server.on('region/data', (p: Packets.Server.RegionDataPacket) => this.onRegionData(p));

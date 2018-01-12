@@ -1,10 +1,10 @@
-import { Component } from './';
+import { Component } from './component';
 import { WorldLocation } from '../../common/models';
 import { Point2D } from '../../common/data/point2d';
 import { ELEMENTS } from '../../common/data/static/elements';
 import { WorldRenderer } from '../world/worldRenderer';
 
-export class LocationComponent extends Component {
+export class Location extends Component {
     renderer: WorldRenderer;
     location: WorldLocation;
     svg: SVGSVGElement;
@@ -72,4 +72,4 @@ export class LocationComponent extends Component {
         // this.style.zIndex = this.location.z + '';
     }
 }
-customElements.define('reverie-location', LocationComponent);
+customElements.define('reverie-location', Location);

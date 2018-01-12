@@ -1,7 +1,5 @@
-export { Component } from './component';
-export { TitleComponent } from './title';
-export { WorldComponent } from './world';
-export { RegionComponent } from './region.component';
-export { LocationComponent } from './location.component';
-export { EntityComponent } from './entity.component';
-export { TerminalComponent } from './terminal';
+export * from './ui';
+export { World } from './world';
+export { Region } from './region';
+export { Location } from './location';
+export { Entity } from './entity';

@@ -1,16 +1,16 @@
-import { Entity, Speech } from '../../common/models';
-import { WorldComponent } from '../components';
-import { EntityComponent } from '../components';
+import { Entity as EntityModel, Speech } from '../../common/models';
+import { World } from '../components';
+import { Entity } from '../components';
 import { Point3D } from '../../common/data/point3d';
 
 const MAX_TALK_MS: number = 5000;
 const RUN_DELAY_MS: number = 200;
 const WALK_DELAY_MS: number = 400;
 export class EntityController {
-    world: WorldComponent;
+    world: World;
     serial: string;
-    entity: Entity;
-    component: EntityComponent;
+    entity: EntityModel;
+    component: Entity;
     currentSpeech: Speech[] = [];
     currentX: number;
     currentY: number;
@@ -20,10 +20,10 @@ export class EntityController {
     lastZ: number;
     lastMovement: number = 0;
     elapsedTime = 0;
-    constructor (world: WorldComponent, entity: Entity) {
+    constructor (world: World, entity: EntityModel) {
         this.world = world;
         this.entity = entity;
-        this.component = new EntityComponent(this, this.world.renderer);
+        this.component = new Entity(this, this.world.renderer);
     }
     update (delta: number) {
         this.elapsedTime += delta;

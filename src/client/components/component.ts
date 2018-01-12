@@ -18,7 +18,9 @@ export class Component extends HTMLElement {
     connectedCallback () {
         // attach template to component
         this.shadow.innerHTML = this.template;
-        this.fadeIn();
+    }
+    disconnectedCallback () {
+        console.log('being removed!');
     }
     /**
      * CSS, HTML template for custom element.

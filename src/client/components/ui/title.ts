@@ -1,6 +1,6 @@
-import { Component } from './';
-import { Client } from '../client';
-export class TitleComponent extends Component {
+import { Component } from '../component';
+
+export class Title extends Component {
     constructor () {
         super();
     }
@@ -28,4 +28,4 @@ export class TitleComponent extends Component {
         `;
     }
 }
-customElements.define('reverie-title', TitleComponent);
+customElements.define('reverie-title', Title);

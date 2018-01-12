@@ -12,8 +12,7 @@ import * as Packets from '../common/data/net';
 
 /** DOM Components  */
 import { DOMRenderer } from './dom';
-import { TerminalComponent } from './components';
-import { ConscienceComponent } from './components/conscience';
+import * as Components from './components';
 
 export class Client {
   events: EventChannel;
@@ -28,8 +27,8 @@ export class Client {
   tickTime = 1000 / this.ticksPerSecond;
   ticks = 0;
 
-  terminal: TerminalComponent;
-  conscience: ConscienceComponent;
+  terminal: Components.Terminal;
+  conscience: Components.Conscience;
   constructor() {
     const events = this.events = new EventChannel();
 
@@ -37,11 +36,11 @@ export class Client {
     this.dom = new DOMRenderer(this);
 
     // create terminal
-    this.terminal = this.dom.addComponent(new TerminalComponent());
+    this.terminal = this.dom.addComponent(new Components.Terminal());
     this.terminal.addEventListener('terminal-message', (e: Event) => this.onTerminalMessage(<CustomEvent>e));
 
     // create server message window
-    this.conscience = this.dom.addComponent(new ConscienceComponent());
+    this.conscience = this.dom.addComponent(new Components.Conscience());
 
     // register incoming server events
     server.on('server/message', (p: Packets.Server.Message) => this.conscience.print(p.message));

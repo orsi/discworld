@@ -1,10 +1,10 @@
 import { Point2D } from '../../common/data/point2d';
 import { Point3D } from '../../common/data/point3d';
 import { WorldLocation } from '../../common/models';
-import { WorldComponent } from '../components';
+import { World } from '../components';
 
 export class WorldRenderer {
-  controller: WorldComponent;
+  controller: World;
   elapsedTime = 0;
   top = 0;
   left = 0;
@@ -15,7 +15,7 @@ export class WorldRenderer {
   originWorld: Point3D = new Point3D(0, 0, 0);
   BLOCK_SIZE = 32;
   REGION_SIZE = this.BLOCK_SIZE * 32;
-    constructor (controller: WorldComponent) {
+    constructor (controller: World) {
       this.controller = controller;
     }
     update (delta: number) {

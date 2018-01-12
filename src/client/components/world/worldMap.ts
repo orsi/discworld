@@ -1,5 +1,5 @@
 import { Component } from '../component';
-import { WorldComponent } from '../';
+import { World } from '../';
 import { WorldState, WorldRegion } from '../../../common/models';
 
 export class WorldMapComponent extends Component {

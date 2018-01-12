@@ -1,9 +1,9 @@
-import { Component } from './';
+import { Component } from './component';
 import { EntityController } from '../world/entityController';
 import { Point2D } from '../../common/data/point2d';
 import { WorldRenderer } from '../world/worldRenderer';
 
-export class EntityComponent extends Component {
+export class Entity extends Component {
     renderer: WorldRenderer;
     entity: EntityController;
     speechElements: { [spechSerial: string]: HTMLElement} = {};
@@ -74,4 +74,4 @@ export class EntityComponent extends Component {
         }
     }
 }
-customElements.define('reverie-entity', EntityComponent);
+customElements.define('reverie-entity', Entity);

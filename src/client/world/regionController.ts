@@ -1,12 +1,12 @@
 import { WorldRegion } from '../../common/models';
-import { RegionComponent, WorldComponent } from '../components';
+import { Region, World } from '../components';
 
 export class RegionController {
     region: WorldRegion;
-    component: RegionComponent;
-    world: WorldComponent;
+    component: Region;
+    world: World;
     elapsedTime: number = 0;
-    constructor (world: WorldComponent, region: WorldRegion, component: RegionComponent) {
+    constructor (world: World, region: WorldRegion, component: Region) {
         this.world = world;
         this.region = region;
         this.component = component;

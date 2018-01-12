@@ -1,7 +1,6 @@
 import { Client } from './client';
 import { EventChannel } from '../common/services/eventChannel';
 import { Point2D } from '../common/data/point2d';
-import * as Components from './components';
 import { Component } from './components/component';
 
 export class DOMRenderer {
@@ -9,7 +8,7 @@ export class DOMRenderer {
     root: Element;
     events: EventChannel;
     socket: SocketIO.Socket;
-    components: Components.Component[] = [];
+    components: Component[] = [];
     width: number;
     height: number;
     constructor (client: Client) {

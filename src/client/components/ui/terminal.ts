@@ -1,6 +1,6 @@
-import { Component } from './';
-import { Client } from '../client';
-export class TerminalComponent extends Component {
+import { Component } from '../component';
+
+export class Terminal extends Component {
   historyIndex = -1;
   history: string[] = [];
   _value = '';
@@ -19,15 +19,15 @@ export class TerminalComponent extends Component {
   get template () {
     return `
     <style>
-      div {
+      :host {
+        display: block;
         position: absolute;
         bottom: 0;
         left: 0;
-        right: 0;
-        height: 1.5em;
+        width: 100%;
         line-height: 1em;
         font-family: 'Courier New';
-        padding: 3px;
+        padding: 8px;
         whitespace: nowrap;
         overflow: hidden;
       }
@@ -101,9 +101,5 @@ export class TerminalComponent extends Component {
       this.value = '';
     }
   }
-  resize (width: number, height: number) {
-    this.width = width;
-    this.style.width = width + 'px';
-  }
 }
-customElements.define('reverie-terminal', TerminalComponent);
+customElements.define('reverie-terminal', Terminal);

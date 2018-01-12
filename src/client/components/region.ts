@@ -1,10 +1,10 @@
-import { Component } from './';
+import { Component } from './component';
 import { WorldRegion } from '../../common/models';
 import { Point2D } from '../../common/data/point2d';
 import { ELEMENTS } from '../../common/data/static/elements';
 import { WorldRenderer } from '../world/worldRenderer';
 
-export class RegionComponent extends Component {
+export class Region extends Component {
     renderer: WorldRenderer;
     region: WorldRegion;
     svg: SVGSVGElement;
@@ -27,4 +27,4 @@ export class RegionComponent extends Component {
         this.style.display = 'inline-block';
     }
 }
-customElements.define('reverie-region', RegionComponent);
+customElements.define('reverie-region', Region);

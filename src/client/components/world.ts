@@ -2,14 +2,15 @@
 import * as server from '../reverieServer';
 
 /** Dependencies */
-import { Component, EntityComponent, LocationComponent } from './';
+import { Component } from './component';
+import { Entity, Location } from './';
 import * as Packets from '../../common/data/net/';
 import { EntityController } from '../world/entityController';
-import { World, WorldLocation } from '../../common/models';
+import { World as WorldModel, WorldLocation } from '../../common/models';
 import { WorldRenderer } from '../world/worldRenderer';
 import { WorldMapComponent } from './world/worldMap';
 
-export class WorldComponent extends Component {
+export class World extends Component {
   worldMap: WorldMapComponent;
 
   canvas: HTMLCanvasElement;
@@ -102,7 +103,7 @@ export class WorldComponent extends Component {
       if (this.locations[location.serial]) return;
 
       this.locations[location.serial] = location;
-      let lComponent = new LocationComponent(location, this.renderer);
+      let lComponent = new Location(location, this.renderer);
       this.components.push(lComponent);
       this.locationContainer.appendChild(lComponent);
       return lComponent;
@@ -111,13 +112,13 @@ export class WorldComponent extends Component {
       let eComponent;
       // check if component for entity already exists
       for (let c of this.components) {
-          if (c.serial === entity.serial) eComponent = <EntityComponent>c;
+          if (c.serial === entity.serial) eComponent = <Entity>c;
       }
 
       // create component
       if (!eComponent) {
           this.entities[entity.serial] = entity;
-          eComponent = new EntityComponent(entity, this.renderer);
+          eComponent = new Entity(entity, this.renderer);
           this.components.push(eComponent);
           this.entityContainer.appendChild(eComponent);
       }
@@ -125,7 +126,7 @@ export class WorldComponent extends Component {
   }
   removeEntityComponent (serial: string) {
       for (let c of this.components) {
-          if ((<EntityComponent>c).entity.serial === serial) c.remove();
+          if ((<Entity>c).entity.serial === serial) c.remove();
       }
   }
 
@@ -215,4 +216,4 @@ export class WorldComponent extends Component {
     return theta >= 225 && theta <= 315;
   }
 }
-customElements.define('reverie-world', WorldComponent);
+customElements.define('reverie-world', World);
