@@ -1,109 +1,97 @@
-// Reverie client
-// Created by Jonathon Orsi
+/**
+ * Reverie - Client entry point
+ * Created by Jonathon Orsi
+ */
 
 /** Services */
 import * as server from './reverieServer';
-import { EventChannel } from '../common/services/eventChannel';
+
+/** DOM, Components  */
+import * as dom from './dom';
+import * as Components from './components';
+import { Component } from './components/component';
 
 /** Data */
-import { State } from './states/state';
-import { WorldState, RegionState, LocationState } from './states';
+import State from './states/state';
+import StartState from './states/start';
 import * as Packets from '../common/data/net';
 
-/** DOM Components  */
-import { DOMRenderer } from './dom';
-import * as Components from './components';
+/** Call init() on document ready */
+document.addEventListener('DOMContentLoaded', function() {
+  init();
+});
+let lastState: State;
+let currentState: State;
+export let clientEntitySerial: string;
+export let connected: boolean = false;
+export let body: HTMLBodyElement;
+export let reverie: Components.Reverie;
 
-export class Client {
-  events: EventChannel;
-  dom: DOMRenderer;
+function init () {
+  // give root to dom
+  body = <HTMLBodyElement>document.querySelector('body');
 
-  lastState: State;
-  currentState: State;
+  // create reverie
+  reverie = new Components.Reverie();
+  dom.render(reverie);
 
-  lastUpdate = new Date().getTime();
-  accumulator = 0;
-  ticksPerSecond = 30;
-  tickTime = 1000 / this.ticksPerSecond;
-  ticks = 0;
+  // register incoming server events
+  server.on('client/entity', (p: Packets.Server.ClientEntityPacket) => clientEntitySerial = p.serial);
+  server.on('connect', (s: SocketIOClient.Socket) => connected = true);
+  server.on('disconnect', (s: SocketIOClient.Socket) => connected = false);
 
-  terminal: Components.Terminal;
-  conscience: Components.Conscience;
-  constructor() {
-    const events = this.events = new EventChannel();
+  // create initial state
+  currentState = new StartState();
 
-    // dom needs to be initiated before components
-    this.dom = new DOMRenderer(this);
-
-    // create terminal
-    this.terminal = this.dom.addComponent(new Components.Terminal());
-    this.terminal.addEventListener('terminal-message', (e: Event) => this.onTerminalMessage(<CustomEvent>e));
-
-    // create server message window
-    this.conscience = this.dom.addComponent(new Components.Conscience());
-
-    // register incoming server events
-    server.on('server/message', (p: Packets.Server.Message) => this.conscience.print(p.message));
-    server.on('client/entity', (p: Packets.Server.ClientEntityPacket) => this.onClientEntity(p));
-    server.on('connect', (s: SocketIOClient.Socket) => this.onServerConnect(s));
-    server.on('disconnect', (s: SocketIOClient.Socket) => this.onServerDisconnect(s));
-
-    // create states and setup first state
-    this.currentState = new WorldState(this);
-  }
-  onTerminalMessage (e: CustomEvent) {
-    server.send(new Packets.Client.Message(e.detail));
-  }
-  getClientEntity () {
-    // return this.entities[this.clientEntitySerial];
-  }
-  // Events
-  clientEntitySerial: string;
-  onClientEntity (p: Packets.Server.ClientEntityPacket) {
-    console.log(p);
-    // set main agent and follow
-    this.clientEntitySerial = p.serial;
-  }
-  update () {// timing
-    this.ticks++;
-    const now = new Date().getTime();
-    const delta = now - this.lastUpdate;
-    this.lastUpdate = now;
-
-    if (this.ticks % 100 === 0) {
-      console.log(`update - delta: ${delta}ms, acc: ${this.accumulator}, ticktime: ${this.tickTime}`);
-    }
-
-    // process queued events
-    this.events.process();
-
-    // update state -- 30tps
-    this.accumulator += delta;
-    while (this.accumulator > this.tickTime) {
-      this.currentState.update(delta);
-      this.accumulator -= this.tickTime;
-    }
-
-    // render frame
-    this.dom.render(delta / this.tickTime);
-
-    requestAnimationFrame(() => this.update());
-  }
-  run () {
-    this.update();
-  }
-  connected: boolean = false;
-  onServerConnect (socket: SocketIOClient.Socket) {
-    this.connected = true;
-  }
-  onServerDisconnect (socket: SocketIOClient.Socket) {
-    this.connected = false;
-  }
+  // start update loop
+  run();
 }
 
-// on load
-document.addEventListener('DOMContentLoaded', function() {
-  // initial run
-  let reverie = new Client();
-  reverie.run();
-});
+let running = false;
+let accumulator = 0;
+let ticks = 0;
+const TICKS_PER_SECOND = 30;
+const TICK_MS = 1000 / TICKS_PER_SECOND;
+let lastUpdate: number;
+function update () {
+  // timing
+  ticks++;
+  const now = new Date().getTime();
+  const delta = now - lastUpdate;
+  lastUpdate = now;
+
+  if (ticks % 100 === 0) {
+    console.log(`update >> delta: ${delta}ms, acc: ${accumulator}`);
+  }
+
+  // update state -- 30tps
+  accumulator += delta;
+  while (accumulator > TICK_MS) {
+    currentState.update(delta);
+    accumulator -= TICK_MS;
+  }
+
+  // render
+  currentState.render(delta / TICK_MS);
+
+  // loop
+  if (running) requestAnimationFrame(() => update());
+}
+function pause () {
+  running = false;
+}
+function run () {
+  running = true;
+  lastUpdate = new Date().getTime();
+  update();
+}
+
+/** for debug */
+declare global {
+  interface Window {
+      reverie: any;
+  }
+}
+window.reverie = {};
+window.reverie.pause = pause;
+window.reverie.run = run;

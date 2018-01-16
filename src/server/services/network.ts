@@ -2,6 +2,7 @@ import * as http from 'http';
 import * as express from 'express';
 import * as io from 'socket.io';
 import * as path from 'path';
+import { Packet } from '../../common/data/net/packet';
 
 const publicDir = path.join(require('path').dirname(require!.main!.filename), './public');
 
@@ -29,6 +30,6 @@ socketServer.on('connection', (socket) => {
 export function on (event: string, cb: (...args: any[]) => void) {
   socketServer.on(event, cb);
 }
-export function broadcast (event: string, ...args: any[]) {
-  socketServer.emit(event, ...args);
+export function broadcast (p: Packet) {
+  socketServer.emit(p.event, p);
 }

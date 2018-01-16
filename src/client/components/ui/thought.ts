@@ -1,4 +1,5 @@
 import { Component } from '../component';
+import * as dom from '../../dom';
 
 export class Thought extends Component {
   static DELAY: number = 5000;

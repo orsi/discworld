@@ -1,12 +1,11 @@
-import { WorldState } from './';
-
 export class World {
+    seed: string;
+    width: number;
+    height: number;
     createdAt: Date;
-    constructor (
-        public seed: string,
-        public width: number,
-        public height: number
-    ) {
-        this.createdAt = new Date();
-    }
+    land: boolean[];
+    temperature: number[];
+    elevation: number[];
+    hydrology: number[];
+    constructor () {}
 }

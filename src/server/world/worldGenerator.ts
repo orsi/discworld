@@ -1,146 +1,141 @@
-import { WorldManager } from './worldManager';
-import { Automaton, Pseudo, Noise, sha256 } from '../../common/utils';
-import { ELEMENTS, REGIONS, ENTITIES, LOCATIONS } from '../../common/data/static';
-import { WorldRegion, WorldLocation } from '../../common/models';
-import { RegionController } from './regionController';
+/** Modules */
+import * as worldSystem from '../worldSystem';
 
-export class WorldGenerator {
-    world: WorldManager;
-    constructor (world: WorldManager) {
-        this.world = world;
+/** Data */
+import { World } from '../../common/models';
+
+export function generateLand (world: World) {
+    let auto = worldSystem.getAutomaton('automaton', world.width, world.height);
+    world.land = auto.cells;
+}
+export function generateElevation (world: World) {
+    if (!world.land) {
+        console.log('The world has not generated any land yet to define elevation!');
     }
-    generateLand () {
-        if (!this.world) {
-            console.log('There is no world to generate land upon yet!');
-        }
-        let auto = this.world.getAutomaton('automaton', this.world.getWidth(), this.world.getHeight());
-        return auto.cells;
+    let elevation = [];
+    let wavelength = 6;
+    let amplitude = worldSystem.MAX_ELEVATION;
+    let noise = worldSystem.getNoise('elevation');
+    for (let i = 0, max = world.width * world.height; i < max; i++) {
+        let x = Math.floor(i % world.width);
+        let y = Math.floor(i / world.width);
+        elevation[i] = Math.floor(noise.noise2d(x / wavelength, y / wavelength) * amplitude);
     }
-    generateElevation () {
-        if (!this.world.land) {
-            console.log('The world has not generated any land yet to define elevation!');
-        }
-        let elevation = [];
-        let wavelength = 96;
-        let amplitude = WorldManager.MAX_ELEVATION;
-        let noise = this.world.getNoise('elevation');
-        for (let i = 0, max = this.world.getWidth() * this.world.getHeight(); i < max; i++) {
-            let x = Math.floor(i % this.world.getWidth());
-            let y = Math.floor(i / this.world.getWidth());
-            elevation[i] = noise.noise2d(x / wavelength, y / wavelength) * amplitude;
-        }
-        return elevation;
+    world.elevation = elevation;
+}
+export function generateTemperature (world: World) {
+    if (!world.elevation) {
+        console.log('The world has no elevation map to generate temperature on!');
     }
-    generateTemperature () {
-        if (!this.world.elevation) {
-            console.log('The world has no elevation map to generate temperature on!');
-        }
-        let temp = [];
-        let noise = this.world.getNoise('temperature');
-        for (let i = 0, max = this.world.getWidth() * this.world.getHeight(); i < max; i++) {
-            let x = Math.floor(i % this.world.getWidth());
-            let y = Math.floor(i / this.world.getWidth());
-            temp[i] = noise.noise2d(x, y);
-        }
-        return temp;
+    let temp = [];
+    let wavelength = 12;
+    let amplitude = worldSystem.MAX_ELEVATION;
+    let noise = worldSystem.getNoise('temperature');
+    for (let i = 0, max = world.width * world.height; i < max; i++) {
+        let x = Math.floor(i % world.width);
+        let y = Math.floor(i / world.width);
+        temp[i] = Math.floor(noise.noise2d(x / wavelength, y / wavelength) * amplitude);
     }
-    generateHydrology () {
-        if (!this.world.temperature || !this.world.elevation) {
-            console.log('The world has no temperature or no elevation!');
-        }
-        let hydro = [];
-        let noise = this.world.getNoise('hydrology');
-        for (let i = 0, max = this.world.getWidth() * this.world.getHeight(); i < max; i++) {
-            let x = Math.floor(i % this.world.getWidth());
-            let y = Math.floor(i / this.world.getWidth());
-            hydro[i] = noise.noise2d(x, y);
-        }
-        return hydro;
+    world.temperature = temp;
+}
+export function generateHydrology (world: World) {
+    if (!world.temperature || !world.elevation) {
+        console.log('The world has no temperature or no elevation!');
     }
-    /**
-     * Creates the elements which can be found within each
-     * region generated dependent on the land, elevation,
-     * temperature, and hydrology fields.
-     */
-    generateElements () {
-        if (!this.world.temperature || !this.world.elevation) {
-            console.log('Cannot create elements with no temperature or elevation!');
-        }
-        let elements: ELEMENTS[] = [];
-        for (let i = 0; i < this.world.getWidth() * this.world.getHeight(); i++) {
-            let element: ELEMENTS;
-            let height = this.world.elevation[i];
-            let heat = this.world.temperature[i];
-            if (height > 120) {
-                element = ELEMENTS.OXYGEN;
-            } else if (height > 60) {
-                element = ELEMENTS.HYDROGEN;
-            } else if (height > 30) {
-                element = ELEMENTS.CARBON;
-            } else if (height > 10) {
-                element = ELEMENTS.GOLD;
-            } else {
-                element = ELEMENTS.IRON;
-            }
-        }
-        return elements;
+    let hydro = [];
+    let wavelength = 8;
+    let amplitude = worldSystem.MAX_ELEVATION;
+    let noise = worldSystem.getNoise('hydrology');
+    for (let i = 0, max = world.width * world.height; i < max; i++) {
+        let x = Math.floor(i % world.width);
+        let y = Math.floor(i / world.width);
+        hydro[i] = Math.floor(noise.noise2d(x / wavelength, y / wavelength) * amplitude);
     }
-    /**
-     * Creates the biomes which depend upon the generated
-     * land, elevation, temperature, and hydrology fields.
-     */
-    generateRegions () {
-        if (!this.world.elevation || !this.world.hydrology) {
-            console.log('Cannot create regions when there is no elevation or hydrology!');
-        }
-        let regions: WorldRegion[] = [];
-        for (let i = 0; i < this.world.getWidth() * this.world.getHeight(); i++) {
-            let regionType: REGIONS;
-            if (this.world.elevation[i] > 120) {
-                regionType = REGIONS.HILLS;
-            } else if (this.world.elevation[i] > 80 && this.world.hydrology[i] < 5) {
-                regionType = REGIONS.FOREST;
-            } else if (this.world.elevation[i] > 40 && this.world.hydrology[i] < 5) {
-                regionType = REGIONS.PLAINS;
-            } else {
-                regionType = REGIONS.SEA;
-            }
-            let newRegion = new WorldRegion(
-                this.world.getHash('region-' + i),
-                regionType,
-                i % this.world.getWidth(),
-                Math.floor(i / this.world.getWidth()),
-                this.world.elevation[i]
-            );
-            regions[i] = newRegion;
-        }
-        return regions;
-    }
-    /**
-     * Creates the synthesized location of each cell
-     * in the created world.
-     */
-    generateLocations() {
-        if (!this.world.regions || !this.world.elements) {
-            console.log('Cannot create locations with no regions or elements!');
-        }
-        let locations: WorldLocation[] = [];
-        for (let i = 0; i < this.world.getWidth() * this.world.getHeight(); i++) {
-            let locationType: LOCATIONS;
-            let element = this.world.elements[i];
-            if (element === ELEMENTS.CARBON) {
-                locationType = LOCATIONS.DIRT;
-            } else {
-                locationType = LOCATIONS.GRASS;
-            }
-            locations[i] = new WorldLocation(
-                this.world.getHash('location-' + i),
-                i % this.world.getWidth(),
-                Math.floor(i / this.world.getWidth()),
-                this.world.elevation[i],
-                locationType
-            );
-        }
-        return locations;
-    }
+    world.hydrology = hydro;
+}
+/**
+ * Creates the elements which can be found within each
+ * region generated dependent on the land, elevation,
+ * temperature, and hydrology fields.
+ */
+export function generateElements (world: World) {
+    // if (!world.temperature || !world.elevation) {
+    //     console.log('Cannot create elements with no temperature or elevation!');
+    // }
+    // let elements: ELEMENTS[] = [];
+    // for (let i = 0; i < world.width * world.height; i++) {
+    //     let element: ELEMENTS;
+    //     let height = world.elevation[i];
+    //     let heat = world.temperature[i];
+    //     if (height > 120) {
+    //         element = ELEMENTS.OXYGEN;
+    //     } else if (height > 60) {
+    //         element = ELEMENTS.HYDROGEN;
+    //     } else if (height > 30) {
+    //         element = ELEMENTS.CARBON;
+    //     } else if (height > 10) {
+    //         element = ELEMENTS.GOLD;
+    //     } else {
+    //         element = ELEMENTS.IRON;
+    //     }
+    // }
+    // return elements;
+}
+/**
+ * Creates the biomes which depend upon the generated
+ * land, elevation, temperature, and hydrology fields.
+ */
+export function generateRegions (world: World) {
+    // if (!world.elevation || !world.hydrology) {
+    //     console.log('Cannot create regions when there is no elevation or hydrology!');
+    // }
+    // let regions: WorldRegion[] = [];
+    // for (let i = 0; i < world.width * world.height; i++) {
+    //     let regionType: REGIONS;
+    //     if (world.elevation[i] > 120) {
+    //         regionType = REGIONS.HILLS;
+    //     } else if (world.elevation[i] > 80 && world.hydrology[i] < 5) {
+    //         regionType = REGIONS.FOREST;
+    //     } else if (world.elevation[i] > 40 && world.hydrology[i] < 5) {
+    //         regionType = REGIONS.PLAINS;
+    //     } else {
+    //         regionType = REGIONS.SEA;
+    //     }
+    //     let newRegion = new WorldRegion(
+    //         world.getHash('region-' + i),
+    //         regionType,
+    //         i % world.width,
+    //         Math.floor(i / world.width),
+    //         world.elevation[i]
+    //     );
+    //     regions[i] = newRegion;
+    // }
+    // return regions;
+}
+/**
+ * Creates the synthesized location of each cell
+ * in the created world.
+ */
+export function generateLocations(world: World) {
+    // if (!world.regions || !world.elements) {
+    //     console.log('Cannot create locations with no regions or elements!');
+    // }
+    // let locations: WorldLocation[] = [];
+    // for (let i = 0; i < world.width * world.height; i++) {
+    //     let locationType: LOCATIONS;
+    //     let element = world.elements[i];
+    //     if (element === ELEMENTS.CARBON) {
+    //         locationType = LOCATIONS.DIRT;
+    //     } else {
+    //         locationType = LOCATIONS.GRASS;
+    //     }
+    //     locations[i] = new WorldLocation(
+    //         world.getHash('location-' + i),
+    //         i % world.width,
+    //         Math.floor(i / world.width),
+    //         world.elevation[i],
+    //         locationType
+    //     );
+    // }
+    // return locations;
 }

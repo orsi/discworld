@@ -7,13 +7,7 @@ export class WorldStatusPacket extends Packet {
         public width: number,
         public height: number,
         public createdAt: Date,
-        public elapsedTime: number,
-        public state: WorldState,
-        public land: boolean[],
-        public temperature: number[],
-        public elevation: number[],
-        public hydrology: number[],
-        public regions: WorldRegion[]
+        public elapsedTime: number
     ) {
         super('world/status');
     }

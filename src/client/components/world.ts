@@ -10,7 +10,7 @@ import { World as WorldModel, WorldLocation } from '../../common/models';
 import { WorldRenderer } from '../world/worldRenderer';
 import { WorldMapComponent } from './world/worldMap';
 
-export class World extends Component {
+export default class World extends Component {
   worldMap: WorldMapComponent;
 
   canvas: HTMLCanvasElement;
@@ -31,9 +31,6 @@ export class World extends Component {
   connectedCallback () {
       super.connectedCallback();
 
-      // register network events
-      server.on('world/status', (p: Packets.Server.WorldStatusPacket) => this.onStatus(p));
-
       // setup events
       this.addEventListener('mousedown', (e) => {
         if (e.button === 2) this.onMoveStart(e);
@@ -51,17 +48,57 @@ export class World extends Component {
       });
   }
 
+  TILE_WIDTH = 12;
   get template () {
-    return `
+    const style = `
     <style>
-      world {
+      :host {
         position: relative;
         display: block;
-        width: 120px;
-        height: 120px;
+        text-align: center;
+      }
+      svg {
+        overflow: visible;
+        display: inline-block;
+        width: 1px;
       }
     </style>
     `;
+
+    let content = '';
+    if (this.model) {
+      content = `
+        <svg>
+          <g>
+      `;
+      for (let y = 0; y < this.model.height; y++) {
+        for (let x = 0; x < this.model.width; x++) {
+          let land = this.model.land[x + (y * this.model.width)];
+          let elevation = this.model.elevation[x + (y * this.model.width)];
+          let temperature = this.model.temperature[x + (y * this.model.width)] * 128;
+          let hydrology = this.model.hydrology[x + (y * this.model.width)] * 128;
+          let stroke = `#${temperature.toString(16).slice(0, 2)}00${hydrology.toString(16).slice(0, 2)}`;
+          let fill = `#${temperature.toString(16).slice(0, 2)}00${hydrology.toString(16).slice(0, 2)}`;
+          if (land) content += `
+            <path
+              fill="${fill}"
+              stroke="${stroke}"
+              d="
+                M${(x * this.TILE_WIDTH) - (y * this.TILE_WIDTH)},
+                  ${(y * this.TILE_WIDTH / 2) + (x * this.TILE_WIDTH / 2) - (elevation) + 256}
+                l${this.TILE_WIDTH},${this.TILE_WIDTH / 2}
+                l${-(this.TILE_WIDTH)},${this.TILE_WIDTH / 2}
+                l${-(this.TILE_WIDTH)},${-(this.TILE_WIDTH / 2)}
+                Z"
+              fill-opacity="1"
+              stroke-width="1"></path>
+          `;
+        }
+      }
+      content += `</g></svg>`;
+    }
+
+    return style + content;
   }
 
   update (delta: number) {
@@ -72,27 +109,22 @@ export class World extends Component {
     // }
     this.renderer.update(delta);
   }
-
-  status: Packets.Server.WorldStatusPacket;
-  onStatus (worldStatus: Packets.Server.WorldStatusPacket) {
-    console.log(worldStatus);
+  model: WorldModel;
+  setWorldData (p: Packets.Server.WorldDataPacket) {
+    console.log(p);
     // if world doesn't exist, create it
-    if (!this.worldMap) {
-      this.worldMap = new WorldMapComponent(
-        worldStatus.seed,
-        worldStatus.width,
-        worldStatus.height,
-        worldStatus.state,
-        worldStatus.createdAt
-      );
-      this.shadow.appendChild(this.worldMap);
-    }
-    this.worldMap.elapsedTime = worldStatus.elapsedTime;
-    this.worldMap.land = worldStatus.land;
-    this.worldMap.elevation = worldStatus.elevation;
-    this.worldMap.hydrology = worldStatus.hydrology;
-    this.worldMap.temperature = worldStatus.temperature;
-    this.worldMap.regions = worldStatus.regions;
+    if (!this.model) this.model = new WorldModel();
+    this.model.seed = p.seed;
+    this.model.width = p.width;
+    this.model.height = p.height;
+    this.model.createdAt = p.createdAt;
+    this.model.land = p.land;
+    this.model.elevation = p.elevation;
+    this.model.hydrology = p.hydrology;
+    this.model.temperature = p.temperature;
+
+    this.stateChange = true;
+    this.render();
   }
   getLocationComponent (serial: string) {
       for (let l of this.components) {

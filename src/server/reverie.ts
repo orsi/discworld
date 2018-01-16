@@ -6,26 +6,28 @@ import * as network from './services/network';
 import * as events from './services/events';
 import * as terminal from './services/terminal';
 
+/** Modules */
+import * as worldSystem from './worldSystem';
+import * as timers from '../common/utils/timerManager';
+
 /** Data */
 import * as Packets from '../common/data/net';
-
-import { WorldSystem } from './worldSystem';
-import { ScriptLoader } from '../common/utils/scriptLoader';
-import { TimerManager } from '../common/utils/timerManager';
 import { Client } from './client';
+
 
 export const version = {
     major: 0,
     minor: 0,
-    patch: 20
+    patch: 21
 };
 
 // root = ~/server/
 export const _rootdir = __dirname;
 
 // Main systems
-let world: WorldSystem;
-export function getWorld () { return world; }
+export function getWorld () {
+    return worldSystem.get();
+}
 
 /**
  * Begins running the Reverie application loop.
@@ -64,7 +66,6 @@ let deltas: number[] = [];
 let startTime: Date = new Date();
 let lastUpdate = startTime.getTime();
 let reverieLoop: NodeJS.Timer;
-let timers: TimerManager = new TimerManager();
 
 function getAverageTickTime() {
     let avg = 0;
@@ -83,9 +84,18 @@ function getAverageTickTime() {
 
 function onNetworkConnection (socket: SocketIO.Socket) {
     console.log(`reverie connection: ${socket.id}`);
+    // add to client dictionary
     const client = clients[socket.id] = new Client(socket);
 
-    if (world) world.createClientEntity(client);
+    // send world and entity if exists
+    let world = worldSystem.get();
+    if (world) {
+        client.send(new Packets.Server.WorldDataPacket(world));
+        let entity = worldSystem.createEntity(client.socket.handshake.address);
+        client.send(new Packets.Server.ClientEntityPacket(entity.serial));
+    }
+
+
 }
 function onNetworkDisconnect (...args: any[]) {
     console.log(...args);
@@ -96,8 +106,8 @@ export function onClientMessage (client: Client, message: string) {
     const command = words.shift();
 
     switch (command) {
-        case 'create':
-            if (!world) {
+        case '/create':
+            if (!worldSystem.worldCreated) {
                 if (words.length >= 3) {
                     const seed = words.shift();
                     if (!seed) return;
@@ -107,14 +117,19 @@ export function onClientMessage (client: Client, message: string) {
                     let height = words.shift();
                     if (!height || isNaN(parseInt(height))) return;
                     let h = parseInt(height);
-                    world = new WorldSystem(seed, w, h);
+
+                    let model = worldSystem.create(seed, w, h);
+                    client.send(new Packets.Server.Message('You are filled with imagination.'));
 
                     // create entities for all connected clients
                     for (let serial in clients) {
-                        world.createClientEntity(clients[serial]);
+                        let c = clients[serial];
+                        let entity = worldSystem.createEntity(c.socket.handshake.address);
+                        c.send(new Packets.Server.ClientEntityPacket(entity.serial));
                     }
 
-                    client.send(new Packets.Server.Message('You are filled with imagination.'));
+                    // broadcast new world to all clients
+                    network.broadcast(new Packets.Server.WorldDataPacket(model));
                 } else {
                     client.send(new Packets.Server.Message('You can\'t seem to picture anything.'));
                 }
@@ -122,8 +137,18 @@ export function onClientMessage (client: Client, message: string) {
                 client.send(new Packets.Server.Message('You feel a longing for more.'));
             }
         break;
-        default:
+        case '/destroy':
+            if (worldSystem.worldCreated) {
+                worldSystem.destroy();
+                client.send(new Packets.Server.Message('Your mind has become blank.'));
 
+                // broadcast destroy world to all clients
+                network.broadcast(new Packets.Server.WorldDestroy());
+            } else {
+                client.send(new Packets.Server.Message('You seem perplexed.'));
+            }
+            break;
+        default:
             // send to other clients
             for (let serial in clients) {
                 // if (serial === client.socket.id) continue;
@@ -155,13 +180,11 @@ function update() {
     // process event queue
     events.process();
 
-    // update each module
-    if (world) {
-        accumulator += delta;
-        while (accumulator >= timePerTick) {
-            world.update(timePerTick);
-            accumulator -= timePerTick;
-        }
+    // update modules
+    accumulator += delta;
+    while (accumulator >= timePerTick) {
+        worldSystem.update(timePerTick);
+        accumulator -= timePerTick;
     }
 
     // asynchronous loop

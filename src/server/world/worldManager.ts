@@ -4,7 +4,6 @@ import { Point3D } from '../../common/data/point3d';
 import { World, WorldLocation, Entity, WorldRegion, WorldState } from '../../common/models';
 import { RegionController } from './regionController';
 import { RegionManager } from './regionManager';
-import { WorldGenerator } from './worldGenerator';
 
 export class WorldManager {
     static MAX_ELEVATION = 128;
@@ -32,8 +31,8 @@ export class WorldManager {
         this.pseudo = new utils.Pseudo(this.hash);
 
         // generate base data
-        let generator = new WorldGenerator(this);
-        this.land = generator.generateLand();
+        // let generator = new WorldGenerator(this);
+        // this.land = generator.generateLand();
         // this.elevation = generator.generateElevation();
         // this.temperature = generator.generateTemperature();
         // this.hydrology = generator.generateHydrology();

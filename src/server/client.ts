@@ -1,7 +1,10 @@
 /** Services */
 import * as network from './services/network';
 import * as events from './services/events';
+
+/** Modules */
 import * as reverie from './reverie';
+import * as world from './worldSystem';
 
 import { Packet } from '../common/data/net/packet';
 import * as Packets from '../common/data/net';
@@ -30,11 +33,11 @@ export class Client {
     // incoming packets
     onMessage (p: Packets.Client.Message) {
         console.log(p);
-        const message = p.message;
-        if (this.state.inWorld && this.entity) {
-            reverie.getWorld().onEntityMessage(this.entity, message);
+        if (p.message.length === 0) return;
+        if (p.message.charAt(0) !== '/' && this.entity) {
+            world.onEntityMessage(this.entity, p.message);
         } else {
-            reverie.onClientMessage(this, message);
+            reverie.onClientMessage(this, p.message);
         }
     }
     /**

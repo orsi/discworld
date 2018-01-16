@@ -45,7 +45,7 @@ export class Noise {
     let c4 = this.cosInterp(b, d, yWeight);
     let ix1 = this.lerp(c3, c4, yWeight);
 
-    let value = ix0 + ix1;
+    let value = (ix0 + ix1) / 2;
     return value;
   }
   lerp (x0: number, x1: number, w: number) {

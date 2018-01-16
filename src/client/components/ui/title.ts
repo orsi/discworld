@@ -10,13 +10,12 @@ export class Title extends Component {
     get template() {
         return `
         <style>
-            h1 {
+            :host {
+                display: block;
                 position: absolute;
-                top: 0;
+                top: 60px;
                 right: 0;
-                bottom: 0;
                 left: 0;
-                margin: 64px;
                 padding: 16px;
                 font-family: 'Courier New';
                 font-size: 2em;
@@ -24,7 +23,7 @@ export class Title extends Component {
                 text-align: center;
             }
         </style>
-        <h1>Reverie</h1>
+        Reverie
         `;
     }
 }

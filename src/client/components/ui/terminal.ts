@@ -41,6 +41,7 @@ export class Terminal extends Component {
     } else {
         this.onKey(e.key);
     }
+    this.render();
   }
   onKeyUp (e: KeyboardEvent) {}
 

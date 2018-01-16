@@ -1,52 +1,80 @@
-import { Client } from './client';
-import { EventChannel } from '../common/services/eventChannel';
-import { Point2D } from '../common/data/point2d';
+/**
+ * Reverie DOM rendering library.
+ */
+import * as client from './client';
 import { Component } from './components/component';
+import { clearInterval } from 'timers';
 
-export class DOMRenderer {
-    client: Client;
-    root: Element;
-    events: EventChannel;
-    socket: SocketIO.Socket;
-    components: Component[] = [];
-    width: number;
-    height: number;
-    constructor (client: Client) {
-        this.client = client;
-        let events = this.events = client.events;
+let components: Component[] = [];
+export let windowWidth = 0;
+export let windowHeight = 0;
 
-        // html setup
-        this.root = <Element>document.querySelector('#reverie');
+// attach hooks to browser events
+window.addEventListener('resize',       (e: Event) => onWindowResize(e));
+window.addEventListener('contextmenu',  (e) => e.preventDefault()); // prevents context menu
 
-        // general browser events
-        window.addEventListener('resize',       (e: Event) => this.onWindowResize(e));
-        window.addEventListener('contextmenu',  (e) => e.preventDefault()); // prevents context menu
-
-        // socket
-        events.on('connect', (socket) => this.socket = socket);
+export function render (el: Component, container?: Component) {
+    if (container) {
+        container.shadow.appendChild(el);
+    } else {
+        client.body.appendChild(el);
     }
-    render (interpolation: number) {
-        this.components.forEach(c => c.render());
+    return new DOMComponent(el);
+}
+export function select (el: Component) {
+    return new DOMComponent(el);
+}
+function onWindowResize (e: Event) {
+    let window = <Window>e.currentTarget;
+    windowWidth = window.innerWidth;
+    windowHeight = window.innerHeight;
+}
+
+class DOMComponent {
+    constructor (public component: Component) {}
+    position (x: number, y: number) {
+        this.component.style.top = x + 'px';
+        this.component.style.left = y + 'px';
+        return this;
     }
-    addComponent <T extends Component> (comp: T) {
-        this.components.push(comp);
-        this.root.appendChild(comp);
-        return comp;
-    }
-    removeComponent (serial: string) {
-        let htmlElement = <Component>document.getElementById(serial);
-        if (htmlElement) htmlElement.fadeOut();
-        for (let i = 0; i < this.components.length; i++) {
-            if (this.components[i].serial === serial) {
-                this.components.splice(i, 1);
-                break;
+    fadeIn (d?: number, cb?: () => void) {
+        let duration = d || 500;
+        const start = new Date().getTime();
+        let el = this.component;
+        el.style.opacity = '0';
+        let fade = function () {
+            let now = new Date().getTime();
+            let delta = now - start;
+            let opacity = delta / duration;
+            if (opacity > 1) opacity = 1;
+            el.style.opacity = opacity.toString();
+            if (now - start < duration) {
+                setTimeout(fade, 16);
+            } else {
+                if (cb) cb();
             }
-        }
+        };
+        let interval = setTimeout(fade, 16);
+        return this;
     }
-    onWindowResize (e: Event) {
-        let window = <Window>e.currentTarget;
-        this.width = window.innerWidth;
-        this.height = window.innerHeight;
-        this.components.forEach(c => c.resize(window.innerWidth, window.innerHeight));
+    fadeOut (d?: number, cb?: () => void) {
+        let duration = d || 500;
+        const start = new Date().getTime();
+        let el = this.component;
+        el.style.opacity = '1';
+        let fade = function () {
+            let now = new Date().getTime();
+            let delta = now - start;
+            let opacity = 1 - (delta / duration);
+            if (opacity < 0) opacity = 0;
+            el.style.opacity = opacity.toString();
+            if (now - start < duration) {
+                setTimeout(fade, 16);
+            } else {
+                if (cb) cb();
+            }
+        };
+        let interval = setTimeout(fade, 16);
+        return this;
     }
 }

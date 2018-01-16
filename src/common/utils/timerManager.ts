@@ -1,26 +1,24 @@
-export class TimerManager {
-    timers: Timer[] = [];
-    process (delta: number) {
-        for (let i = 0; i < this.timers.length; i++) {
-            const timer = this.timers[i];
-            if (timer.isActive) timer.tick(delta);
-            else this.timers.splice(i, 1);
-          }
-    }
-    createTimer(tickTime: number, callback: () => void, isOnce: boolean = false) {
-        let timer = new Timer(tickTime, callback, isOnce);
-        timer.id = this.timers.length;
-        this.timers.push(timer);
-        return timer.id;
-    }
-    remove (i: number) {
-        if (this.timers.length - 1 > i) {
-            this.timers.splice(i, 1);
+let timers: Timer[] = [];
+export function process (delta: number) {
+    for (let i = 0; i < timers.length; i++) {
+        const timer = timers[i];
+        if (timer.isActive) timer.tick(delta);
+        else timers.splice(i, 1);
         }
+}
+export function create(tickTime: number, callback: () => void, isOnce: boolean = false) {
+    let timer = new Timer(tickTime, callback, isOnce);
+    timer.id = timers.length;
+    timers.push(timer);
+    return timer.id;
+}
+export function remove (i: number) {
+    if (timers.length - 1 > i) {
+        timers.splice(i, 1);
     }
-    removeAll () {
-        this.timers.splice(0, this.timers.length);
-    }
+}
+export function removeAll () {
+    timers.splice(0, timers.length);
 }
 class Timer {
     id: number;
@@ -34,10 +32,10 @@ class Timer {
     private isOnce = false;
     private callback: () => void;
     constructor(tickTime: number, callback: () => void, isOnce: boolean = false) {
-        this.tickTime = tickTime;
-        this.callback = callback;
+        tickTime = tickTime;
+        callback = callback;
         this.timeUntilNextTick = tickTime;
-        this.isOnce = isOnce;
+        isOnce = isOnce;
     }
     tick(elapsedTime: number) {
         this.totalTime += elapsedTime;
