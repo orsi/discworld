@@ -36,9 +36,7 @@ export default class Start extends State {
             // create world component
             this.world = new WorldComponent();
             dom.render(this.world, client.reverie);
-            let top = this.title.offsetTop + this.title.clientHeight + 18;
-            let left = (this.title.clientWidth / 2) - (this.world.clientWidth / 2);
-            dom.select(this.world).position(top, left).fadeIn(3000);
+            dom.select(this.world).fadeIn(3000);
             this.world.addEventListener('world-click', (e: Event) => this.onWorldClick(<CustomEvent>e));
         }
         this.world.setWorldData(p);

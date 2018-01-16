@@ -53,14 +53,15 @@ export default class World extends Component {
     const style = `
     <style>
       :host {
-        position: relative;
+        position: absolute;
         display: block;
+        top: 50%;
+        left: 50%;
         text-align: center;
       }
       svg {
         overflow: visible;
         display: inline-block;
-        width: 1px;
       }
     </style>
     `;
@@ -85,7 +86,7 @@ export default class World extends Component {
               stroke="${stroke}"
               d="
                 M${(x * this.TILE_WIDTH) - (y * this.TILE_WIDTH)},
-                  ${(y * this.TILE_WIDTH / 2) + (x * this.TILE_WIDTH / 2) - (elevation) + 256}
+                  ${(y * this.TILE_WIDTH / 2) + (x * this.TILE_WIDTH / 2) - (elevation)}
                 l${this.TILE_WIDTH},${this.TILE_WIDTH / 2}
                 l${-(this.TILE_WIDTH)},${this.TILE_WIDTH / 2}
                 l${-(this.TILE_WIDTH)},${-(this.TILE_WIDTH / 2)}
