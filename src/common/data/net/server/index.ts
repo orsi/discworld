@@ -1,10 +1,8 @@
-export { Message } from './message';
-export { WorldStatusPacket } from './worldStatusPacket';
-export { WorldDataPacket } from './worldDataPacket';
+export { default as ServerMessage } from './serverMessage';
+export { default as WorldData } from './worldData';
 export { default as WorldDestroy } from './worldDestroy';
-export { ClientEntityPacket } from './clientEntityPacket';
-export { EntityCreatePacket } from './entityCreatePacket';
-export { EntityPositionPacket } from './entityPositionPacket';
-export { EntityChatPacket } from './entityChatPacket';
-export { EntityRemovePacket } from './entityRemovePacket';
-export { RegionDataPacket } from './regionDataPacket';
+export { default as ClientEntity } from './clientEntity';
+export { default as EntityMove } from './entityMove';
+export { default as EntityMessage } from './entityMessage';
+export { default as EntityRemove } from './entityRemove';
+export { default as RegionData } from './regionData';

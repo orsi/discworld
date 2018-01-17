@@ -1,6 +1,6 @@
-import { Packet } from '../packet';
+import Packet from '../packet';
 
-export class EntityChatPacket extends Packet {
+export default class EntityMessage extends Packet {
     constructor (
         public serial: string,
         public message: string

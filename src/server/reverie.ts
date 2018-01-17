@@ -12,7 +12,7 @@ import * as timers from '../common/utils/timerManager';
 
 /** Data */
 import * as Packets from '../common/data/net';
-import { Client } from './client';
+import Client from './client';
 
 
 export const version = {

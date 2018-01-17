@@ -1,3 +1,3 @@
-export class Packet {
+export default class Packet {
     constructor (public event: string) {}
 }

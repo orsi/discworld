@@ -2,7 +2,7 @@
  * Reverie DOM rendering library.
  */
 import * as client from './client';
-import { Component } from './components/component';
+import Component from './components/component';
 import { clearInterval } from 'timers';
 
 let components: Component[] = [];
@@ -30,6 +30,10 @@ function onWindowResize (e: Event) {
     windowHeight = window.innerHeight;
 }
 
+/**
+ * Wrapper for components. Provides extra functionality
+ * for DOM manipulation.
+ */
 class DOMComponent {
     constructor (public component: Component) {}
     position (x: number, y: number) {

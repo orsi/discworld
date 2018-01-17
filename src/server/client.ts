@@ -11,7 +11,7 @@ import * as Packets from '../common/data/net';
 import { Entity } from '../common/models';
 import { DIRECTION } from '../common/data/static';
 
-export class Client {
+export default class Client {
     socket: SocketIO.Socket;
     entity: Entity;
     state: any = {

@@ -1,4 +1,4 @@
-import { Component } from '../component';
+import Component from '../component';
 import { Thought } from './thought';
 
 export class Conscience extends Component {

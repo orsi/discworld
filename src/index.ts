@@ -6,7 +6,7 @@
  *
  * */
 
- import * as readline from 'readline';
+import * as readline from 'readline';
 // Setup graceful shutdown
 if (process.platform === 'win32') {
     let rl = readline.createInterface({

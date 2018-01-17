@@ -1,6 +1,6 @@
 import { Pseudo } from './';
 
-export class Automaton {
+export default class Automaton {
   width: number;
   height: number;
   step = 0;

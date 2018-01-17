@@ -1,12 +1,10 @@
 import { uuid } from '../../common/utils/uuid';
-import { Point2D } from '../../common/data/point2d';
-export class Component extends HTMLElement {
+export default class Component extends HTMLElement {
     serial: string;
     stateChange: boolean = false;
     disposing: boolean = false;
     width: number;
     height: number;
-    center: Point2D;
     shadow: ShadowRoot;
     constructor () {
         super();
@@ -66,6 +64,5 @@ export class Component extends HTMLElement {
         this.height = height;
         this.style.width = width + 'px';
         this.style.height = height + 'px';
-        this.center = new Point2D(width / 2, height / 2);
     }
 }

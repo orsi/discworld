@@ -1,4 +1,4 @@
-export class Tile {
+export default class Tile {
     id: number;
     name: string;
     constructor (id: number, name: string) {

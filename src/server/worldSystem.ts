@@ -12,7 +12,6 @@ import * as Packets from '../common/data/net';
 import { Point3D } from '../common/data/point3d';
 import { ELEMENTS } from '../common/data/static';
 import { World, WorldState, WorldRegion, WorldLocation, Tile, Entity } from '../common/models';
-import { Client } from './client';
 
 export const MAX_ELEVATION = 255;
 export const MAX_REGIONS = 24;
@@ -128,8 +127,8 @@ export function createEntity (id: string) {
   //   }
   // }
 }
-export function removeClientEntity (client: Client) {
-  delete entities[client.entity.serial];
+export function removeEntity (serial: string) {
+  delete entities[serial];
 }
 
 export function sendWorldMap () {

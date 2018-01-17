@@ -1,4 +1,4 @@
-export class Skill {
+export default class Skill {
     id: number;
     name: string;
 }

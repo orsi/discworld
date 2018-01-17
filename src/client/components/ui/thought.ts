@@ -1,4 +1,4 @@
-import { Component } from '../component';
+import Component from '../component';
 import * as dom from '../../dom';
 
 export class Thought extends Component {

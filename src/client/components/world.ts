@@ -2,7 +2,7 @@
 import * as server from '../reverieServer';
 
 /** Dependencies */
-import { Component } from './component';
+import Component from './component';
 import { Entity, Location } from './';
 import * as Packets from '../../common/data/net/';
 import { EntityController } from '../world/entityController';

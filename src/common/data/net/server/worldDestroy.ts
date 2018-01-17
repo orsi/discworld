@@ -1,4 +1,4 @@
-import { Packet } from '../packet';
+import Packet from '../packet';
 
 export default class WorldDestroy extends Packet {
     constructor () {

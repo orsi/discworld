@@ -1,7 +1,7 @@
 import { World } from './';
 import { REGIONS } from '../data/static/regions';
 
-export class WorldRegion {
+export default class WorldRegion {
     constructor (
         public serial: string,
         public type: REGIONS,

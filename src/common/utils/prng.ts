@@ -1,4 +1,4 @@
-export class Pseudo {
+export default class PRNG {
   private a: number = 9301;
   private b: number = 49297;
   private m: number = 233280;
@@ -18,12 +18,12 @@ export class Pseudo {
     if (seed === 'undefined') console.error(`no seed for prng this: ${this.seed}, given: ${seed}`);
   }
 
-  next () {
+  random () {
     this.seed = (this.seed * this.a + this.b) % this.m;
     return this.seed / this.m;
   }
 
   range (min: number, max: number) {
-    return this.next() * (max - min) + min;
+    return this.random() * (max - min) + min;
   }
 }

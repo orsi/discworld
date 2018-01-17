@@ -1,4 +1,4 @@
-import { Component } from '../component';
+import Component from '../component';
 import { World } from '../';
 import { WorldState, WorldRegion } from '../../../common/models';
 

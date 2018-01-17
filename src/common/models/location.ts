@@ -1,6 +1,6 @@
 import { LOCATIONS } from '../data/static';
 
-export class WorldLocation {
+export default class WorldLocation {
     constructor (
         public serial: string,
         public x: number,

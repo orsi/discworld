@@ -1,7 +1,7 @@
-import { Packet } from '../packet';
+import Packet from '../packet';
 import { World } from '../../../models/';
 
-export class WorldDataPacket extends Packet {
+export default class WorldData extends Packet {
     seed: string;
     width: number;
     height: number;

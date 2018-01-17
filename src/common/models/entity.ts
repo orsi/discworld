@@ -1,7 +1,8 @@
 import { WorldLocation, Skill } from './';
 import { ENTITIES } from '../data/static/';
+import Speech from './speech';
 
-export class Entity {
+export default class Entity {
     serial: string;
     type: ENTITIES;
     x: number;
@@ -18,7 +19,4 @@ export class Entity {
     intelligence: number;
     deletedAt: number;
     constructor () {}
-}
-export class Speech {
-    constructor (public serial: string, public text: string, public createdAt: number) {}
 }

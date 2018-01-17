@@ -1,4 +1,4 @@
-export class World {
+export default class World {
     seed: string;
     width: number;
     height: number;

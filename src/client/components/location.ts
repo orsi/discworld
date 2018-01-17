@@ -1,4 +1,4 @@
-import { Component } from './component';
+import Component from './component';
 import { WorldLocation } from '../../common/models';
 import { Point2D } from '../../common/data/point2d';
 import { ELEMENTS } from '../../common/data/static/elements';
