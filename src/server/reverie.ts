@@ -90,9 +90,9 @@ function onNetworkConnection (socket: SocketIO.Socket) {
     // send world and entity if exists
     let world = worldSystem.get();
     if (world) {
-        client.send(new Packets.Server.WorldDataPacket(world));
+        client.send(new Packets.Server.WorldData(world));
         let entity = worldSystem.createEntity(client.socket.handshake.address);
-        client.send(new Packets.Server.ClientEntityPacket(entity.serial));
+        client.send(new Packets.Server.ClientEntity(entity.serial));
     }
 
 
@@ -125,11 +125,11 @@ export function onClientMessage (client: Client, message: string) {
                     for (let serial in clients) {
                         let c = clients[serial];
                         let entity = worldSystem.createEntity(c.socket.handshake.address);
-                        c.send(new Packets.Server.ClientEntityPacket(entity.serial));
+                        c.send(new Packets.Server.ClientEntity(entity.serial));
                     }
 
                     // broadcast new world to all clients
-                    network.broadcast(new Packets.Server.WorldDataPacket(model));
+                    network.broadcast(new Packets.Server.WorldData(model));
                 } else {
                     client.send(new Packets.Server.Message('You can\'t seem to picture anything.'));
                 }

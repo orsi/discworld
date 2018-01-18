@@ -1,4 +1,4 @@
-export { default as ServerMessage } from './serverMessage';
+export { default as Message } from './serverMessage';
 export { default as WorldData } from './worldData';
 export { default as WorldDestroy } from './worldDestroy';
 export { default as ClientEntity } from './clientEntity';

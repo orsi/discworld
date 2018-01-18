@@ -9,7 +9,7 @@ import * as server from './reverieServer';
 /** DOM, Components  */
 import * as dom from './dom';
 import * as Components from './components';
-import { Component } from './components/component';
+import Component from './components/component';
 
 /** Data */
 import State from './states/state';
@@ -36,7 +36,7 @@ function init () {
   dom.render(reverie);
 
   // register incoming server events
-  server.on('client/entity', (p: Packets.Server.ClientEntityPacket) => clientEntitySerial = p.serial);
+  server.on('client/entity', (p: Packets.Server.ClientEntity) => clientEntitySerial = p.serial);
   server.on('connect', (s: SocketIOClient.Socket) => connected = true);
   server.on('disconnect', (s: SocketIOClient.Socket) => connected = false);
 

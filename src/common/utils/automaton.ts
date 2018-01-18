@@ -1,4 +1,4 @@
-import { Pseudo } from './';
+import { PRNG } from './';
 
 export default class Automaton {
   width: number;
@@ -8,9 +8,9 @@ export default class Automaton {
   birth = [6, 7, 8];
   survival = [5, 6, 7, 8];
   cells: boolean[] = [];
-  pseudo: Pseudo;
-  constructor (seed: string, width: number, height: number) {
-    this.pseudo = new Pseudo(seed);
+  prng: PRNG;
+  constructor (seed: string, width: number, height: number, options?: any) {
+    this.prng = new PRNG(seed);
     this.width = width;
     this.height = height;
     this.create();
@@ -19,7 +19,7 @@ export default class Automaton {
     // create automaton map
     for (let i = 0; i < this.width * this.height; i++) {
       // randomly choose alive/dead
-      let alive = this.pseudo.next() < this.probability;
+      let alive = this.prng.random() < this.probability;
       this.cells[i] = alive;
     }
   }

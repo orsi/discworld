@@ -9,14 +9,14 @@ import * as generator from './world/worldGenerator';
 
 /** Data */
 import * as Packets from '../common/data/net';
-import { Point3D } from '../common/data/point3d';
+import Point3D from '../common/data/point3d';
 import { ELEMENTS } from '../common/data/static';
-import { World, WorldState, WorldRegion, WorldLocation, Tile, Entity } from '../common/models';
+import { World, WorldRegion, WorldLocation, Tile, Entity } from '../common/models';
 
 export const MAX_ELEVATION = 255;
 export const MAX_REGIONS = 24;
 export let hash: string;
-export let pseudo: utils.Pseudo;
+export let pseudo: utils.PRNG;
 
 export let model: World;
 export let worldCreated: boolean = false;
@@ -54,7 +54,7 @@ export function destroy () {
   worldCreated = false;
 }
 export function getNextRandom () {
-  return pseudo.next();
+  return pseudo.random();
 }
 export function getHash (suffix: string) {
     return utils.sha256(model.seed + '-' + suffix);
@@ -63,7 +63,7 @@ export function getAutomaton (seed: string, width: number, height: number) {
     return new utils.Automaton(getHash(seed), width, height);
 }
 export function getPseudo (seed: string) {
-    return new utils.Pseudo(getHash(seed));
+    return new utils.PRNG(getHash(seed));
 }
 export function getNoise (seed: string) {
     return new utils.Noise(getHash(seed));
@@ -182,3 +182,27 @@ export function onEntityMessage (entity: Entity, message: string) {
   //   }
   // }
 }
+
+// function isPosition(x: number, y: number) {
+//   return x >= 0 && x < this.world.width && y >= 0 && y < this.world.height;
+// }
+// function canMoveToPosition (x: number, y: number) {
+//   return this.isPosition(x, y) && this.land[x * y];
+// }
+// function getPosition (x: number, y: number) {
+//   return this.isPosition(x, y) ? new Point3D(x, y, this.elevation[x * y]) : undefined;
+// }
+
+// REGION_SIZE = 32;
+// getRegionAtLocation (x: number, y: number) {
+//     let regionX = Math.floor(x / this.REGION_SIZE);
+//     let regionY = Math.floor(y / this.REGION_SIZE);
+//     let regionController = this.regions[regionX * regionY];
+//     return regionController;
+// }
+// isPositionInRegion (location: Point3D, regionOf: Point3D) {
+//     return location.x < regionOf.x + (this.REGION_SIZE / 2)
+//         &&  location.x > regionOf.x - (this.REGION_SIZE / 2)
+//         && location.y < regionOf.y + (this.REGION_SIZE / 2)
+//         && location.y > regionOf.y - (this.REGION_SIZE / 2);
+// }

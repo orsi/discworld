@@ -2,7 +2,7 @@ import * as http from 'http';
 import * as express from 'express';
 import * as io from 'socket.io';
 import * as path from 'path';
-import { Packet } from '../../common/data/net/packet';
+import Packet from '../../common/data/net/packet';
 
 const publicDir = path.join(require('path').dirname(require!.main!.filename), './public');
 

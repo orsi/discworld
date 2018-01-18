@@ -1,10 +1,10 @@
-import { Pseudo } from './';
+import { PRNG } from './';
 
-export class Noise {
-  pseudo: Pseudo;
+export default class Noise {
+  prng: PRNG;
   samples: { [key: string]: number } = {};
   constructor (seed: string) {
-    this.pseudo = new Pseudo(seed);
+    this.prng = new PRNG(seed);
   }
   noise1d (x: number) {
     let previousPoint = Math.floor(x);
@@ -18,7 +18,7 @@ export class Noise {
   get1dValue (x: number) {
     let value = this.samples[x];
     // cache value if not available
-    if (!value) value = this.samples[x] = this.pseudo.next();
+    if (!value) value = this.samples[x] = this.prng.random();
     return value;
   }
   noise2d(x: number, y: number) {
@@ -59,7 +59,7 @@ export class Noise {
     let seed = 'x' + x + 'y' + y;
     let value = this.samples[seed];
     // cache value if not available
-    if (!value) value = this.samples[seed] = this.pseudo.next();
+    if (!value) value = this.samples[seed] = this.prng.random();
     // console.log(`seed: ${seed} value: ${value}`);
     return value;
   }

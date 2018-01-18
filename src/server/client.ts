@@ -6,7 +6,7 @@ import * as events from './services/events';
 import * as reverie from './reverie';
 import * as world from './worldSystem';
 
-import { Packet } from '../common/data/net/packet';
+import Packet from '../common/data/net/packet';
 import * as Packets from '../common/data/net';
 import { Entity } from '../common/models';
 import { DIRECTION } from '../common/data/static';

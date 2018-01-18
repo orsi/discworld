@@ -1,5 +1,5 @@
 import * as io from 'socket.io-client';
-import { Packet } from '../common/data/net/packet';
+import Packet from '../common/data/net/packet';
 
 export const server = io();
 export function on (event: string, cb: (...args: any[]) => void) {

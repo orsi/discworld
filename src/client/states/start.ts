@@ -22,7 +22,7 @@ export default class Start extends State {
         this.title = new TitleComponent();
         dom.render(this.title, client.reverie);
 
-        server.on('world/data', (p: Packets.Server.WorldDataPacket) => this.onWorldStatus(p));
+        server.on('world/data', (p: Packets.Server.WorldData) => this.onWorldStatus(p));
         server.on('world/destroy', (p: Packets.Server.WorldDestroy) => this.onWorldDestroy(p));
 
         // server.on('region/data', (p: Packets.Server.RegionDataPacket) => this.onRegionData(p));
@@ -30,7 +30,7 @@ export default class Start extends State {
         // server.on('entity/move', (p: Packets.Server.EntityPositionPacket) => this.onEntityMove(p));
         // server.on('entity/remove', (p: Packets.Server.EntityRemovePacket) => this.onEntityRemove(p));
     }
-    onWorldStatus (p: Packets.Server.WorldDataPacket) {
+    onWorldStatus (p: Packets.Server.WorldData) {
         console.log(p);
         if (!this.world) {
             // create world component

@@ -111,7 +111,7 @@ export default class World extends Component {
     this.renderer.update(delta);
   }
   model: WorldModel;
-  setWorldData (p: Packets.Server.WorldDataPacket) {
+  setWorldData (p: Packets.Server.WorldData) {
     console.log(p);
     // if world doesn't exist, create it
     if (!this.model) this.model = new WorldModel();
@@ -163,23 +163,19 @@ export default class World extends Component {
       }
   }
 
-  onEntityCreate (p: Packets.Server.EntityCreatePacket) {
-    let e = p.entity;
-    this.entities[e.serial] = new EntityController(this, e);
-  }
-  onEntityChat (p: Packets.Server.EntityChatPacket) {
+  onEntityChat (p: Packets.Server.EntityMessage) {
     console.log(p);
     // let e = this.getEntityBySerial(from);
     // if (!e) return;
     // e.entity.speak(speech);
   }
-  onEntityMove(p: Packets.Server.EntityPositionPacket) {
+  onEntityMove(p: Packets.Server.EntityMove) {
     console.log(p);
     // let movedAgent = this.getEntityBySerial(entity.serial);
     // if (!movedAgent) movedAgent = this.createEntity(entity);
     // movedAgent.moveTo(entity.position);
   }
-  onEntityRemove (p: Packets.Server.EntityRemovePacket) {
+  onEntityRemove (p: Packets.Server.EntityRemove) {
     console.log(p);
 
     let entity = this.entities[p.serial];
@@ -223,8 +219,8 @@ export default class World extends Component {
   }
   getTheta (x: number, y: number) {
     // translate around origin
-    x = x - this.center.x;
-    y = y - this.center.y;
+    x = x - this.clientWidth / 2;
+    y = y - this.clientHeight / 2;
     // get angle
     let rad = Math.atan2(-1, 1) - Math.atan2(x, y);
     rad =  rad * 360 / (2 * Math.PI);

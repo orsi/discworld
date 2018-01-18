@@ -1,7 +1,7 @@
 import { Entity as EntityModel, Speech } from '../../common/models';
 import { World } from '../components';
 import { Entity } from '../components';
-import { Point3D } from '../../common/data/point3d';
+import Point3D from '../../common/data/point3d';
 
 const MAX_TALK_MS: number = 5000;
 const RUN_DELAY_MS: number = 200;

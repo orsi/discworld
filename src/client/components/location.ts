@@ -1,10 +1,9 @@
 import Component from './component';
 import { WorldLocation } from '../../common/models';
-import { Point2D } from '../../common/data/point2d';
 import { ELEMENTS } from '../../common/data/static/elements';
 import { WorldRenderer } from '../world/worldRenderer';
 
-export class Location extends Component {
+export default class Location extends Component {
     renderer: WorldRenderer;
     location: WorldLocation;
     svg: SVGSVGElement;

@@ -139,3 +139,98 @@ export function generateLocations(world: World) {
     // }
     // return locations;
 }
+let midpoints: { [key: string]: number } = {};
+function getMidpoints (x: number, y: number, z: number) {
+    // check for pre-calculated vertices
+    let leftMidpoint = midpoints['x' + x + 'y' + y];
+    let topMidpoint = midpoints['x' + (x + 1) + 'y' + y];
+    let rightMidpoint = midpoints['x' + (x + 1) + 'y' + (y + 1)];
+    let bottomMidpoint = midpoints['x' + x + 'y' + (y + 1)];
+
+    // if (typeof leftMidpoint === 'undefined') {
+    //     leftMidpoint = z;
+    //     let leftCount = 1;
+    //     let n = elevation[x * (y - 1)];
+    //     let w = x - 1 >= 0 ? elevation[(x - 1) * y] : undefined;
+    //     let nw = x - 1 >= 0 ? elevation[(x - 1) * (y - 1)] : undefined;
+    //     if (n) {
+    //         leftMidpoint += n;
+    //         leftCount++;
+    //     }
+    //     if (w) {
+    //         leftMidpoint += w;
+    //         leftCount++;
+    //     }
+    //     if (nw) {
+    //         leftMidpoint += nw;
+    //         leftCount++;
+    //     }
+    //     midpoints['x' + x + 'y' + y] = leftMidpoint /= leftCount;
+    // }
+    // if (typeof topMidpoint === 'undefined') {
+    //     topMidpoint = z;
+    //     let topCount = 1;
+    //     let n = elevation[x * (y - 1)];
+    //     let ne = x + 1 < world.height ? elevation[(x + 1) * (y - 1)] : undefined;
+    //     let e = x + 1 < world.height ? elevation[(x + 1) * y] : undefined;
+    //     if (n) {
+    //         topMidpoint += n;
+    //         topCount++;
+    //     }
+    //     if (ne) {
+    //         topMidpoint += ne;
+    //         topCount++;
+    //     }
+    //     if (e) {
+    //         topMidpoint += e;
+    //         topCount++;
+    //     }
+    //     midpoints['x' + (x + 1) + 'y' + y] = topMidpoint /= topCount;
+    // }
+    // if (typeof rightMidpoint === 'undefined') {
+    //     rightMidpoint = z;
+    //     let rightCount = 1;
+    //     let e = x + 1 < world.width ? elevation[(x + 1) * y] : undefined;
+    //     let se = x + 1 < world.width ? elevation[(x + 1) * (y + 1)] : undefined;
+    //     let s = elevation[x * (y + 1)];
+    //     if (e) {
+    //         rightMidpoint += e;
+    //         rightCount++;
+    //     }
+    //     if (se) {
+    //         rightMidpoint += se;
+    //         rightCount++;
+    //     }
+    //     if (s) {
+    //         rightMidpoint += s;
+    //         rightCount++;
+    //     }
+    //     midpoints['x' + (x + 1) + 'y' + (y + 1)] = rightMidpoint /= rightCount;
+    // }
+    // if (typeof bottomMidpoint === 'undefined') {
+    //     bottomMidpoint = z;
+    //     let bottomCount = 1;
+    //     let s = elevation[x * (y + 1)];
+    //     let sw = x - 1 >= 0 ? elevation[(x - 1) * (y + 1)] : undefined;
+    //     let w = x - 1 >= 0 ? elevation[(x - 1) * y] : undefined;
+    //     if (s) {
+    //         bottomMidpoint += s;
+    //         bottomCount++;
+    //     }
+    //     if (sw) {
+    //         bottomMidpoint += sw;
+    //         bottomCount++;
+    //     }
+    //     if (w) {
+    //         bottomMidpoint += w;
+    //         bottomCount++;
+    //     }
+    //     midpoints['x' + x + 'y' + (y + 1)] = bottomMidpoint /= bottomCount;
+    // }
+    return {
+        left: leftMidpoint - z,
+        top: topMidpoint - z,
+        right: rightMidpoint - z,
+        bottom: bottomMidpoint - z
+    };
+}

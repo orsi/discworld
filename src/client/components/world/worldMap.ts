@@ -1,6 +1,6 @@
 import Component from '../component';
 import { World } from '../';
-import { WorldState, WorldRegion } from '../../../common/models';
+import { WorldRegion } from '../../../common/models';
 
 export class WorldMapComponent extends Component {
     elapsedTime: number;
@@ -13,7 +13,6 @@ export class WorldMapComponent extends Component {
         public seed: string,
         public width: number,
         public height: number,
-        public status: WorldState,
         public createdAt: Date
     ) {
         super();
