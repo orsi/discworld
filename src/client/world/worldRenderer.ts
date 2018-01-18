@@ -3,7 +3,7 @@ import Point3D from '../../common/data/point3d';
 import { WorldLocation } from '../../common/models';
 import { World } from '../components';
 
-export class WorldRenderer {
+export default class WorldRenderer {
   controller: World;
   elapsedTime = 0;
   top = 0;
@@ -13,7 +13,7 @@ export class WorldRenderer {
   zoomScale = 1;
   originPixel: Point2D = new Point2D(0, 0);
   originWorld: Point3D = new Point3D(0, 0, 0);
-  BLOCK_SIZE = 32;
+  BLOCK_SIZE = 4;
   REGION_SIZE = this.BLOCK_SIZE * 32;
     constructor (controller: World) {
       this.controller = controller;
@@ -25,11 +25,6 @@ export class WorldRenderer {
       // let entity = this.controller.getClientEntity();
       // if (entity) this.setWorldOrigin(entity.currentX, entity.currentY, entity.currentZ);
     }
-    setWorldCenter (point: Point3D) {
-      this.originWorld.x = point.x;
-      this.originWorld.y = point.y;
-      this.originWorld.z = point.z;
-    }
     setWorldOrigin (x: number, y: number, z: number) {
       this.originWorld.x = x;
       this.originWorld.y = y;
@@ -37,11 +32,11 @@ export class WorldRenderer {
     }
     mapWorldLocationToPixel (x: number, y: number, z: number) {
       let pixelX = (x - this.originWorld.x) * this.BLOCK_SIZE
-                  + (y - this.originWorld.y) * this.BLOCK_SIZE
+                  - (y - this.originWorld.y) * this.BLOCK_SIZE
                   + this.originPixel.x;
       let pixelY = (y - this.originWorld.y) * (this.BLOCK_SIZE / 2)
-                  - (x - this.originWorld.x) * (this.BLOCK_SIZE / 2)
-                  - (z - this.originWorld.z) * (this.BLOCK_SIZE / 2)
+                  + (x - this.originWorld.x) * (this.BLOCK_SIZE / 2)
+                  - (z - this.originWorld.z) * (1 / this.BLOCK_SIZE)
                   + this.originPixel.y;
       return new Point2D(pixelX, pixelY);
     }
@@ -55,9 +50,6 @@ export class WorldRenderer {
                   + this.originPixel.y;
       return new Point2D(pixelX, pixelY);
     }
-    mapToPixel (point: Point3D) {
-      return this.mapWorldLocationToPixel(point.x, point.y, point.z);
-    }
     mapPixelToWorldLocation (x: number, y: number) {
       let worldX = Math.floor(x / this.BLOCK_SIZE);
       let worldY = Math.floor(y / this.BLOCK_SIZE);
@@ -65,9 +57,6 @@ export class WorldRenderer {
         x: worldX,
         y: worldY
       };
-    }
-    pixelToMap (point: Point2D) {
-      this.mapPixelToWorldLocation(point.x, point.y);
     }
     zoom (scale: number) {
       this.zoomScale = scale;

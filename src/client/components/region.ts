@@ -1,7 +1,7 @@
 import Component from './component';
 import { WorldRegion } from '../../common/models';
 import { ELEMENTS } from '../../common/data/static/elements';
-import { WorldRenderer } from '../world/worldRenderer';
+import WorldRenderer from '../world/worldRenderer';
 
 export default class Region extends Component {
     renderer: WorldRenderer;

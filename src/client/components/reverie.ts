@@ -19,6 +19,8 @@ export default class Reverie extends Component {
 
         // create terminal
         this.terminal = new Components.Terminal();
+        this.terminal.style.position = '10';
+        this.terminal.style.zIndex = '10';
         dom.render(this.terminal, this);
         this.terminal.addEventListener('terminal-message', (e: Event) => {
             server.send(new Packets.Client.Message((<CustomEvent>e).detail));
@@ -26,6 +28,8 @@ export default class Reverie extends Component {
 
         // create server message window
         this.conscience = new Components.Conscience();
+        this.conscience.style.position = '10';
+        this.conscience.style.zIndex = '10';
         dom.render(this.conscience, this);
         server.on('server/message', (p: Packets.Server.Message) => this.conscience.print(p.message));
     }

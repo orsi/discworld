@@ -34,16 +34,16 @@ export default class Noise {
     // the four grid point values bounding x, y
     let a = this.get2dValue(x0, y0);
     let b = this.get2dValue(x1, y0);
-    let c = this.get2dValue(x1, y1);
-    let d = this.get2dValue(x0, y1);
+    let c = this.get2dValue(x0, y1);
+    let d = this.get2dValue(x1, y1);
 
     // how much does each corner influence the value
     let c1 = this.cosInterp(a, b, xWeight);
     let c2 = this.cosInterp(c, d, xWeight);
-    let ix0 = this.lerp(c1, c2, xWeight);
+    let ix0 = this.lerp(c1, c2, yWeight);
     let c3 = this.cosInterp(a, c, yWeight);
     let c4 = this.cosInterp(b, d, yWeight);
-    let ix1 = this.lerp(c3, c4, yWeight);
+    let ix1 = this.lerp(c3, c4, xWeight);
 
     let value = (ix0 + ix1) / 2;
     return value;

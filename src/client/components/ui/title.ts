@@ -1,6 +1,6 @@
 import Component from '../component';
 
-export class Title extends Component {
+export default class Title extends Component {
     constructor () {
         super();
     }
@@ -13,6 +13,7 @@ export class Title extends Component {
             :host {
                 display: block;
                 position: absolute;
+                z-index: 11;
                 top: 60px;
                 right: 0;
                 left: 0;

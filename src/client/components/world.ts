@@ -5,9 +5,9 @@ import * as server from '../reverieServer';
 import Component from './component';
 import { Entity, Location } from './';
 import * as Packets from '../../common/data/net/';
-import { EntityController } from '../world/entityController';
+import EntityController from '../world/entityController';
 import { World as WorldModel, WorldLocation } from '../../common/models';
-import { WorldRenderer } from '../world/worldRenderer';
+import WorldRenderer from '../world/worldRenderer';
 import { WorldMapComponent } from './world/worldMap';
 
 export default class World extends Component {
@@ -27,6 +27,10 @@ export default class World extends Component {
   constructor  () {
     super();
       this.renderer = new WorldRenderer(this);
+
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+      this.renderer.setSize(width, height);
   }
   connectedCallback () {
       super.connectedCallback();
@@ -46,6 +50,11 @@ export default class World extends Component {
           detail: e
         }));
       });
+      window.addEventListener('resize', (e) => {
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        this.renderer.setSize(width, height);
+      });
   }
 
   TILE_WIDTH = 12;
@@ -55,13 +64,16 @@ export default class World extends Component {
       :host {
         position: absolute;
         display: block;
-        top: 50%;
-        left: 50%;
-        text-align: center;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
       }
       svg {
         overflow: visible;
         display: inline-block;
+        width: 100%;
+        height: 100%;
       }
     </style>
     `;
@@ -74,26 +86,26 @@ export default class World extends Component {
       `;
       for (let y = 0; y < this.model.height; y++) {
         for (let x = 0; x < this.model.width; x++) {
-          let land = this.model.land[x + (y * this.model.width)];
-          let elevation = this.model.elevation[x + (y * this.model.width)];
-          let temperature = this.model.temperature[x + (y * this.model.width)] * 128;
-          let hydrology = this.model.hydrology[x + (y * this.model.width)] * 128;
-          let stroke = `#${temperature.toString(16).slice(0, 2)}00${hydrology.toString(16).slice(0, 2)}`;
-          let fill = `#${temperature.toString(16).slice(0, 2)}00${hydrology.toString(16).slice(0, 2)}`;
-          if (land) content += `
+          let land = this.model.land[x][y];
+          let elevation = this.model.elevation[x][y];
+          let temperature = this.model.temperature[x][y];
+          let hydrology = this.model.hydrology[x][y];
+          let fill = `#${temperature.toString(16).slice(0, 2)}0000`;
+          if (land && this.renderer.isOnScreen(x, y, elevation)) {
+            let pixel = this.renderer.mapWorldLocationToPixel(x, y, elevation);
+            content += `
             <path
               fill="${fill}"
-              stroke="${stroke}"
+              data-i="${x} ${y}"
               d="
-                M${(x * this.TILE_WIDTH) - (y * this.TILE_WIDTH)},
-                  ${(y * this.TILE_WIDTH / 2) + (x * this.TILE_WIDTH / 2) - (elevation)}
-                l${this.TILE_WIDTH},${this.TILE_WIDTH / 2}
-                l${-(this.TILE_WIDTH)},${this.TILE_WIDTH / 2}
-                l${-(this.TILE_WIDTH)},${-(this.TILE_WIDTH / 2)}
+                M${pixel.x},${pixel.y}
+                l${this.renderer.BLOCK_SIZE},${this.renderer.BLOCK_SIZE / 2}
+                l${-(this.renderer.BLOCK_SIZE)},${this.renderer.BLOCK_SIZE / 2}
+                l${-(this.renderer.BLOCK_SIZE)},${-(this.renderer.BLOCK_SIZE / 2)}
                 Z"
-              fill-opacity="1"
-              stroke-width="1"></path>
+              fill-opacity="1"></path>
           `;
+          }
         }
       }
       content += `</g></svg>`;
@@ -123,6 +135,8 @@ export default class World extends Component {
     this.model.elevation = p.elevation;
     this.model.hydrology = p.hydrology;
     this.model.temperature = p.temperature;
+
+    this.renderer.setWorldOrigin(this.model.width / 2, this.model.height / 2, 128);
 
     this.stateChange = true;
     this.render();

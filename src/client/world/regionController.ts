@@ -1,7 +1,7 @@
 import { WorldRegion } from '../../common/models';
 import { Region, World } from '../components';
 
-export class RegionController {
+export default class RegionController {
     region: WorldRegion;
     component: Region;
     world: World;

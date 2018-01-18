@@ -1,7 +1,7 @@
 import Component from '../component';
-import { Thought } from './thought';
+import Thought from './thought';
 
-export class Conscience extends Component {
+export default class Conscience extends Component {
   constructor () {
     super();
   }

@@ -5,21 +5,45 @@ import * as worldSystem from '../worldSystem';
 import { World } from '../../common/models';
 
 export function generateLand (world: World) {
-    let auto = worldSystem.getAutomaton('automaton', world.width, world.height);
-    world.land = auto.cells;
+    // let auto = worldSystem.getAutomaton('automaton', world.width, world.height);
+    let land: boolean[][] = [];
+    let terrainNoise: number[][] = [];
+    let xfreq = 6;
+    let xwavelength = world.width / xfreq;
+    let yfreq = 8;
+    let ywavelength = world.height / yfreq;
+    let noise = worldSystem.getNoise('elevation');
+    for (let x = 0; x < world.width; x++) {
+        terrainNoise[x] = [];
+        for (let y = 0; y < world.height; y++) {
+            terrainNoise[x][y] = noise.noise2d(x / xwavelength, y / ywavelength);
+        }
+    }
+    let minElevation = 0.2;
+    for (let x = 0; x < world.width; x++) {
+        land[x] = [];
+        for (let y = 0; y < world.height; y++) {
+            land[x][y] = terrainNoise[x][y] > minElevation;
+        }
+    }
+    world.land = land;
 }
 export function generateElevation (world: World) {
     if (!world.land) {
         console.log('The world has not generated any land yet to define elevation!');
     }
-    let elevation = [];
-    let wavelength = 6;
+    let elevation: number[][] = [];
+    let xfreq = 6;
+    let xwavelength = world.width / xfreq;
+    let yfreq = 8;
+    let ywavelength = world.height / yfreq;
     let amplitude = worldSystem.MAX_ELEVATION;
     let noise = worldSystem.getNoise('elevation');
-    for (let i = 0, max = world.width * world.height; i < max; i++) {
-        let x = Math.floor(i % world.width);
-        let y = Math.floor(i / world.width);
-        elevation[i] = Math.floor(noise.noise2d(x / wavelength, y / wavelength) * amplitude);
+    for (let x = 0; x < world.width; x++) {
+        elevation[x] = [];
+        for (let y = 0; y < world.height; y++) {
+            elevation[x][y] = Math.floor(noise.noise2d(x / xwavelength, y / ywavelength) * amplitude);
+        }
     }
     world.elevation = elevation;
 }
@@ -27,14 +51,16 @@ export function generateTemperature (world: World) {
     if (!world.elevation) {
         console.log('The world has no elevation map to generate temperature on!');
     }
-    let temp = [];
-    let wavelength = 12;
+    let temp: number[][] = [];
+    let freq = 3;
+    let wavelength = world.width / freq;
     let amplitude = worldSystem.MAX_ELEVATION;
     let noise = worldSystem.getNoise('temperature');
-    for (let i = 0, max = world.width * world.height; i < max; i++) {
-        let x = Math.floor(i % world.width);
-        let y = Math.floor(i / world.width);
-        temp[i] = Math.floor(noise.noise2d(x / wavelength, y / wavelength) * amplitude);
+    for (let x = 0; x < world.width; x++) {
+        temp[x] = [];
+        for (let y = 0; y < world.height; y++) {
+            temp[x][y] = Math.floor(noise.noise2d(x / wavelength, y / wavelength) * amplitude);
+        }
     }
     world.temperature = temp;
 }
@@ -42,14 +68,15 @@ export function generateHydrology (world: World) {
     if (!world.temperature || !world.elevation) {
         console.log('The world has no temperature or no elevation!');
     }
-    let hydro = [];
+    let hydro: number[][] = [];
     let wavelength = 8;
     let amplitude = worldSystem.MAX_ELEVATION;
     let noise = worldSystem.getNoise('hydrology');
-    for (let i = 0, max = world.width * world.height; i < max; i++) {
-        let x = Math.floor(i % world.width);
-        let y = Math.floor(i / world.width);
-        hydro[i] = Math.floor(noise.noise2d(x / wavelength, y / wavelength) * amplitude);
+    for (let x = 0; x < world.width; x++) {
+        hydro[x] = [];
+        for (let y = 0; y < world.height; y++) {
+            hydro[x][y] = Math.floor(noise.noise2d(x / wavelength, y / wavelength) * amplitude);
+        }
     }
     world.hydrology = hydro;
 }

@@ -6,7 +6,7 @@ import Point3D from '../../common/data/point3d';
 const MAX_TALK_MS: number = 5000;
 const RUN_DELAY_MS: number = 200;
 const WALK_DELAY_MS: number = 400;
-export class EntityController {
+export default class EntityController {
     world: World;
     serial: string;
     entity: EntityModel;

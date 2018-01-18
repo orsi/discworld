@@ -7,39 +7,38 @@ export default class Automaton {
   probability = 0.7;
   birth = [6, 7, 8];
   survival = [5, 6, 7, 8];
-  cells: boolean[] = [];
+  cells: boolean[][] = [];
   prng: PRNG;
   constructor (seed: string, width: number, height: number, options?: any) {
     this.prng = new PRNG(seed);
     this.width = width;
     this.height = height;
-    this.create();
-  }
-  create () {
-    // create automaton map
-    for (let i = 0; i < this.width * this.height; i++) {
-      // randomly choose alive/dead
-      let alive = this.prng.random() < this.probability;
-      this.cells[i] = alive;
+
+    // create initial automaton map
+    for (let x = 0; x < this.width; x++) {
+      this.cells[x] = [];
+      for (let y = 0; y < this.height; y++) {
+        // randomly choose alive/dead
+        let alive = this.prng.random() < this.probability;
+        this.cells[x][y] = alive;
+      }
     }
   }
   next () {
-    let nextMap: boolean[] = [];
+    let nextMap: boolean[][] = [];
 
-    // Loop over each row and column of the map
-    for (let i = 0; i < this.width * this.height; i++) {
-      let x = i % this.width;
-      let y = Math.floor(i / this.width);
-      let neighboursCount = this.countNeighbours(x, y);
-
-      if (this.cells[i]) {
-        // see if the cell survives
-        nextMap[i] = this.survival.indexOf(neighboursCount) > -1;
-      } else {
-        // see if the cell comes alive
-        nextMap[i] = this.birth.indexOf(neighboursCount) > -1;
+    for (let x = 0; x < this.width; x++) {
+      nextMap[x] = [];
+      for (let y = 0; y < this.height; y++) {
+        let neighboursCount = this.countNeighbours(x, y);
+        if (this.cells[x][y]) {
+          // see if the cell survives
+          nextMap[x][y] = this.survival.indexOf(neighboursCount) > -1;
+        } else {
+          // see if the cell comes alive
+          nextMap[x][y] = this.birth.indexOf(neighboursCount) > -1;
+        }
       }
-
     }
     this.cells = nextMap;
   }

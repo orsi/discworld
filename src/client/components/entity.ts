@@ -1,6 +1,6 @@
 import Component from './component';
-import { EntityController } from '../world/entityController';
-import { WorldRenderer } from '../world/worldRenderer';
+import EntityController from '../world/entityController';
+import WorldRenderer from '../world/worldRenderer';
 
 export default class Entity extends Component {
     renderer: WorldRenderer;

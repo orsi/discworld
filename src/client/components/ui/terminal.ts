@@ -1,6 +1,6 @@
 import Component from '../component';
 
-export class Terminal extends Component {
+export default class Terminal extends Component {
   historyIndex = -1;
   history: string[] = [];
   _value = '';
