@@ -3,49 +3,50 @@ import * as worldSystem from '../worldSystem';
 
 /** Data */
 import { World } from '../../common/models';
+import Point2D from '../../common/data/point2d';
 
-export function generateLand (world: World) {
-    // let auto = worldSystem.getAutomaton('automaton', world.width, world.height);
-    let land: boolean[][] = [];
+export function generateElevation (world: World) {
+    // create elevation noise map
     let terrainNoise: number[][] = [];
-    let xfreq = 6;
-    let xwavelength = world.width / xfreq;
-    let yfreq = 8;
-    let ywavelength = world.height / yfreq;
-    let noise = worldSystem.getNoise('elevation');
+    let regionWidth = 32;
+    let regionHeight = 32;
+    let threshold = 0.5;
+    let elNoise = worldSystem.getNoise('elevation');
     for (let x = 0; x < world.width; x++) {
         terrainNoise[x] = [];
         for (let y = 0; y < world.height; y++) {
-            terrainNoise[x][y] = noise.noise2d(x / xwavelength, y / ywavelength);
+            terrainNoise[x][y] = elNoise.noise2d(x / regionWidth, y / regionHeight) * worldSystem.MAX_ELEVATION;
         }
     }
-    let minElevation = 0.2;
+    world.elevation = terrainNoise;
+
+    let land: boolean[][] = [];
+    let centerX = world.width / 2;
+    let centerY = world.height / 2;
+    let maxDistance = Math.sqrt(Math.pow((world.width - centerX), 2) + Math.pow(0, 2));
+
+    let landNoise = worldSystem.getNoise('elevation');
+    let lowElevationCutoff = .1;
+    let radWavelength = Math.PI * world.width / 16;
     for (let x = 0; x < world.width; x++) {
         land[x] = [];
         for (let y = 0; y < world.height; y++) {
-            land[x][y] = terrainNoise[x][y] > minElevation;
+            // cutoff elevations too low
+
+            // cutoff points too far from origin
+            // this creates the 'disc' of the world
+            let distanceFromCenter = Math.sqrt(Math.pow((x - centerX), 2) + Math.pow((y - centerY), 2));
+            let vector2 = new Point2D(centerX - x, centerY - y);
+            let vector1 = new Point2D(0, 1); // 12 o'clock == 0°, assuming that y goes from bottom to top
+            let rad = Math.atan2(vector2.y, vector2.x) - Math.atan2(vector1.y, vector1.x);
+            let radInfluence = landNoise.noise1d(rad / radWavelength) * .4;
+            let isCloseToCenter = distanceFromCenter / maxDistance < 0.95 - radInfluence;
+
+            land[x][y] = isCloseToCenter;
         }
     }
+
     world.land = land;
-}
-export function generateElevation (world: World) {
-    if (!world.land) {
-        console.log('The world has not generated any land yet to define elevation!');
-    }
-    let elevation: number[][] = [];
-    let xfreq = 6;
-    let xwavelength = world.width / xfreq;
-    let yfreq = 8;
-    let ywavelength = world.height / yfreq;
-    let amplitude = worldSystem.MAX_ELEVATION;
-    let noise = worldSystem.getNoise('elevation');
-    for (let x = 0; x < world.width; x++) {
-        elevation[x] = [];
-        for (let y = 0; y < world.height; y++) {
-            elevation[x][y] = Math.floor(noise.noise2d(x / xwavelength, y / ywavelength) * amplitude);
-        }
-    }
-    world.elevation = elevation;
 }
 export function generateTemperature (world: World) {
     if (!world.elevation) {

@@ -124,7 +124,6 @@ export default class World extends Component {
   }
   model: WorldModel;
   setWorldData (p: Packets.Server.WorldData) {
-    console.log(p);
     // if world doesn't exist, create it
     if (!this.model) this.model = new WorldModel();
     this.model.seed = p.seed;

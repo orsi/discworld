@@ -13,7 +13,7 @@ import Point3D from '../common/data/point3d';
 import { ELEMENTS } from '../common/data/static';
 import { World, WorldRegion, WorldLocation, Tile, Entity } from '../common/models';
 
-export const MAX_ELEVATION = 255;
+export const MAX_ELEVATION = 256;
 export const MAX_REGIONS = 24;
 export let hash: string;
 export let pseudo: utils.PRNG;
@@ -35,7 +35,6 @@ export function create (seed: string, width: number, height: number) {
   model.width = width;
   model.height = height;
   model.createdAt = new Date();
-  generator.generateLand(model);
   generator.generateElevation(model);
   generator.generateTemperature(model);
   generator.generateHydrology(model);

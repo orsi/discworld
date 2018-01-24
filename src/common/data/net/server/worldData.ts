@@ -6,8 +6,8 @@ export default class WorldData extends Packet {
     width: number;
     height: number;
     createdAt: Date;
-    land: boolean[][];
     temperature: number[][];
+    land: boolean[][];
     elevation: number[][];
     hydrology: number[][];
     constructor (model: World) {
@@ -17,8 +17,8 @@ export default class WorldData extends Packet {
         this.height = model.height;
         this.createdAt = model.createdAt;
         this.land = model.land;
-        this.temperature = model.temperature;
         this.elevation = model.elevation;
+        this.temperature = model.temperature;
         this.hydrology = model.hydrology;
     }
 }

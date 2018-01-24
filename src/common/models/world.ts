@@ -4,8 +4,8 @@ export default class World {
     height: number;
     createdAt: Date;
     land: boolean[][];
-    temperature: number[][];
     elevation: number[][];
+    temperature: number[][];
     hydrology: number[][];
     constructor () {}
 }

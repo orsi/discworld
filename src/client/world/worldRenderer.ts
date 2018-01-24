@@ -36,7 +36,7 @@ export default class WorldRenderer {
                   + this.originPixel.x;
       let pixelY = (y - this.originWorld.y) * (this.BLOCK_SIZE / 2)
                   + (x - this.originWorld.x) * (this.BLOCK_SIZE / 2)
-                  - (z - this.originWorld.z) * (1 / this.BLOCK_SIZE)
+                  - (z - this.originWorld.z)
                   + this.originPixel.y;
       return new Point2D(pixelX, pixelY);
     }
