@@ -8,14 +8,28 @@ import Point2D from '../../common/data/point2d';
 export function generateElevation (world: World) {
     // create elevation noise map
     let terrainNoise: number[][] = [];
-    let regionWidth = 32;
-    let regionHeight = 32;
     let threshold = 0.5;
+    let octaves = 5;
+    let persistence = .5;
+    let lacunarity = 2;
     let elNoise = worldSystem.getNoise('elevation');
     for (let x = 0; x < world.width; x++) {
         terrainNoise[x] = [];
         for (let y = 0; y < world.height; y++) {
-            terrainNoise[x][y] = elNoise.noise2d(x / regionWidth, y / regionHeight) * worldSystem.MAX_ELEVATION;
+            let normalize = 0;
+            let frequency = 1 / (world.width / 6);
+            let amplitude = worldSystem.MAX_ELEVATION;
+            terrainNoise[x][y] = 0;
+            for (let i = 0; i < octaves; i++) {
+                terrainNoise[x][y] += elNoise.noise2d(
+                    x * frequency,
+                    y * frequency
+                ) * amplitude;
+                normalize += amplitude;
+                amplitude *= persistence;
+                frequency *= lacunarity;
+            }
+            terrainNoise[x][y] = terrainNoise[x][y] / normalize * worldSystem.MAX_ELEVATION;
         }
     }
     world.elevation = terrainNoise;
