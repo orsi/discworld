@@ -35,6 +35,7 @@ export function create (seed: string, width: number, height: number) {
   model.width = width;
   model.height = height;
   model.createdAt = new Date();
+  generator.generateLand(model);
   generator.generateElevation(model);
   generator.generateTemperature(model);
   generator.generateHydrology(model);

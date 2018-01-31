@@ -3,6 +3,7 @@ import * as server from '../reverieServer';
 
 /** Dependencies */
 import Component from './component';
+import LandGrid from './world/landGrid';
 import { Entity, Location } from './';
 import * as Packets from '../../common/data/net/';
 import EntityController from '../world/entityController';
@@ -139,6 +140,7 @@ export default class World extends Component {
 
     this.stateChange = true;
     this.render();
+    this.shadow.appendChild(new LandGrid(this.model.land, this.model.width, this.model.height));
   }
   getLocationComponent (serial: string) {
       for (let l of this.components) {

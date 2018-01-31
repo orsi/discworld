@@ -12,8 +12,7 @@ export default class Noise {
     let previousPointValue = this.get1dValue(previousPoint);
     let nextPointValue = this.get1dValue(nextPoint);
     let distance = x - previousPoint;
-    let result = previousPointValue * (1 - distance) + nextPointValue * (distance);
-    return result;
+    return this.cosInterp(previousPointValue, nextPointValue, distance);
   }
   get1dValue (x: number) {
     let value = this.samples[x];

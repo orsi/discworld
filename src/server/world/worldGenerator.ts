@@ -5,6 +5,57 @@ import * as worldSystem from '../worldSystem';
 import { World } from '../../common/models';
 import Point2D from '../../common/data/point2d';
 
+/**
+ * Generates the disc shape of the world.
+ * @param world
+ */
+export function generateLand (world: World) {
+    let land: boolean[][] = [];
+    let centerX = world.width / 2;
+    let centerY = world.height / 2;
+
+    // calculate the radius of the circle within the world's width and height
+    let worldRadius = world.width / 2;
+
+    // values for slicing disc
+    const circleArc = 2 * Math.PI;
+    const amplitude = worldRadius / 6;
+    const arcSlices = 16;
+    const arcChunkSize = circleArc / arcSlices;
+    let arcNoise: number[] = [];
+    let landNoise = worldSystem.getPseudo('land');
+    for (let i = 0; i < arcSlices; i++) {
+        arcNoise.push(landNoise.random());
+    }
+
+    for (let x = 0; x < world.width; x++) {
+        land[x] = [];
+        for (let y = 0; y < world.height; y++) {
+            // calculate the angle from 12'oclock
+            let arc = Math.atan2(y - centerY, x - centerX);
+            if (arc < 0) arc = arc + 2 * Math.PI;
+
+            let arcPosition = arc / arcChunkSize;
+            let previousPoint = Math.floor(arcPosition);
+            let nextPoint = Math.ceil(arcPosition);
+            let previousPointValue = arcNoise[previousPoint % arcSlices];
+            let nextPointValue = arcNoise[nextPoint % arcSlices];
+            let arcWeight = arcPosition - previousPoint;
+
+            const mu2 = (1 - Math.cos(arcWeight * Math.PI)) / 2;
+            let interp = (previousPointValue * (1 - mu2)) + (nextPointValue * mu2);
+
+            // if this point's distance from center is within
+            // the circumference with noise influence, then
+            // there is land
+            const maxLandDistance = worldRadius - (interp * amplitude);
+            const locationDistance = Math.sqrt(Math.pow((x - centerX), 2) + Math.pow((y - centerY), 2));
+            land[x][y] = locationDistance < maxLandDistance;
+        }
+    }
+
+    world.land = land;
+}
 export function generateElevation (world: World) {
     // create elevation noise map
     let terrainNoise: number[][] = [];
@@ -33,35 +84,8 @@ export function generateElevation (world: World) {
         }
     }
     world.elevation = terrainNoise;
-
-    let land: boolean[][] = [];
-    let centerX = world.width / 2;
-    let centerY = world.height / 2;
-    let maxDistance = Math.sqrt(Math.pow((world.width - centerX), 2) + Math.pow(0, 2));
-
-    let landNoise = worldSystem.getNoise('elevation');
-    let lowElevationCutoff = .1;
-    let radWavelength = Math.PI * world.width / 16;
-    for (let x = 0; x < world.width; x++) {
-        land[x] = [];
-        for (let y = 0; y < world.height; y++) {
-            // cutoff elevations too low
-
-            // cutoff points too far from origin
-            // this creates the 'disc' of the world
-            let distanceFromCenter = Math.sqrt(Math.pow((x - centerX), 2) + Math.pow((y - centerY), 2));
-            let vector2 = new Point2D(centerX - x, centerY - y);
-            let vector1 = new Point2D(0, 1); // 12 o'clock == 0°, assuming that y goes from bottom to top
-            let rad = Math.atan2(vector2.y, vector2.x) - Math.atan2(vector1.y, vector1.x);
-            let radInfluence = landNoise.noise1d(rad / radWavelength) * .4;
-            let isCloseToCenter = distanceFromCenter / maxDistance < 0.95 - radInfluence;
-
-            land[x][y] = isCloseToCenter;
-        }
-    }
-
-    world.land = land;
 }
+
 export function generateTemperature (world: World) {
     if (!world.elevation) {
         console.log('The world has no elevation map to generate temperature on!');

@@ -11,7 +11,7 @@ export let windowHeight = 0;
 
 // attach hooks to browser events
 window.addEventListener('resize',       (e: Event) => onWindowResize(e));
-window.addEventListener('contextmenu',  (e) => e.preventDefault()); // prevents context menu
+// window.addEventListener('contextmenu',  (e) => e.preventDefault()); // prevents context menu
 
 export function render (el: Component, container?: Component) {
     if (container) {
