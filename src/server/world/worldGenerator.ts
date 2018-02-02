@@ -11,23 +11,18 @@ import Point2D from '../../common/data/point2d';
  */
 export function generateLand (world: World) {
     let land: boolean[][] = [];
-    let centerX = world.width / 2;
-    let centerY = world.height / 2;
 
-    // calculate the radius of the circle within the world's width and height
-    let worldRadius = world.width / 2;
+    // figure out the significant portions of the world's disc
+    const circleArc = 2 * Math.PI;
+    const worldRadius = world.width / 2;
+    const centerX = world.width / 2;
+    const centerY = world.height / 2;
 
     // values for slicing disc
-    const circleArc = 2 * Math.PI;
-    const amplitude = worldRadius / 6;
-    const arcSlices = 16;
-    const arcChunkSize = circleArc / arcSlices;
-    let arcNoise: number[] = [];
-    let landNoise = worldSystem.getPseudo('land');
-    for (let i = 0; i < arcSlices; i++) {
-        arcNoise.push(landNoise.random());
-    }
-
+    const octaves = 5;
+    const chunks = 16;
+    const amplitude = worldRadius / 2;
+    let landNoise = worldSystem.getNoise('land');
     for (let x = 0; x < world.width; x++) {
         land[x] = [];
         for (let y = 0; y < world.height; y++) {
@@ -35,70 +30,118 @@ export function generateLand (world: World) {
             let arc = Math.atan2(y - centerY, x - centerX);
             if (arc < 0) arc = arc + 2 * Math.PI;
 
-            let arcPosition = arc / arcChunkSize;
-            let previousPoint = Math.floor(arcPosition);
-            let nextPoint = Math.ceil(arcPosition);
-            let previousPointValue = arcNoise[previousPoint % arcSlices];
-            let nextPointValue = arcNoise[nextPoint % arcSlices];
-            let arcWeight = arcPosition - previousPoint;
+            // setup for noise octaves
+            let interp = 0;
+            let maxAmp = 0;
+            let octaveChunks = chunks;
+            let octaveAmp = amplitude;
+            for (let i = 0; i < octaves; i++) {
+                let arcPosition = arc / (circleArc / octaveChunks);
+                let previousPoint = Math.floor(arcPosition);
+                let nextPoint = Math.ceil(arcPosition);
+                let previousPointValue = landNoise.get1dValue(previousPoint % octaveChunks);
+                let nextPointValue = landNoise.get1dValue(nextPoint % octaveChunks);
+                let arcWeight = arcPosition - previousPoint;
+                interp += landNoise.cosInterp(previousPointValue, nextPointValue, arcWeight) * octaveAmp;
 
-            const mu2 = (1 - Math.cos(arcWeight * Math.PI)) / 2;
-            let interp = (previousPointValue * (1 - mu2)) + (nextPointValue * mu2);
+                // recalculate values for next octave
+                maxAmp += octaveAmp;
+                octaveChunks *= 2;
+                octaveAmp *= .5;
+            }
+            // normalize values to original amplitude
+            interp = (interp / maxAmp) * amplitude;
 
             // if this point's distance from center is within
             // the circumference with noise influence, then
             // there is land
-            const maxLandDistance = worldRadius - (interp * amplitude);
+            const maxLandDistance = worldRadius - interp;
             const locationDistance = Math.sqrt(Math.pow((x - centerX), 2) + Math.pow((y - centerY), 2));
             land[x][y] = locationDistance < maxLandDistance;
         }
     }
-
     world.land = land;
 }
 export function generateElevation (world: World) {
-    // create elevation noise map
-    let terrainNoise: number[][] = [];
-    let threshold = 0.5;
+    if (!world.land) return console.log('No land to generate elevation upon');
+
+    let elevation: number[][] = [];
+
+    // setup for noise octaves
     let octaves = 5;
-    let persistence = .5;
-    let lacunarity = 2;
+    let frequency = 6;
+    let amplitude = worldSystem.MAX_ELEVATION;
     let elNoise = worldSystem.getNoise('elevation');
     for (let x = 0; x < world.width; x++) {
-        terrainNoise[x] = [];
+        elevation[x] = [];
         for (let y = 0; y < world.height; y++) {
-            let normalize = 0;
-            let frequency = 1 / (world.width / 6);
-            let amplitude = worldSystem.MAX_ELEVATION;
-            terrainNoise[x][y] = 0;
+            if (!world.land[x][y]) continue;
+
+            let maxAmp = 0;
+            let octaveFrequency = frequency;
+            let octaveAmp = amplitude;
+            elevation[x][y] = 0;
             for (let i = 0; i < octaves; i++) {
-                terrainNoise[x][y] += elNoise.noise2d(
-                    x * frequency,
-                    y * frequency
-                ) * amplitude;
-                normalize += amplitude;
-                amplitude *= persistence;
-                frequency *= lacunarity;
+                let wavelength = world.width / octaveFrequency;
+                elevation[x][y] += elNoise.noise2d(
+                    x * (1 / wavelength),
+                    y * (1 / wavelength)
+                ) * octaveAmp;
+                maxAmp += octaveAmp;
+                octaveFrequency *= 2;
+                octaveAmp *= .5;
             }
-            terrainNoise[x][y] = terrainNoise[x][y] / normalize * worldSystem.MAX_ELEVATION;
+            elevation[x][y] = (elevation[x][y] / maxAmp) * amplitude;
         }
     }
-    world.elevation = terrainNoise;
+    world.elevation = elevation;
 }
 
 export function generateTemperature (world: World) {
-    if (!world.elevation) {
-        console.log('The world has no elevation map to generate temperature on!');
-    }
+    if (!world.land || !world.elevation) return console.log('The world has no elevation map to generate temperature on!');
+
     let temp: number[][] = [];
-    let freq = 3;
-    let wavelength = world.width / freq;
-    let amplitude = worldSystem.MAX_ELEVATION;
-    let noise = worldSystem.getNoise('temperature');
+
+    // general areas of temperature gradient
+    const worldRadius = world.width / 2;
+    const worldCenterX = world.width / 2;
+    const worldCenterY = world.height / 2;
+    const outerRingMax = worldRadius;
+    const outerRingMin = worldRadius * .65;
+    const coldElevation = 160;
+
+    // setup octave noise for temperature gradient octaves
+    const octaves = 5;
+    const frequency = 8;
+    const amplitude = worldSystem.MAX_ELEVATION;
+
+    let tempNoise = worldSystem.getNoise('temperature');
     for (let x = 0; x < world.width; x++) {
         temp[x] = [];
         for (let y = 0; y < world.height; y++) {
-            temp[x][y] = Math.floor(noise.noise2d(x / wavelength, y / wavelength) * amplitude);
+            if (!world.land[x][y]) continue;
+
+            let landDistanceFromCenter = Math.sqrt(Math.pow(x - worldCenterX, 2) + Math.pow(y - worldCenterY, 2));
+            let maxAmp = 0;
+            let interp = 0;
+            let octaveFrequency = frequency;
+            let octaveAmp = amplitude;
+            for (let i = 0; i < octaves; i++) {
+                let wavelength = worldRadius / octaveFrequency;
+                interp += tempNoise.noise1d(landDistanceFromCenter * (1 / wavelength)) * octaveAmp;
+                maxAmp += octaveAmp;
+                octaveFrequency *= 2;
+                octaveAmp *= .4;
+            }
+            interp = (interp / maxAmp) * amplitude;
+
+            // values in outer ring are colder
+            if (landDistanceFromCenter >= outerRingMin
+                && landDistanceFromCenter <= outerRingMax) interp *= .8;
+            // values on high elevation are colder
+            if (world.elevation[x][y] > coldElevation) interp *= 1 - (world.elevation[x][y] / worldSystem.MAX_ELEVATION);
+
+            temp[x][y] = interp;
         }
     }
     world.temperature = temp;

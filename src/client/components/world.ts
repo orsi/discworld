@@ -3,17 +3,14 @@ import * as server from '../reverieServer';
 
 /** Dependencies */
 import Component from './component';
-import LandGrid from './world/landGrid';
+import WorldOverview from './world/worldOverview';
 import { Entity, Location } from './';
 import * as Packets from '../../common/data/net/';
 import EntityController from '../world/entityController';
 import { World as WorldModel, WorldLocation } from '../../common/models';
 import WorldRenderer from '../world/worldRenderer';
-import { WorldMapComponent } from './world/worldMap';
 
 export default class World extends Component {
-  worldMap: WorldMapComponent;
-
   canvas: HTMLCanvasElement;
   bufferCanvas: HTMLCanvasElement;
   renderer: WorldRenderer;
@@ -88,10 +85,12 @@ export default class World extends Component {
       for (let y = 0; y < this.model.height; y++) {
         for (let x = 0; x < this.model.width; x++) {
           let land = this.model.land[x][y];
+          if (!land) continue;
+
           let elevation = this.model.elevation[x][y];
-          let temperature = this.model.temperature[x][y];
+          let temperature = Math.floor(this.model.temperature[x][y]);
           let hydrology = this.model.hydrology[x][y];
-          let fill = `#${temperature.toString(16).slice(0, 2)}0000`;
+          let fill = `rgb(${temperature},0,${256 - temperature})`;
           if (land && this.renderer.isOnScreen(x, y, elevation)) {
             let pixel = this.renderer.mapWorldLocationToPixel(x, y, elevation);
             content += `
@@ -140,7 +139,7 @@ export default class World extends Component {
 
     this.stateChange = true;
     this.render();
-    this.shadow.appendChild(new LandGrid(this.model.land, this.model.width, this.model.height));
+    this.shadow.appendChild(new WorldOverview(this.model));
   }
   getLocationComponent (serial: string) {
       for (let l of this.components) {
@@ -202,7 +201,7 @@ export default class World extends Component {
 
   // Location based functions
   isLocation(x: number, y: number) {
-    return x >= 0 && x < this.worldMap.width && y >= 0 && y < this.worldMap.height;
+    return x >= 0 && x < this.model.width && y >= 0 && y < this.model.height;
   }
 
   // Entity based functions
