@@ -11,7 +11,8 @@ import * as generator from './world/worldGenerator';
 import * as Packets from '../common/data/net';
 import Point3D from '../common/data/point3d';
 import { ELEMENTS } from '../common/data/static';
-import { World, WorldRegion, WorldLocation, Tile, Entity } from '../common/models';
+import { World, WorldRegion, Tile, Entity } from '../common/models';
+import WorldLocation from '../common/models/worldLocation';
 
 export const MAX_ELEVATION = 256;
 export const MAX_REGIONS = 24;
@@ -35,10 +36,19 @@ export function create (seed: string, width: number, height: number) {
   model.width = width;
   model.height = height;
   model.createdAt = new Date();
+  // initialize map
+  model.map = [];
+  for (let x = 0; x < width; x++) {
+    model.map[x] = [];
+    for (let y = 0; y < height; y++) {
+      model.map[x][y] = new WorldLocation();
+    }
+  }
   generator.generateLand(model);
   generator.generateElevation(model);
   generator.generateTemperature(model);
-  generator.generateHydrology(model);
+  generator.generatePrecipitation(model);
+  generator.generateBiomes(model);
   worldCreated = true;
   return model;
 }

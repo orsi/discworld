@@ -9,6 +9,7 @@ import * as Packets from '../../common/data/net/';
 import EntityController from '../world/entityController';
 import { World as WorldModel, WorldLocation } from '../../common/models';
 import WorldRenderer from '../world/worldRenderer';
+import { BIOMES } from '../../common/data/static/biomes';
 
 export default class World extends Component {
   canvas: HTMLCanvasElement;
@@ -84,19 +85,62 @@ export default class World extends Component {
       `;
       for (let y = 0; y < this.model.height; y++) {
         for (let x = 0; x < this.model.width; x++) {
-          let land = this.model.land[x][y];
-          if (!land) continue;
+          let location = this.model.map[x][y];
+          if (!location.land) continue;
 
-          let elevation = this.model.elevation[x][y];
-          let temperature = Math.floor(this.model.temperature[x][y]);
-          let hydrology = this.model.hydrology[x][y];
-          let fill = `rgb(${temperature},0,${256 - temperature})`;
-          if (land && this.renderer.isOnScreen(x, y, elevation)) {
-            let pixel = this.renderer.mapWorldLocationToPixel(x, y, elevation);
+          let fill = `rgba(0,0,0,0)`;
+          switch (location.biome) {
+            case BIOMES.VOID:
+              fill = `rgba(10,10,10,1)`;
+              break;
+            case BIOMES.TUNDRA:
+              fill = `rgba(230,230,230,1)`;
+              break;
+            case BIOMES.DESERT:
+              fill = `rgba(93,79,69,1)`;
+              break;
+            case BIOMES.FOREST:
+              fill = `rgba(34,139,34,1)`;
+              break;
+            case BIOMES.GRASSLAND:
+              fill = `rgba(124,252,0,1)`;
+              break;
+            case BIOMES.HEATHLAND:
+              fill = `rgba(138,43,226,1)`;
+              break;
+            case BIOMES.SAVANNA:
+              fill = `rgba(210,129,86,1)`;
+              break;
+            case BIOMES.MIRE:
+              fill = `rgba(62,68,60,1)`;
+              break;
+            case BIOMES.RIVER:
+              fill = `rgba(23,70,81,1)`;
+              break;
+            case BIOMES.LAKE:
+              fill = `rgba(104,120,201,1)`;
+              break;
+            case BIOMES.SEA:
+              fill = `rgba(0,105,148,1)`;
+              break;
+            case BIOMES.HILLS:
+              fill = `rgba(102,204,0,1)`;
+              break;
+            case BIOMES.MOUNTAINS:
+              fill = `rgba(150,141,153,1)`;
+              break;
+          }
+          if (this.renderer.isOnScreen(x, y, location.elevation)) {
+            let pixel = this.renderer.mapWorldLocationToPixel(x, y, location.elevation);
             content += `
             <path
               fill="${fill}"
-              data-i="${x} ${y}"
+              data-x="${x}"
+              data-y="${y}"
+              data-biome="${location.biome}"
+              data-elevation="${location.elevation}"
+              data-temperature="${location.temperature}"
+              data-precipitation="${location.precipitation}"
               d="
                 M${pixel.x},${pixel.y}
                 l${this.renderer.BLOCK_SIZE},${this.renderer.BLOCK_SIZE / 2}
@@ -126,14 +170,7 @@ export default class World extends Component {
   setWorldData (p: Packets.Server.WorldData) {
     // if world doesn't exist, create it
     if (!this.model) this.model = new WorldModel();
-    this.model.seed = p.seed;
-    this.model.width = p.width;
-    this.model.height = p.height;
-    this.model.createdAt = p.createdAt;
-    this.model.land = p.land;
-    this.model.elevation = p.elevation;
-    this.model.hydrology = p.hydrology;
-    this.model.temperature = p.temperature;
+    this.model = p.world;
 
     this.renderer.setWorldOrigin(this.model.width / 2, this.model.height / 2, 128);
 
