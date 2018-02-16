@@ -30,10 +30,12 @@ function copyFolderRecursiveSync( source, target ) {
             var curSource = path.join( source, file );
             if ( fs.lstatSync( curSource ).isDirectory() ) {
                 copyFolderRecursiveSync( curSource, targetFolder );
-            } else {
+            } else if (path.extname(curSource) !== '.ts') {
                 copyFileSync( curSource, targetFolder );
             }
         } );
     }
 }
-copyFolderRecursiveSync('./src/public', './dist');
+copyFolderRecursiveSync('./src/client/css', './dist/client');
+copyFolderRecursiveSync('./src/client/res', './dist/client');
+copyFileSync('./src/client/index.html', './dist/client');

@@ -4,19 +4,22 @@ import * as server from '../reverieServer';
 /** Dependencies */
 import Component from './component';
 import WorldOverview from './world/worldOverview';
-import { Entity, Location } from './';
-import * as Packets from '../../common/data/net/';
+import Entity from './entity';
+import Location from './location';
+
+import EntityMovePacket from '../../../common/data/net/server/entityMove';
+import EntityMessagePacket from '../../../common/data/net/server/entityMessage';
+import EntityRemovePacket from '../../../common/data/net/server/entityRemove';
+import WorldDataPacket from '../../../common/data/net/server/worldData';
+
 import EntityController from '../world/entityController';
-import { World as WorldModel, WorldLocation } from '../../common/models';
+import { default as WorldModel } from '../../../common/models/world';
+import WorldLocation from '../../../common/models/location';
 import WorldRenderer from '../world/worldRenderer';
-import { BIOMES } from '../../common/data/static/biomes';
+import { BIOMES } from '../../../common/data/static/biomes';
 
 export default class World extends Component {
-  canvas: HTMLCanvasElement;
-  bufferCanvas: HTMLCanvasElement;
   renderer: WorldRenderer;
-  locationContainer: HTMLElement;
-  entityContainer: HTMLElement;
   locations: Dictionary<WorldLocation> = {};
   entities: Dictionary<EntityController> = {};
   components: Component[] = [];
@@ -130,8 +133,12 @@ export default class World extends Component {
               fill = `rgba(150,141,153,1)`;
               break;
           }
-          if (this.renderer.isOnScreen(x, y, location.elevation)) {
-            let pixel = this.renderer.mapWorldLocationToPixel(x, y, location.elevation);
+          let drawElevation = location.elevation;
+          if (location.biome === BIOMES.RIVER
+            || location.biome === BIOMES.LAKE
+            || location.biome === BIOMES.SEA) drawElevation = 64;
+          if (this.renderer.isOnScreen(x, y, drawElevation)) {
+            let pixel = this.renderer.mapWorldLocationToPixel(x, y, drawElevation);
             content += `
             <path
               fill="${fill}"
@@ -167,7 +174,7 @@ export default class World extends Component {
     this.renderer.update(delta);
   }
   model: WorldModel;
-  setWorldData (p: Packets.Server.WorldData) {
+  setWorldData (p: WorldDataPacket) {
     // if world doesn't exist, create it
     if (!this.model) this.model = new WorldModel();
     this.model = p.world;
@@ -189,7 +196,7 @@ export default class World extends Component {
       this.locations[location.serial] = location;
       let lComponent = new Location(location, this.renderer);
       this.components.push(lComponent);
-      this.locationContainer.appendChild(lComponent);
+      // this.locationContainer.appendChild(lComponent);
       return lComponent;
   }
   addEntityComponent (entity: EntityController) {
@@ -204,7 +211,7 @@ export default class World extends Component {
           this.entities[entity.serial] = entity;
           eComponent = new Entity(entity, this.renderer);
           this.components.push(eComponent);
-          this.entityContainer.appendChild(eComponent);
+          // this.entityContainer.appendChild(eComponent);
       }
       return eComponent;
   }
@@ -214,19 +221,19 @@ export default class World extends Component {
       }
   }
 
-  onEntityChat (p: Packets.Server.EntityMessage) {
+  onEntityChat (p: EntityMessagePacket) {
     console.log(p);
     // let e = this.getEntityBySerial(from);
     // if (!e) return;
     // e.entity.speak(speech);
   }
-  onEntityMove(p: Packets.Server.EntityMove) {
+  onEntityMove(p: EntityMovePacket) {
     console.log(p);
     // let movedAgent = this.getEntityBySerial(entity.serial);
     // if (!movedAgent) movedAgent = this.createEntity(entity);
     // movedAgent.moveTo(entity.position);
   }
-  onEntityRemove (p: Packets.Server.EntityRemove) {
+  onEntityRemove (p: EntityRemovePacket) {
     console.log(p);
 
     let entity = this.entities[p.serial];

@@ -1,4 +1,4 @@
-import { LOCATIONS } from '../data/static';
+import { LOCATIONS } from '../data/static/locations';
 
 export default class WorldLocation {
     constructor (

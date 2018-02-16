@@ -1,6 +1,7 @@
 import Packet from '../packet';
-import { DIRECTION } from '../../../data/static';
-export default class Move extends Packet {
+import { DIRECTION } from '../../static/direction';
+
+export default class MovePacket extends Packet {
     constructor (
         public direction: DIRECTION
     ) {

@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "strict": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "strictPropertyInitialization": false,
+    "outDir": "dist",
+    "typeRoots": [
+      "./node_modules/@types"
+     ]
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}

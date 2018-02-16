@@ -22,5 +22,5 @@ process.on('SIGINT', function () {
     process.exit();
 });
 
-import * as reverie from './server/reverie';
+import * as reverie from './reverie';
 reverie.run();

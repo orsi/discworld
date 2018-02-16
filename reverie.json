@@ -1,8 +1,9 @@
 {
+    "env": "dev",
     "terminal": {
         "logLevel": 2
     },
-    "universe": {},
+    "world": {},
     "network": {
         "port": 3000
     }

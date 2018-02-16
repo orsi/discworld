@@ -1,6 +1,6 @@
 import Packet from '../packet';
 
-export default class EntityMove extends Packet {
+export default class EntityMovePacket extends Packet {
     constructor (
         public entitySerial: string,
         public x: number,

@@ -1,6 +1,6 @@
 import Packet from '../packet';
 
-export default class Message extends Packet {
+export default class MessagePacket extends Packet {
     constructor (
         public message: string
     ) {

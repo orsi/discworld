@@ -6,10 +6,15 @@ import * as events from './services/events';
 import * as reverie from './reverie';
 import * as world from './worldSystem';
 
+import Entity from '../common/models/entity';
+
 import Packet from '../common/data/net/packet';
-import * as Packets from '../common/data/net';
-import { Entity } from '../common/models';
-import { DIRECTION } from '../common/data/static';
+import MessagePacket from '../common/data/net/client/message';
+import MovePacket from '../common/data/net/client/move';
+import InteractPacket from '../common/data/net/client/interact';
+import FocusPacket from '../common/data/net/client/focus';
+
+import { DIRECTION } from '../common/data/static/direction';
 
 export default class Client {
     socket: SocketIO.Socket;
@@ -21,17 +26,17 @@ export default class Client {
     constructor (socket: SocketIO.Socket) {
         this.socket = socket;
 
-        socket.on('client/message', (p: Packets.Client.Message) => this.onMessage(p));
-        socket.on('client/move', (p: Packets.Client.Move) => this.onMove(p));
-        socket.on('client/interact', (p: Packets.Client.Interact) => this.onInteract(p));
-        socket.on('client/focus', (p: Packets.Client.Focus) => this.onFocus(p));
+        socket.on('client/message', (p: MessagePacket) => this.onMessage(p));
+        socket.on('client/move', (p: MovePacket) => this.onMove(p));
+        socket.on('client/interact', (p: InteractPacket) => this.onInteract(p));
+        socket.on('client/focus', (p: FocusPacket) => this.onFocus(p));
     }
     send (packet: Packet) {
         this.socket.emit(packet.event, packet);
     }
 
     // incoming packets
-    onMessage (p: Packets.Client.Message) {
+    onMessage (p: MessagePacket) {
         console.log(p);
         if (p.message.length === 0) return;
         if (p.message.charAt(0) !== '/' && this.entity) {
@@ -49,7 +54,7 @@ export default class Client {
      * @param client The client requesting to move
      * @param data The direction of move
      */
-    onMove (p: Packets.Client.Move) {
+    onMove (p: MovePacket) {
         let nextPosition = this.parsePosition(this.entity.x, this.entity.y, p.direction);
 
         // return if entity can't move to position
@@ -106,14 +111,14 @@ export default class Client {
         // let position = reverie.getWorld().getPosition(x, y);
         // return position;
     }
-    onInteract (p: Packets.Client.Interact) {
+    onInteract (p: InteractPacket) {
         // get entity
         // get object entity wants to interact with
         // check if entity cna interact with it
         // if entity can, perform interaction with object
         // if entity can't, reject
     }
-    onFocus (p: Packets.Client.Focus) {
+    onFocus (p: FocusPacket) {
         // get entity
         // get object entity wants to focus
         // check if entity can focus on object

@@ -1,6 +1,5 @@
-import { WorldLocation, Skill } from './';
-import { ENTITIES } from '../data/static/';
 import Speech from './speech';
+import { ENTITIES } from '../data/static/entities';
 
 export default class Entity {
     serial: string;

@@ -11,8 +11,11 @@ import * as worldSystem from './worldSystem';
 import * as timers from '../common/utils/timerManager';
 
 /** Data */
-import * as Packets from '../common/data/net';
 import Client from './client';
+import WorldDataPacket from '../common/data/net/server/worldData';
+import WorldDestroyPacket from '../common/data/net/server/worldDestroy';
+import MessagePacket from '../common/data/net/server/serverMessage';
+import ClientEntityPacket from '../common/data/net/server/clientEntity';
 
 
 export const version = {
@@ -22,7 +25,8 @@ export const version = {
 };
 
 // root = ~/server/
-export const _rootdir = __dirname;
+console.log('dir', __dirname);
+export const __rootdir = __dirname;
 
 // Main systems
 export function getWorld () {
@@ -90,9 +94,9 @@ function onNetworkConnection (socket: SocketIO.Socket) {
     // send world and entity if exists
     let world = worldSystem.get();
     if (world) {
-        client.send(new Packets.Server.WorldData(world));
+        client.send(new WorldDataPacket(world));
         let entity = worldSystem.createEntity(client.socket.handshake.address);
-        client.send(new Packets.Server.ClientEntity(entity.serial));
+        client.send(new ClientEntityPacket(entity.serial));
     }
 
 
@@ -119,33 +123,33 @@ export function onClientMessage (client: Client, message: string) {
                     let h = parseInt(height);
 
                     let model = worldSystem.create(seed, w, h);
-                    client.send(new Packets.Server.Message('You are filled with imagination.'));
+                    client.send(new MessagePacket('You are filled with imagination.'));
 
                     // create entities for all connected clients
                     for (let serial in clients) {
                         let c = clients[serial];
                         let entity = worldSystem.createEntity(c.socket.handshake.address);
-                        c.send(new Packets.Server.ClientEntity(entity.serial));
+                        c.send(new ClientEntityPacket(entity.serial));
                     }
 
                     // broadcast new world to all clients
-                    network.broadcast(new Packets.Server.WorldData(model));
+                    network.broadcast(new WorldDataPacket(model));
                 } else {
-                    client.send(new Packets.Server.Message('You can\'t seem to picture anything.'));
+                    client.send(new MessagePacket('You can\'t seem to picture anything.'));
                 }
             } else {
-                client.send(new Packets.Server.Message('You feel a longing for more.'));
+                client.send(new MessagePacket('You feel a longing for more.'));
             }
         break;
         case '/destroy':
             if (worldSystem.worldCreated) {
                 worldSystem.destroy();
-                client.send(new Packets.Server.Message('Your mind has become blank.'));
+                client.send(new MessagePacket('Your mind has become blank.'));
 
                 // broadcast destroy world to all clients
-                network.broadcast(new Packets.Server.WorldDestroy());
+                network.broadcast(new WorldDestroyPacket());
             } else {
-                client.send(new Packets.Server.Message('You seem perplexed.'));
+                client.send(new MessagePacket('You seem perplexed.'));
             }
             break;
         default:
@@ -153,7 +157,7 @@ export function onClientMessage (client: Client, message: string) {
             for (let serial in clients) {
                 // if (serial === client.socket.id) continue;
                 let c = clients[serial];
-                c.send(new Packets.Server.Message(`A voice echoes in the distance... "${message}"`));
+                c.send(new MessagePacket(`A voice echoes in the distance... "${message}"`));
             }
             break;
     }

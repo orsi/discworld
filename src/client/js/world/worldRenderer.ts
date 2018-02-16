@@ -1,7 +1,7 @@
-import Point2D from '../../common/data/point2d';
-import Point3D from '../../common/data/point3d';
-import { WorldLocation } from '../../common/models';
-import { World } from '../components';
+import Point2D from '../../../common/data/point2d';
+import Point3D from '../../../common/data/point3d';
+import WorldLocation from '../../../common/models/location';
+import World from '../components/world';
 
 export default class WorldRenderer {
   controller: World;

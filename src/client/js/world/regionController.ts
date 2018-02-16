@@ -1,5 +1,6 @@
-import { WorldRegion } from '../../common/models';
-import { Region, World } from '../components';
+import WorldRegion from '../../../common/models/region';
+import World from '../components/region';
+import Region from '../components/world';
 
 export default class RegionController {
     region: WorldRegion;

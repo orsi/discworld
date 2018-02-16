@@ -1,4 +1,4 @@
-import { uuid } from '../../common/utils/uuid';
+import { uuid } from '../../../common/utils/uuid';
 export default class Component extends HTMLElement {
     serial: string;
     stateChange: boolean = false;

@@ -4,20 +4,23 @@ import * as events from './services/events';
 import * as reverie from './reverie';
 
 /** Tools */
-import * as utils from '../common/utils';
+import PRNG from '../common/utils/prng';
+import Automaton from '../common/utils/automaton';
+import Noise from '../common/utils/noise';
+import { sha256 } from '../common/utils/hash';
 import * as generator from './world/worldGenerator';
 
 /** Data */
-import * as Packets from '../common/data/net';
 import Point3D from '../common/data/point3d';
-import { ELEMENTS } from '../common/data/static';
-import { World, WorldRegion, Tile, Entity } from '../common/models';
 import WorldLocation from '../common/models/worldLocation';
+import World from '../common/models/world';
+import Entity from '../common/models/entity';
+
 
 export const MAX_ELEVATION = 256;
 export const MAX_REGIONS = 24;
 export let hash: string;
-export let pseudo: utils.PRNG;
+export let pseudo: PRNG;
 
 export let model: World;
 export let worldCreated: boolean = false;
@@ -67,16 +70,16 @@ export function getNextRandom () {
   return pseudo.random();
 }
 export function getHash (suffix: string) {
-    return utils.sha256(model.seed + '-' + suffix);
+    return sha256(model.seed + '-' + suffix);
 }
 export function getAutomaton (seed: string, width: number, height: number) {
-    return new utils.Automaton(getHash(seed), width, height);
+    return new Automaton(getHash(seed), width, height);
 }
 export function getPseudo (seed: string) {
-    return new utils.PRNG(getHash(seed));
+    return new PRNG(getHash(seed));
 }
 export function getNoise (seed: string) {
-    return new utils.Noise(getHash(seed));
+    return new Noise(getHash(seed));
 }
 export function getRandomLocation() {
     return new Point3D(

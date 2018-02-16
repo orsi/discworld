@@ -1,5 +1,6 @@
 import Packet from '../packet';
-export default class Focus extends Packet {
+
+export default class FocusPacket extends Packet {
     constructor () {
         super('client/focus');
     }

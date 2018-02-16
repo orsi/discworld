@@ -1,6 +1,6 @@
 import Component from './component';
-import { WorldLocation } from '../../common/models';
-import { ELEMENTS } from '../../common/data/static/elements';
+import WorldLocation from '../../../common/models/location';
+import { ELEMENTS } from '../../../common/data/static/elements';
 import WorldRenderer from '../world/worldRenderer';
 
 export default class Location extends Component {

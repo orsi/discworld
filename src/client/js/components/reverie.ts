@@ -1,16 +1,18 @@
 import Component from './component';
-import * as Components from './';
+import Terminal from './ui/terminal';
+import Conscience from './ui/conscience';
 
 /** Services */
 import * as dom from '../dom';
 import * as server from '../reverieServer';
 
 /** Data */
-import * as Packets from '../../common/data/net';
+import MessagePacket from '../../../common/data/net/client/message';
+import { default as ServerMessagePacket } from '../../../common/data/net/client/message';
 
 export default class Reverie extends Component {
-    terminal: Components.Terminal;
-    conscience: Components.Conscience;
+    terminal: Terminal;
+    conscience: Conscience;
     constructor () {
         super();
     }
@@ -18,20 +20,20 @@ export default class Reverie extends Component {
         super.connectedCallback();
 
         // create terminal
-        this.terminal = new Components.Terminal();
+        this.terminal = new Terminal();
         this.terminal.style.position = '10';
         this.terminal.style.zIndex = '10';
         dom.render(this.terminal, this);
         this.terminal.addEventListener('terminal-message', (e: Event) => {
-            server.send(new Packets.Client.Message((<CustomEvent>e).detail));
+            server.send(new MessagePacket((<CustomEvent>e).detail));
         });
 
         // create server message window
-        this.conscience = new Components.Conscience();
+        this.conscience = new Conscience();
         this.conscience.style.position = '10';
         this.conscience.style.zIndex = '10';
         dom.render(this.conscience, this);
-        server.on('server/message', (p: Packets.Server.Message) => this.conscience.print(p.message));
+        server.on('server/message', (p: ServerMessagePacket) => this.conscience.print(p.message));
     }
     get template () {
         return `

@@ -1,7 +1,7 @@
 /** Dependencies */
 import Component from '../component';
-import { World as WorldModel } from '../../../common/models';
-import { BIOMES } from '../../../common/data/static/biomes';
+import { default as WorldModel } from '../../../../common/models/world';
+import { BIOMES } from '../../../../common/data/static/biomes';
 
 export default class WorldOverview extends Component {
     model: WorldModel;

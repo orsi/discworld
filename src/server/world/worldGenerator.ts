@@ -2,9 +2,9 @@
 import * as worldSystem from '../worldSystem';
 
 /** Data */
-import { World } from '../../common/models';
 import Point2D from '../../common/data/point2d';
 import { BIOMES } from '../../common/data/static/biomes';
+import World from '../../common/models/world';
 
 /**
  * Generates the disc shape of the world.

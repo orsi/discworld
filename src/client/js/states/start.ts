@@ -6,11 +6,10 @@ import * as server from '../reverieServer';
 import * as dom from '../dom';
 
 /** Data */
-import * as Packets from '../../common/data/net';
-import {
-    Title as TitleComponent,
-    World as WorldComponent
-} from '../components';
+import WorldDataPacket from '../../../common/data/net/server/worldData';
+import WorldDestroyPacket from '../../../common/data/net/server/worldData';
+import { default as TitleComponent } from '../components/ui/title';
+import { default as WorldComponent } from '../components/world';
 
 export default class Start extends State {
     title: TitleComponent;
@@ -22,15 +21,15 @@ export default class Start extends State {
         this.title = new TitleComponent();
         dom.render(this.title, client.reverie);
 
-        server.on('world/data', (p: Packets.Server.WorldData) => this.onWorldStatus(p));
-        server.on('world/destroy', (p: Packets.Server.WorldDestroy) => this.onWorldDestroy(p));
+        server.on('world/data', (p: WorldDataPacket) => this.onWorldStatus(p));
+        server.on('world/destroy', (p: WorldDestroyPacket) => this.onWorldDestroy(p));
 
         // server.on('region/data', (p: Packets.Server.RegionDataPacket) => this.onRegionData(p));
         // server.on('entity/speech', (p: Packets.Server.EntityChatPacket) => this.onEntityChat(p));
         // server.on('entity/move', (p: Packets.Server.EntityPositionPacket) => this.onEntityMove(p));
         // server.on('entity/remove', (p: Packets.Server.EntityRemovePacket) => this.onEntityRemove(p));
     }
-    onWorldStatus (p: Packets.Server.WorldData) {
+    onWorldStatus (p: WorldDataPacket) {
         console.log(p);
         if (!this.world) {
             // create world component
@@ -41,7 +40,7 @@ export default class Start extends State {
         }
         this.world.setWorldData(p);
     }
-    onWorldDestroy (p: Packets.Server.WorldDestroy) {
+    onWorldDestroy (p: WorldDestroyPacket) {
         console.log(p);
         if (!this.world) return;
         dom.select(this.world).fadeOut(2000, () => {

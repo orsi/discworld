@@ -1,4 +1,3 @@
-import { World } from './';
 import { REGIONS } from '../data/static/regions';
 
 export default class WorldRegion {

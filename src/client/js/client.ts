@@ -8,13 +8,14 @@ import * as server from './reverieServer';
 
 /** DOM, Components  */
 import * as dom from './dom';
-import * as Components from './components';
 import Component from './components/component';
+import Reverie from './components/reverie';
 
 /** Data */
 import State from './states/state';
 import StartState from './states/start';
-import * as Packets from '../common/data/net';
+
+import ClientEntityPacket from '../../common/data/net/server/clientEntity';
 
 /** Call init() on document ready */
 document.addEventListener('DOMContentLoaded', function() {
@@ -25,18 +26,18 @@ let currentState: State;
 export let clientEntitySerial: string;
 export let connected: boolean = false;
 export let body: HTMLBodyElement;
-export let reverie: Components.Reverie;
+export let reverie: Reverie;
 
 function init () {
   // give root to dom
   body = <HTMLBodyElement>document.querySelector('body');
 
   // create reverie
-  reverie = new Components.Reverie();
+  reverie = new Reverie();
   dom.render(reverie);
 
   // register incoming server events
-  server.on('client/entity', (p: Packets.Server.ClientEntity) => clientEntitySerial = p.serial);
+  server.on('client/entity', (p: ClientEntityPacket) => clientEntitySerial = p.serial);
   server.on('connect', (s: SocketIOClient.Socket) => connected = true);
   server.on('disconnect', (s: SocketIOClient.Socket) => connected = false);
 

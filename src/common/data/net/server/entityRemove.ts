@@ -1,6 +1,6 @@
 import Packet from '../packet';
 
-export default class EntityRemove extends Packet {
+export default class EntityRemovePacket extends Packet {
     constructor (
         public serial: string
     ) {

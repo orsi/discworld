@@ -1,4 +1,4 @@
-import { PRNG } from './';
+import PRNG from './prng';
 
 export default class Noise {
   prng: PRNG;
