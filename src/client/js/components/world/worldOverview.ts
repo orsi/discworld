@@ -4,13 +4,19 @@ import { default as WorldModel } from '../../../../common/models/world';
 import { BIOMES } from '../../../../common/data/static/biomes';
 
 export default class WorldOverview extends Component {
-    model: WorldModel;
+  canvas: HTMLCanvasElement = document.createElement('canvas');
+  ctx: CanvasRenderingContext2D = this.canvas.getContext('2d')!;
+  model: WorldModel;
   constructor  (model: WorldModel) {
     super();
     this.model = model;
+
+    this.canvas.width = this.model.width;
+    this.canvas.height = this.model.height;
   }
   connectedCallback () {
       super.connectedCallback();
+      this.shadow.appendChild(this.canvas);
   }
   get template () {
     const style = `
@@ -24,8 +30,7 @@ export default class WorldOverview extends Component {
         width: ${this.model.width}px;
         height: ${this.model.height}px;
       }
-      svg {
-        overflow: visible;
+      canvas {
         display: inline-block;
         background-color: rgba(0,0,0,.6);
         width: 100%;
@@ -33,12 +38,12 @@ export default class WorldOverview extends Component {
       }
     </style>
     `;
+    return style;
+  }
 
-    let content = '';
-    content = `
-        <svg>
-          <g>
-      `;
+  rendered = false;
+  update (delta: number) {
+    if (!this.rendered) {
       for (let y = 0; y < this.model.height; y++) {
         for (let x = 0; x < this.model.width; x++) {
           let location = this.model.map[x][y];
@@ -86,13 +91,12 @@ export default class WorldOverview extends Component {
               fill = `rgba(150,141,153,1)`;
               break;
           }
-          content += `
-            <rect x="${x}" y="${y}" width="1" height="1" fill="${fill}" opacity=".9" />
-          `;
+          this.ctx.fillStyle = fill;
+          this.ctx.fillRect(x, y, 1, 1);
         }
       }
-      content += `</g></svg>`;
-    return style + content;
+      this.rendered = true;
+    }
   }
 }
 customElements.define('reverie-land-grid', WorldOverview);

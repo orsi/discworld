@@ -53,7 +53,9 @@ export default class Start extends State {
     }
     pause () {}
     resume () {}
-    update (delta: number) {}
+    update (delta: number) {
+        if (this.world) this.world.update(delta);
+    }
     render (interpolation: number) {}
     dispose () {}
 }

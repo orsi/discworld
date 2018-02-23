@@ -19,6 +19,9 @@ import WorldRenderer from '../world/worldRenderer';
 import { BIOMES } from '../../../common/data/static/biomes';
 
 export default class World extends Component {
+  canvas: HTMLCanvasElement = document.createElement('canvas');
+  ctx: CanvasRenderingContext2D = this.canvas.getContext('2d')!;
+  overview: WorldOverview;
   renderer: WorldRenderer;
   locations: Dictionary<WorldLocation> = {};
   entities: Dictionary<EntityController> = {};
@@ -29,10 +32,6 @@ export default class World extends Component {
   constructor  () {
     super();
       this.renderer = new WorldRenderer(this);
-
-      let width = window.innerWidth;
-      let height = window.innerHeight;
-      this.renderer.setSize(width, height);
   }
   connectedCallback () {
       super.connectedCallback();
@@ -57,6 +56,8 @@ export default class World extends Component {
         let height = window.innerHeight;
         this.renderer.setSize(width, height);
       });
+
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
   TILE_WIDTH = 12;
@@ -71,7 +72,7 @@ export default class World extends Component {
         bottom: 0;
         left: 0;
       }
-      svg {
+      canvas {
         overflow: visible;
         display: inline-block;
         width: 100%;
@@ -80,12 +81,18 @@ export default class World extends Component {
     </style>
     `;
 
-    let content = '';
-    if (this.model) {
-      content = `
-        <svg>
-          <g>
-      `;
+    return style;
+  }
+
+  rendered = false;
+  update (delta: number) {
+    this.elapsedTime += delta;
+    // if (this.agentMoving && this.elapsedTime - this.lastMove > 200) {
+    //     this.server.emit('move', this.parseMouseDirection(this.currentMouse.x, this.currentMouse.y));
+    //     this.lastMove = this.elapsedTime;
+    // }
+    if (this.model && !this.rendered) {
+      this.renderer.update(delta);
       for (let y = 0; y < this.model.height; y++) {
         for (let x = 0; x < this.model.width; x++) {
           let location = this.model.map[x][y];
@@ -118,13 +125,13 @@ export default class World extends Component {
               fill = `rgba(62,68,60,1)`;
               break;
             case BIOMES.RIVER:
-              fill = `rgba(23,70,81,1)`;
+              fill = `rgba(0,0,81,1)`;
               break;
             case BIOMES.LAKE:
-              fill = `rgba(104,120,201,1)`;
+              fill = `rgba(0,0,201,1)`;
               break;
             case BIOMES.SEA:
-              fill = `rgba(0,105,148,1)`;
+              fill = `rgba(0,0,148,1)`;
               break;
             case BIOMES.HILLS:
               fill = `rgba(102,204,0,1)`;
@@ -139,39 +146,20 @@ export default class World extends Component {
             || location.biome === BIOMES.SEA) drawElevation = 64;
           if (this.renderer.isOnScreen(x, y, drawElevation)) {
             let pixel = this.renderer.mapWorldLocationToPixel(x, y, drawElevation);
-            content += `
-            <path
-              fill="${fill}"
-              data-x="${x}"
-              data-y="${y}"
-              data-biome="${location.biome}"
-              data-elevation="${location.elevation}"
-              data-temperature="${location.temperature}"
-              data-precipitation="${location.precipitation}"
-              d="
-                M${pixel.x},${pixel.y}
-                l${this.renderer.BLOCK_SIZE},${this.renderer.BLOCK_SIZE / 2}
-                l${-(this.renderer.BLOCK_SIZE)},${this.renderer.BLOCK_SIZE / 2}
-                l${-(this.renderer.BLOCK_SIZE)},${-(this.renderer.BLOCK_SIZE / 2)}
-                Z"
-              fill-opacity="1"></path>
-          `;
+            let blockSize = this.renderer.BLOCK_SIZE;
+            this.ctx.fillStyle = fill;
+            this.ctx.beginPath();
+            this.ctx.moveTo(pixel.x, pixel.y);
+            this.ctx.lineTo(pixel.x + blockSize, pixel.y + (blockSize / 2));
+            this.ctx.lineTo(pixel.x, pixel.y + blockSize);
+            this.ctx.lineTo(pixel.x - blockSize, pixel.y + (blockSize / 2));
+            this.ctx.fill();
           }
         }
       }
-      content += `</g></svg>`;
+      this.overview.update(delta);
+      this.rendered = true;
     }
-
-    return style + content;
-  }
-
-  update (delta: number) {
-    this.elapsedTime += delta;
-    // if (this.agentMoving && this.elapsedTime - this.lastMove > 200) {
-    //     this.server.emit('move', this.parseMouseDirection(this.currentMouse.x, this.currentMouse.y));
-    //     this.lastMove = this.elapsedTime;
-    // }
-    this.renderer.update(delta);
   }
   model: WorldModel;
   setWorldData (p: WorldDataPacket) {
@@ -180,10 +168,12 @@ export default class World extends Component {
     this.model = p.world;
 
     this.renderer.setWorldOrigin(this.model.width / 2, this.model.height / 2, 128);
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+    this.shadow.appendChild(this.canvas);
 
-    this.stateChange = true;
-    this.render();
-    this.shadow.appendChild(new WorldOverview(this.model));
+    this.overview = new WorldOverview(this.model);
+    this.shadow.appendChild(this.overview);
   }
   getLocationComponent (serial: string) {
       for (let l of this.components) {
