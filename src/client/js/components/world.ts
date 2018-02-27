@@ -29,14 +29,17 @@ export default class World extends Component {
 
   elapsedTime = 0;
 
+  lastMove: number = 0;
+  clientIsMoving: boolean = false;
+  currentMouse: {x: number, y: number} = {x: 0, y: 0};
   constructor  () {
     super();
-      this.renderer = new WorldRenderer(this);
   }
   connectedCallback () {
       super.connectedCallback();
 
       // setup events
+      this.addEventListener('mousewheel', (e) => this.onZoom(e));
       this.addEventListener('mousedown', (e) => {
         if (e.button === 2) this.onMoveStart(e);
       });
@@ -52,12 +55,13 @@ export default class World extends Component {
         }));
       });
       window.addEventListener('resize', (e) => {
-        let width = window.innerWidth;
-        let height = window.innerHeight;
-        this.renderer.setSize(width, height);
+        this.width = this.canvas.width = window.innerWidth;
+        this.height = this.canvas.height = window.innerHeight;
+        this.renderer.setSize(this.width, this.height);
+        this.rendered = false;
       });
 
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer = new WorldRenderer(this, window.innerWidth, window.innerHeight);
   }
 
   TILE_WIDTH = 12;
@@ -91,8 +95,36 @@ export default class World extends Component {
     //     this.server.emit('move', this.parseMouseDirection(this.currentMouse.x, this.currentMouse.y));
     //     this.lastMove = this.elapsedTime;
     // }
+
+    // input
+    let now = new Date().getTime();
+    if (this.clientIsMoving && now - this.lastMove > 120) {
+      let originX = this.renderer.originPixel.x;
+      let originY = this.renderer.originPixel.y;
+      if (this.isNorth(this.currentMouse.x, this.currentMouse.y)) {
+        originX--;
+        originY++;
+      }
+      if (this.isEast(this.currentMouse.x, this.currentMouse.y)) {
+        originX--;
+        originY--;
+      }
+      if (this.isSouth(this.currentMouse.x, this.currentMouse.y)) {
+        originX++;
+        originY--;
+      }
+      if (this.isWest(this.currentMouse.x, this.currentMouse.y)) {
+        originX++;
+        originY++;
+      }
+      this.renderer.setPixelOrigin(originX, originY);
+      this.rendered = false;
+      this.lastMove = now;
+    }
+
+    this.renderer.update(delta);
     if (this.model && !this.rendered) {
-      this.renderer.update(delta);
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       for (let y = 0; y < this.model.height; y++) {
         for (let x = 0; x < this.model.width; x++) {
           let location = this.model.map[x][y];
@@ -146,7 +178,7 @@ export default class World extends Component {
             || location.biome === BIOMES.SEA) drawElevation = 64;
           if (this.renderer.isOnScreen(x, y, drawElevation)) {
             let pixel = this.renderer.mapWorldLocationToPixel(x, y, drawElevation);
-            let blockSize = this.renderer.BLOCK_SIZE;
+            let blockSize = this.renderer.getTileSize();
             this.ctx.fillStyle = fill;
             this.ctx.beginPath();
             this.ctx.moveTo(pixel.x, pixel.y);
@@ -238,10 +270,16 @@ export default class World extends Component {
     return x >= 0 && x < this.model.width && y >= 0 && y < this.model.height;
   }
 
-  // Entity based functions
-  lastMove: number = 0;
-  clientIsMoving: boolean = false;
-  currentMouse: {x: number, y: number} = {x: 0, y: 0};
+  onZoom (e: MouseWheelEvent) {
+    console.log(e.wheelDelta, e.wheelDeltaX, e.wheelDeltaY);
+    if (e.wheelDelta > 0) {
+      this.renderer.zoomIn();
+      this.rendered = false;
+    } else {
+      this.renderer.zoomOut();
+      this.rendered = false;
+    }
+  }
   onMoveStart (e: MouseEvent) {
     this.clientIsMoving = true;
     this.currentMouse.x = e.x;
@@ -267,30 +305,51 @@ export default class World extends Component {
   }
   getTheta (x: number, y: number) {
     // translate around origin
-    x = x - this.clientWidth / 2;
-    y = y - this.clientHeight / 2;
+    let originX = this.canvas.width / 2;
+    let originY = this.canvas.height / 2;
+    x = x - originX;
+    y = -1 * (y - originY);
     // get angle
-    let rad = Math.atan2(-1, 1) - Math.atan2(x, y);
+    let rad = Math.atan2(x, y);
     rad =  rad * 360 / (2 * Math.PI);
     if (rad < 0) rad += 360;
     return rad;
   }
   isNorth(x: number, y: number) {
+    let cornerX = this.canvas.width;
+    let cornerY = 0;
+    let cornerTheta = this.getTheta(cornerX, cornerY);
+    let max = cornerTheta + 80;
+    let min = cornerTheta - 80;
     let theta = this.getTheta(x, y);
-    return  theta >= 30 && theta <= 175;
+    return theta >= min && theta <= max;
   }
   isEast(x: number, y: number) {
+    let cornerX = this.canvas.width;
+    let cornerY = this.canvas.height;
+    let cornerTheta = this.getTheta(cornerX, cornerY);
+    let max = cornerTheta + 80;
+    let min = cornerTheta - 80;
     let theta = this.getTheta(x, y);
-    return theta >= 110 && theta <= 245;
-  }
-  isWest(x: number, y: number) {
-    let theta = this.getTheta(x, y);
-    return theta >= 0 && theta <= 55
-        || theta >= 280 && theta <= 360;
+    return theta >= min && theta <= max;
   }
   isSouth(x: number, y: number) {
+    let cornerX = 0;
+    let cornerY = this.canvas.height;
+    let cornerTheta = this.getTheta(cornerX, cornerY);
+    let max = cornerTheta + 80;
+    let min = cornerTheta - 80;
     let theta = this.getTheta(x, y);
-    return theta >= 225 && theta <= 315;
+    return theta >= min && theta <= max;
+  }
+  isWest(x: number, y: number) {
+    let cornerX = 0;
+    let cornerY = 0;
+    let cornerTheta = this.getTheta(cornerX, cornerY);
+    let max = cornerTheta + 80;
+    let min = cornerTheta - 80;
+    let theta = this.getTheta(x, y);
+    return theta >= min && theta <= max;
   }
 }
 customElements.define('reverie-world', World);
