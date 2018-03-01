@@ -86,7 +86,7 @@ export function generateElevation (world: World) {
                 octaveFrequency *= 2;
                 octaveAmp *= .5;
             }
-            world.map[x][y].elevation = (world.map[x][y].elevation / maxAmp) * amplitude;
+            world.map[x][y].elevation = world.map[x][y].z = (world.map[x][y].elevation / maxAmp) * amplitude;
         }
     }
 }

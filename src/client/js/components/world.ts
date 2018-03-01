@@ -17,10 +17,14 @@ import { default as WorldModel } from '../../../common/models/world';
 import WorldLocation from '../../../common/models/location';
 import WorldRenderer from '../world/worldRenderer';
 import { BIOMES } from '../../../common/data/static/biomes';
+import Point2D from '../../../common/data/point2d';
+import Point3D from '../../../common/data/point3d';
 
 export default class World extends Component {
   canvas: HTMLCanvasElement = document.createElement('canvas');
-  ctx: CanvasRenderingContext2D = this.canvas.getContext('2d')!;
+  mainContext: CanvasRenderingContext2D = this.canvas.getContext('2d')!;
+  buffer: HTMLCanvasElement = document.createElement('canvas');
+  bufferContext: CanvasRenderingContext2D = this.buffer.getContext('2d')!;
   overview: WorldOverview;
   renderer: WorldRenderer;
   locations: Dictionary<WorldLocation> = {};
@@ -55,16 +59,18 @@ export default class World extends Component {
         }));
       });
       window.addEventListener('resize', (e) => {
-        this.width = this.canvas.width = window.innerWidth;
+        this.width = this.canvas.width  = window.innerWidth;
         this.height = this.canvas.height = window.innerHeight;
         this.renderer.setSize(this.width, this.height);
         this.rendered = false;
       });
-
+      this.width = this.canvas.width  = window.innerWidth;
+      this.height = this.canvas.height = window.innerHeight;
       this.renderer = new WorldRenderer(this, window.innerWidth, window.innerHeight);
+      this.renderer.setSize(this.width, this.height);
+      this.shadow.appendChild(this.canvas);
   }
 
-  TILE_WIDTH = 12;
   get template () {
     const style = `
     <style>
@@ -91,121 +97,49 @@ export default class World extends Component {
   rendered = false;
   update (delta: number) {
     this.elapsedTime += delta;
-    // if (this.agentMoving && this.elapsedTime - this.lastMove > 200) {
-    //     this.server.emit('move', this.parseMouseDirection(this.currentMouse.x, this.currentMouse.y));
-    //     this.lastMove = this.elapsedTime;
-    // }
-
-    // input
-    let now = new Date().getTime();
-    if (this.clientIsMoving && now - this.lastMove > 120) {
-      let originX = this.renderer.originPixel.x;
-      let originY = this.renderer.originPixel.y;
+    if (this.clientIsMoving && this.elapsedTime - this.lastMove > 16) {
       if (this.isNorth(this.currentMouse.x, this.currentMouse.y)) {
-        originX--;
-        originY++;
+        this.pixelOffset.x--;
+        this.pixelOffset.y++;
       }
       if (this.isEast(this.currentMouse.x, this.currentMouse.y)) {
-        originX--;
-        originY--;
+        this.pixelOffset.x--;
+        this.pixelOffset.y--;
       }
       if (this.isSouth(this.currentMouse.x, this.currentMouse.y)) {
-        originX++;
-        originY--;
+        this.pixelOffset.x++;
+        this.pixelOffset.y--;
       }
       if (this.isWest(this.currentMouse.x, this.currentMouse.y)) {
-        originX++;
-        originY++;
+        this.pixelOffset.x++;
+        this.pixelOffset.y++;
       }
-      this.renderer.setPixelOrigin(originX, originY);
+      this.lastMove = this.elapsedTime;
       this.rendered = false;
-      this.lastMove = now;
     }
 
-    this.renderer.update(delta);
-    if (this.model && !this.rendered) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      for (let y = 0; y < this.model.height; y++) {
-        for (let x = 0; x < this.model.width; x++) {
-          let location = this.model.map[x][y];
-          if (!location.land) continue;
-
-          let fill = `rgba(0,0,0,0)`;
-          switch (location.biome) {
-            case BIOMES.VOID:
-              fill = `rgba(10,10,10,1)`;
-              break;
-            case BIOMES.TUNDRA:
-              fill = `rgba(230,230,230,1)`;
-              break;
-            case BIOMES.DESERT:
-              fill = `rgba(93,79,69,1)`;
-              break;
-            case BIOMES.FOREST:
-              fill = `rgba(34,139,34,1)`;
-              break;
-            case BIOMES.GRASSLAND:
-              fill = `rgba(124,252,0,1)`;
-              break;
-            case BIOMES.HEATHLAND:
-              fill = `rgba(138,43,226,1)`;
-              break;
-            case BIOMES.SAVANNA:
-              fill = `rgba(210,129,86,1)`;
-              break;
-            case BIOMES.MIRE:
-              fill = `rgba(62,68,60,1)`;
-              break;
-            case BIOMES.RIVER:
-              fill = `rgba(0,0,81,1)`;
-              break;
-            case BIOMES.LAKE:
-              fill = `rgba(0,0,201,1)`;
-              break;
-            case BIOMES.SEA:
-              fill = `rgba(0,0,148,1)`;
-              break;
-            case BIOMES.HILLS:
-              fill = `rgba(102,204,0,1)`;
-              break;
-            case BIOMES.MOUNTAINS:
-              fill = `rgba(150,141,153,1)`;
-              break;
-          }
-          let drawElevation = location.elevation;
-          if (location.biome === BIOMES.RIVER
-            || location.biome === BIOMES.LAKE
-            || location.biome === BIOMES.SEA) drawElevation = 64;
-          if (this.renderer.isOnScreen(x, y, drawElevation)) {
-            let pixel = this.renderer.mapWorldLocationToPixel(x, y, drawElevation);
-            let blockSize = this.renderer.getTileSize();
-            this.ctx.fillStyle = fill;
-            this.ctx.beginPath();
-            this.ctx.moveTo(pixel.x, pixel.y);
-            this.ctx.lineTo(pixel.x + blockSize, pixel.y + (blockSize / 2));
-            this.ctx.lineTo(pixel.x, pixel.y + blockSize);
-            this.ctx.lineTo(pixel.x - blockSize, pixel.y + (blockSize / 2));
-            this.ctx.fill();
-          }
-        }
-      }
-      this.overview.update(delta);
-      this.rendered = true;
-    }
+    if (this.overview) this.overview.update(delta);
+    if (this.renderer) this.renderer.update(delta);
+    if (this.model) this.renderMainContext(this.bufferContext);
   }
   model: WorldModel;
+  origin: Point3D = new Point3D(0, 0, 0);
+  pixelOffset: Point2D = new Point2D(0, 0);
   setWorldData (p: WorldDataPacket) {
     // if world doesn't exist, create it
     if (!this.model) this.model = new WorldModel();
     this.model = p.world;
 
-    this.renderer.setWorldOrigin(this.model.width / 2, this.model.height / 2, 128);
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
-    this.shadow.appendChild(this.canvas);
-
     this.overview = new WorldOverview(this.model);
     this.shadow.appendChild(this.overview);
+
+    this.origin.x = this.model.width / 2;
+    this.origin.y = this.model.height / 2;
+    this.origin.z = 128;
+
+    this.buffer.width = this.model.width * this.TILE_SIZE + this.model.height * this.TILE_SIZE;
+    this.buffer.height = this.model.height * this.TILE_SIZE + this.model.width * (this.TILE_SIZE / 2);
+    this.draw(this.bufferContext);
   }
   getLocationComponent (serial: string) {
       for (let l of this.components) {
@@ -270,15 +204,126 @@ export default class World extends Component {
     return x >= 0 && x < this.model.width && y >= 0 && y < this.model.height;
   }
 
-  onZoom (e: MouseWheelEvent) {
-    console.log(e.wheelDelta, e.wheelDeltaX, e.wheelDeltaY);
-    if (e.wheelDelta > 0) {
-      this.renderer.zoomIn();
-      this.rendered = false;
-    } else {
-      this.renderer.zoomOut();
-      this.rendered = false;
+  /**
+   * Draw
+   */
+
+  draw (ctx: CanvasRenderingContext2D) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    for (let y = 0; y < this.model.height; y++) {
+      for (let x = 0; x < this.model.width; x++) {
+        let location = this.model.map[x][y];
+        if (!location.land) continue;
+
+        // colour
+        ctx.fillStyle = `rgba(0,0,0,0)`;
+        switch (location.biome) {
+          case BIOMES.VOID:
+            ctx.fillStyle = `rgba(10,10,10,1)`;
+            break;
+          case BIOMES.TUNDRA:
+            ctx.fillStyle = `rgba(230,230,230,1)`;
+            break;
+          case BIOMES.DESERT:
+            ctx.fillStyle = `rgba(93,79,69,1)`;
+            break;
+          case BIOMES.FOREST:
+            ctx.fillStyle = `rgba(34,139,34,1)`;
+            break;
+          case BIOMES.GRASSLAND:
+            ctx.fillStyle = `rgba(124,252,0,1)`;
+            break;
+          case BIOMES.HEATHLAND:
+            ctx.fillStyle = `rgba(138,43,226,1)`;
+            break;
+          case BIOMES.SAVANNA:
+            ctx.fillStyle = `rgba(210,129,86,1)`;
+            break;
+          case BIOMES.MIRE:
+            ctx.fillStyle = `rgba(62,68,60,1)`;
+            break;
+          case BIOMES.RIVER:
+            ctx.fillStyle = `rgba(0,0,81,1)`;
+            break;
+          case BIOMES.LAKE:
+            ctx.fillStyle = `rgba(0,0,201,1)`;
+            break;
+          case BIOMES.SEA:
+            ctx.fillStyle = `rgba(0,0,148,1)`;
+            break;
+          case BIOMES.HILLS:
+            ctx.fillStyle = `rgba(102,204,0,1)`;
+            break;
+          case BIOMES.MOUNTAINS:
+            ctx.fillStyle = `rgba(150,141,153,1)`;
+            break;
+        }
+
+        // elevation
+        let drawElevation = location.elevation;
+        if (location.biome === BIOMES.RIVER
+          || location.biome === BIOMES.LAKE
+          || location.biome === BIOMES.SEA) drawElevation = 64;
+
+        // draw
+        const point = this.getPoint(location.x, location.y, drawElevation);
+        ctx.beginPath();
+        ctx.moveTo(point.x, point.y);
+        ctx.lineTo(point.x + this.TILE_SIZE, point.y + (this.TILE_SIZE / 2));
+        ctx.lineTo(point.x, point.y + this.TILE_SIZE);
+        ctx.lineTo(point.x - this.TILE_SIZE, point.y + (this.TILE_SIZE / 2));
+        ctx.fill();
+      }
     }
+  }
+  renderMainContext (ctx: CanvasRenderingContext2D) {
+    this.mainContext.clearRect(0, 0, this.mainContext.canvas.width, this.mainContext.canvas.height);
+
+    const originPoint = this.getPoint(this.origin.x, this.origin.y, this.origin.z);
+    const wView = this.mainContext.canvas.width * this.zoomFactor;
+    const hView = this.mainContext.canvas.height * this.zoomFactor;
+
+    this.mainContext.drawImage(ctx.canvas,
+      originPoint.x - this.pixelOffset.x - (wView / 2),
+      originPoint.y - this.pixelOffset.y - (hView / 2),
+      wView,
+      hView,
+      0,
+      0,
+      this.mainContext.canvas.width,
+      this.mainContext.canvas.height
+    );
+  }
+  TILE_SIZE = 12;
+  getPoint (x: number, y: number, z: number) {
+    let pixelX = x * this.TILE_SIZE - y * this.TILE_SIZE + (this.origin.x * this.TILE_SIZE + this.origin.y * this.TILE_SIZE);
+    let pixelY = y * (this.TILE_SIZE / 2) + x * (this.TILE_SIZE / 2) - z * (this.TILE_SIZE / 4);
+    return new Point2D(pixelX, pixelY);
+  }
+  getLocationAtPixel (x: number, y: number) {
+    let lx = Math.floor(x / this.TILE_SIZE);
+    if (lx > this.model.width) lx = this.model.width;
+    if (lx < 0) lx = 0;
+    let ly = Math.floor(y / this.TILE_SIZE);
+    if (ly > this.model.height) ly = this.model.height;
+    if (ly < 0) ly = 0;
+    return this.model.map[lx][ly];
+  }
+  zoomFactor = 1.0;
+  onZoom (e: MouseWheelEvent) {
+    if (e.wheelDelta > 0 && this.zoomFactor > .2) {
+      this.zoomFactor = this.zoomFactor - .1;
+    } else if (e.wheelDelta < 0 && this.zoomFactor < 4) {
+      this.zoomFactor = this.zoomFactor + .1;
+    }
+
+    // normalize
+    if (this.zoomFactor < .1) this.zoomFactor = 0.1;
+    if (this.zoomFactor > 4) this.zoomFactor = 4;
+
+    // chop off excess digits
+    this.zoomFactor = parseFloat(this.zoomFactor.toFixed(2));
+    console.log(this.zoomFactor, this.origin, this.pixelOffset);
   }
   onMoveStart (e: MouseEvent) {
     this.clientIsMoving = true;

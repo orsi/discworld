@@ -44,7 +44,10 @@ export function create (seed: string, width: number, height: number) {
   for (let x = 0; x < width; x++) {
     model.map[x] = [];
     for (let y = 0; y < height; y++) {
-      model.map[x][y] = new WorldLocation();
+      const loc = new WorldLocation();
+      loc.x = x;
+      loc.y = y;
+      model.map[x][y] = loc;
     }
   }
   generator.generateLand(model);

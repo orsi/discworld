@@ -12,8 +12,7 @@ export default class WorldRenderer {
   height: number;
   originPixel: Point2D = new Point2D(0, 0);
   originWorld: Point3D = new Point3D(0, 0, 0);
-  zoomScale = 1;
-  BLOCK_SIZE = 4;
+  BLOCK_SIZE = 32;
   REGION_SIZE = this.BLOCK_SIZE * 32;
   constructor (controller: World, width: number, height: number) {
     this.controller = controller;
@@ -44,7 +43,7 @@ export default class WorldRenderer {
                 + this.originPixel.x;
     let pixelY = (y - this.originWorld.y) * (this.getTileSize() / 2)
                 + (x - this.originWorld.x) * (this.getTileSize() / 2)
-                - (z - this.originWorld.z)
+                - (z - this.originWorld.z) * (this.getTileSize() / 4)
                 + this.originPixel.y;
     return new Point2D(pixelX, pixelY);
   }
@@ -67,13 +66,7 @@ export default class WorldRenderer {
     };
   }
   getTileSize () {
-    return this.BLOCK_SIZE * this.zoomScale;
-  }
-  zoomIn () {
-    if (this.zoomScale < 6) this.zoomScale = this.zoomScale + 0.1;
-  }
-  zoomOut () {
-    if (this.zoomScale > 0.2) this.zoomScale = this.zoomScale - 0.1;
+    return this.BLOCK_SIZE;
   }
   setSize (width: number, height: number) {
     let deltaX = this.width - width;
