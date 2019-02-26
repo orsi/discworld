@@ -216,46 +216,46 @@ export default class World extends Component {
         if (!location.land) continue;
 
         // colour
-        ctx.fillStyle = `rgba(0,0,0,0)`;
+        ctx.fillStyle = `hsla(0,0,0,0)`;
         switch (location.biome) {
           case BIOMES.VOID:
-            ctx.fillStyle = `rgba(10,10,10,1)`;
+            ctx.fillStyle = `hsla(10,0%,0%,1)`;
             break;
           case BIOMES.TUNDRA:
-            ctx.fillStyle = `rgba(230,230,230,1)`;
+            ctx.fillStyle = `hsla(230,100%,100%,1)`;
             break;
           case BIOMES.DESERT:
-            ctx.fillStyle = `rgba(93,79,69,1)`;
+            ctx.fillStyle = `hsla(60,75%,35%,1)`;
             break;
           case BIOMES.FOREST:
-            ctx.fillStyle = `rgba(34,139,34,1)`;
+            ctx.fillStyle = `hsla(125,50%,25%,1)`;
             break;
           case BIOMES.GRASSLAND:
-            ctx.fillStyle = `rgba(124,252,0,1)`;
+            ctx.fillStyle = `hsla(125,100%,45%,1)`;
             break;
           case BIOMES.HEATHLAND:
-            ctx.fillStyle = `rgba(138,43,226,1)`;
+            ctx.fillStyle = `hsla(138,43%,60%,1)`;
             break;
           case BIOMES.SAVANNA:
-            ctx.fillStyle = `rgba(210,129,86,1)`;
+            ctx.fillStyle = `hsla(75,75%,75%,1)`;
             break;
           case BIOMES.MIRE:
-            ctx.fillStyle = `rgba(62,68,60,1)`;
+            ctx.fillStyle = `hsla(200,80%,25%,1)`;
             break;
           case BIOMES.RIVER:
-            ctx.fillStyle = `rgba(0,0,81,1)`;
+            ctx.fillStyle = `hsla(220,100%,75%,1)`;
             break;
           case BIOMES.LAKE:
-            ctx.fillStyle = `rgba(0,0,201,1)`;
+            ctx.fillStyle = `hsla(245,100%,50%,1)`;
             break;
           case BIOMES.SEA:
-            ctx.fillStyle = `rgba(0,0,148,1)`;
+            ctx.fillStyle = `hsla(245,1000%,25%,1)`;
             break;
           case BIOMES.HILLS:
-            ctx.fillStyle = `rgba(102,204,0,1)`;
+            ctx.fillStyle = `hsla(85,100%,30%,1)`;
             break;
           case BIOMES.MOUNTAINS:
-            ctx.fillStyle = `rgba(150,141,153,1)`;
+            ctx.fillStyle = `hsla(60,20%,60%,1)`;
             break;
         }
 
