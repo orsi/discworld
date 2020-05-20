@@ -62,7 +62,7 @@ function update () {
   lastUpdate = now;
 
   if (ticks % 100 === 0) {
-    console.log(`update >> delta: ${delta}ms, acc: ${accumulator}`);
+    // console.log(`update >> delta: ${delta}ms, acc: ${accumulator}`);
   }
 
   // update state -- 30tps
