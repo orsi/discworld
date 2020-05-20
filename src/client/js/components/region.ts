@@ -26,4 +26,4 @@ export default class Region extends Component {
         this.style.display = 'inline-block';
     }
 }
-customElements.define('reverie-region', Region);
+customElements.define('discworld-region', Region);

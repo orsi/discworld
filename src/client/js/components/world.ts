@@ -1,5 +1,5 @@
 /** Services */
-import * as server from '../reverieServer';
+import * as server from '../discworldServer';
 
 /** Dependencies */
 import Component from './component';
@@ -397,4 +397,4 @@ export default class World extends Component {
     return theta >= min && theta <= max;
   }
 }
-customElements.define('reverie-world', World);
+customElements.define('discworld-world', World);

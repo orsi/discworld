@@ -1,7 +1,7 @@
 /**
  * Terminal Service
  * This provides small functionality for executing
- * commands while Reverie is running.
+ * commands while Discworld is running.
  */
 let inputBuffer: (string | Buffer)[] = [];
 if (process.stdin.isTTY) {

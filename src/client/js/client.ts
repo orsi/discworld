@@ -1,15 +1,15 @@
 /**
- * Reverie - Client entry point
+ * Discworld - Client entry point
  * Created by Jonathon Orsi
  */
 
 /** Services */
-import * as server from './reverieServer';
+import * as server from './discworldServer';
 
 /** DOM, Components  */
 import * as dom from './dom';
 import Component from './components/component';
-import Reverie from './components/reverie';
+import Discworld from './components/discworld';
 
 /** Data */
 import State from './states/state';
@@ -26,15 +26,15 @@ let currentState: State;
 export let clientEntitySerial: string;
 export let connected: boolean = false;
 export let body: HTMLBodyElement;
-export let reverie: Reverie;
+export let discworld: Discworld;
 
 function init () {
   // give root to dom
   body = <HTMLBodyElement>document.querySelector('body');
 
-  // create reverie
-  reverie = new Reverie();
-  dom.render(reverie);
+  // create discworld
+  discworld = new Discworld();
+  dom.render(discworld);
 
   // register incoming server events
   server.on('client/entity', (p: ClientEntityPacket) => clientEntitySerial = p.serial);
@@ -90,9 +90,9 @@ function run () {
 /** for debug */
 declare global {
   interface Window {
-      reverie: any;
+      discworld: any;
   }
 }
-window.reverie = {};
-window.reverie.pause = pause;
-window.reverie.run = run;
+window.discworld = {};
+window.discworld.pause = pause;
+window.discworld.run = run;

@@ -1,5 +1,5 @@
 /*
- * Reverie
+ * Discworld
  * an online browser-based simulation
  * created by Jonathon Orsi
  * July 17th, 2017
@@ -22,5 +22,5 @@ process.on('SIGINT', function () {
     process.exit();
 });
 
-import * as reverie from './reverie';
-reverie.run();
+import * as discworld from './discworld';
+discworld.run();

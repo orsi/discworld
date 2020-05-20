@@ -1,5 +1,5 @@
 /**
- * Event Service for Reverie.
+ * Event Service for Discworld.
  */
 let queue: { eventName: string; sender: any; args: any[]; }[] = [];
 let events: { [eventName: string]: Function[] } = {};

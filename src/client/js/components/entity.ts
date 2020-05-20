@@ -73,4 +73,4 @@ export default class Entity extends Component {
         }
     }
 }
-customElements.define('reverie-entity', Entity);
+customElements.define('discworld-entity', Entity);

@@ -3,7 +3,7 @@ import * as network from './services/network';
 import * as events from './services/events';
 
 /** Modules */
-import * as reverie from './reverie';
+import * as discworld from './discworld';
 import * as world from './worldSystem';
 
 import Entity from '../common/models/entity';
@@ -42,7 +42,7 @@ export default class Client {
         if (p.message.charAt(0) !== '/' && this.entity) {
             world.onEntityMessage(this.entity, p.message);
         } else {
-            reverie.onClientMessage(this, p.message);
+            discworld.onClientMessage(this, p.message);
         }
     }
     /**
@@ -58,7 +58,7 @@ export default class Client {
         let nextPosition = this.parsePosition(this.entity.x, this.entity.y, p.direction);
 
         // return if entity can't move to position
-        // if (!nextPosition || !reverie.getWorld().canMoveToPosition(nextPosition.x, nextPosition.y)) return;
+        // if (!nextPosition || !discworld.getWorld().canMoveToPosition(nextPosition.x, nextPosition.y)) return;
 
         // send new position to entity
         // client.entity.moveTo(nextPosition);
@@ -108,7 +108,7 @@ export default class Client {
                 y--;
                 break;
         }
-        // let position = reverie.getWorld().getPosition(x, y);
+        // let position = discworld.getWorld().getPosition(x, y);
         // return position;
     }
     onInteract (p: InteractPacket) {

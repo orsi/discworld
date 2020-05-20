@@ -103,4 +103,4 @@ export default class Terminal extends Component {
     }
   }
 }
-customElements.define('reverie-terminal', Terminal);
+customElements.define('discworld-terminal', Terminal);

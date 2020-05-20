@@ -2,7 +2,7 @@ import State from './state';
 
 /** Services */
 import * as client from '../client';
-import * as server from '../reverieServer';
+import * as server from '../discworldServer';
 import * as dom from '../dom';
 
 /** Data */
@@ -19,7 +19,7 @@ export default class Start extends State {
 
         // create title component
         this.title = new TitleComponent();
-        dom.render(this.title, client.reverie);
+        dom.render(this.title, client.discworld);
 
         server.on('world/data', (p: WorldDataPacket) => this.onWorldStatus(p));
         server.on('world/destroy', (p: WorldDestroyPacket) => this.onWorldDestroy(p));
@@ -34,7 +34,7 @@ export default class Start extends State {
         if (!this.world) {
             // create world component
             this.world = new WorldComponent();
-            dom.render(this.world, client.reverie);
+            dom.render(this.world, client.discworld);
             dom.select(this.world).fadeIn(3000);
             this.world.addEventListener('world-click', (e: Event) => this.onWorldClick(<CustomEvent>e));
         }

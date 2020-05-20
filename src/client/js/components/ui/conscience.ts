@@ -31,4 +31,4 @@ export default class Conscience extends Component {
     this.shadow.appendChild(t);
   }
 }
-customElements.define('reverie-conscience', Conscience);
+customElements.define('discworld-conscience', Conscience);

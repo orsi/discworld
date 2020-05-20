@@ -1,10 +1,10 @@
 {
-  "name": "reverie",
+  "name": "discworld",
   "version": "0.0.2",
   "description": "An experiment in online worlds.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jorsi/reverie.git"
+    "url": "https://github.com/jorsi/discworld.git"
   },
   "main": "index.js",
   "scripts": {

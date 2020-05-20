@@ -39,4 +39,4 @@ export default class Thought extends Component {
     }
   }
 }
-customElements.define('reverie-thought', Thought);
+customElements.define('discworld-thought', Thought);

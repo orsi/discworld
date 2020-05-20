@@ -1,5 +1,5 @@
 /**
- * Reverie DOM rendering library.
+ * Discworld DOM rendering library.
  */
 import * as client from './client';
 import Component from './components/component';

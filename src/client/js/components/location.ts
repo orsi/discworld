@@ -71,4 +71,4 @@ export default class Location extends Component {
         // this.style.zIndex = this.location.z + '';
     }
 }
-customElements.define('reverie-location', Location);
+customElements.define('discworld-location', Location);

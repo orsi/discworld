@@ -4,13 +4,13 @@ import Conscience from './ui/conscience';
 
 /** Services */
 import * as dom from '../dom';
-import * as server from '../reverieServer';
+import * as server from '../discworldServer';
 
 /** Data */
 import MessagePacket from '../../../common/data/net/client/message';
 import { default as ServerMessagePacket } from '../../../common/data/net/client/message';
 
-export default class Reverie extends Component {
+export default class Discworld extends Component {
     terminal: Terminal;
     conscience: Conscience;
     constructor () {
@@ -51,4 +51,4 @@ export default class Reverie extends Component {
         `;
     }
 }
-customElements.define('reverie-main', Reverie);
+customElements.define('discworld-main', Discworld);

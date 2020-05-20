@@ -34,7 +34,7 @@ export function getWorld () {
 }
 
 /**
- * Begins running the Reverie application loop.
+ * Begins running the Discworld application loop.
  */
 export function run() {
     isRunning = true;
@@ -69,7 +69,7 @@ let accumulator = 0;
 let deltas: number[] = [];
 let startTime: Date = new Date();
 let lastUpdate = startTime.getTime();
-let reverieLoop: NodeJS.Timer;
+let discworldLoop: NodeJS.Timer;
 
 function getAverageTickTime() {
     let avg = 0;
@@ -83,11 +83,11 @@ function getAverageTickTime() {
 
 /**
  * Initialization constructor for application.
- * @param config Optional configuration object for Reverie application.
+ * @param config Optional configuration object for Discworld application.
  */
 
 function onNetworkConnection (socket: SocketIO.Socket) {
-    console.log(`reverie connection: ${socket.id}`);
+    console.log(`discworld connection: ${socket.id}`);
     // add to client dictionary
     const client = clients[socket.id] = new Client(socket);
 
@@ -169,7 +169,7 @@ function onTerminalCommand (data: any) {
 }
 
 /**
- * Main Reverie application logic loop
+ * Main Discworld application logic loop
  */
 function update() {
     // update times
@@ -193,25 +193,24 @@ function update() {
 
     // asynchronous loop
     if (isRunning) {
-        reverieLoop = setTimeout(() => update(), timePerTick);
+        discworldLoop = setTimeout(() => update(), timePerTick);
     } else {
         // this.exit();
     }
 }
 
 /**
- * Initialization of Reverie
+ * Initialization of Discworld
  */
 
 console.log(`
 =====================================================================
-ooooooooo.                                             o8o
-888    Y88.                                            "
-888   .d88'  .ooooo.  oooo    ooo  .ooooo.  oooo d8b oooo   .ooooo.
-888ooo88P'  d88'  88b   88.  .8'  d88'  88b  888""8P  888  d88'  88b
-888 88b.    888ooo888    88..8'   888ooo888  888      888  888ooo888
-888   88b.  888    .o     888'    888    .o  888      888  888    .o
-o888o  o888o  Y8bod8P'      8'      Y8bod8P' d888b    o888o  Y8bod8P'
+     _ _                             _     _
+    | (_)                           | |   | |
+  __| |_ ___  _____      _____  _ __| | __| |
+ / _  | / __|/ __\\ \\ /\\ / / _ \\| '__| |/ _  |
+| (_| | \\__ \\ (__ \\ V  V / (_) | |  | | (_| |
+ \\__,_|_|___/\\___| \\_/\\_/ \\___/|_|  |_|\\__,_|
 =====================================================================
 (v${version.major}.${version.minor}.${version.patch})`);
     console.log('\n');

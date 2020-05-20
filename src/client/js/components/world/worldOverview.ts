@@ -99,4 +99,4 @@ export default class WorldOverview extends Component {
     }
   }
 }
-customElements.define('reverie-land-grid', WorldOverview);
+customElements.define('discworld-land-grid', WorldOverview);

@@ -24,8 +24,8 @@ export default class Title extends Component {
                 text-align: center;
             }
         </style>
-        Reverie
+        Discworld
         `;
     }
 }
-customElements.define('reverie-title', Title);
+customElements.define('discworld-title', Title);

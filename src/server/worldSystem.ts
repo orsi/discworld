@@ -1,7 +1,7 @@
 /** Services */
 import * as network from './services/network';
 import * as events from './services/events';
-import * as reverie from './reverie';
+import * as discworld from './discworld';
 
 /** Tools */
 import PRNG from '../common/utils/prng';

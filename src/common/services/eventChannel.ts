@@ -1,7 +1,7 @@
 /**
- * Event Manager for Reverie.
+ * Event Manager for Discworld.
  * This class acts as a communications channel
- * between multiple Reverie modules.
+ * between multiple Discworld modules.
  */
 export class EventChannel {
   queue: { event: string; data?: any; }[] = [];
