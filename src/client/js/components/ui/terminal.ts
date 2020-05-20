@@ -39,13 +39,13 @@ export default class Terminal extends Component {
     if (e.ctrlKey || e.altKey || e.metaKey) {
         // do command
     } else {
-        this.onKey(e.key);
+        this.onKey(e.key, e);
     }
     this.render();
   }
   onKeyUp (e: KeyboardEvent) {}
 
-  onKey (key: string) {
+  onKey (key: string, e: KeyboardEvent) {
     if (key === 'ArrowUp') {
       this.prevHistory();
     }
@@ -53,6 +53,7 @@ export default class Terminal extends Component {
       this.nextHistory();
     }
     if (key === 'Backspace') {
+      e.preventDefault(); // prevents browser from leaving page
       this.value = this.value.slice(0, -1);
     }
     if (key === 'Enter') {
