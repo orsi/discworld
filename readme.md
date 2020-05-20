@@ -1,111 +1,34 @@
-# Reverie
-Reverie is a procedurally generated multi-user world simulation.
+# Discworld
 
-## Systems
-* Server
-  * Reverie Server Engine
-  * Communication
-  * Console
-  * Network (Socket.io)
-  * World
-    * Entities
-    * Components
-    * Environments
-    * Tiles
-  * Database
-  * Utilities
-  * Http Server (Express.io)
-* Client
-  * Reverie Client Engine
-  * Communication
-  * World
-    * Entities
-    * Components
-    * Environments
-      * Tiles
-  * Network (Socket.io)
-  * Resources
-  * Input
-    * Keyboard
-      * Terminal
-    * Mouse
-  * Output
-    * Interface
-      * Speech
-      * Thoughts
-      * Interactions
-    * Graphics
-    * Audio
-      * Environment
-      * Effects
+Discworld is a browser-based disc world generator written in Typescript. The backend hosts a web server to serve the frontend client at localhost:3000. Commands are issued through the client to the backend server which generates the map data to send back to the user.
 
-## Design patterns
-#### Singletons  
-Node.js modules make Singletons the default for exports when using an object. `module.exports` presents a public API to other modules, with all code outside of it becoming a shared private space for only the module.
+# Installation
+
+In order to install and run the generator, you can download the repository .zip by clicking the "Clone or Download" button above and extracting the files to a folder, or use the command `git clone https://github.com/jorsi/discworld` in your terminal. Afterwards, from a command line terminal in the project folder enter the following commands:
 
 ```
-// Private
-var entities = ['Player1', 'Enemy45', 'Item12', 'StrangeHut3'];
-function checkStatus (entity) {
-  // Do something private
-}
-
-
-// Public
-module.exports = {
-	region: 'tropical forest',
-  coords: {
-    x: 567,
-    y: 123
-  },
-	getEntities: function () {
-    return entities;
-  }
-}
-```  
-
-*Node.js will cache modules based on the filename, however, typos in require('./Singleton') and require('./singleton') will load two different versions of the same module.*
-
-#### Types  
-Constructor function can be used with Node.js modules to build Custom Types. Attaching a function to `module.exports` will allow outside modules to use the `new CustomType()` syntax to create instances. Privacy outside of the `module.exports` is shared amongst all instance, so private instance variables should be declared syntactically in side the constructor function by a preceding underscore.
-
-```
-var entities = [];
-function getDamageRoll(min, max) {
-  // random roll
-}
-
-module.exports = Entity
-function Entity(id) {
-    this.id = id;     // public
-    this._hitpoints = 55; // private
-}
-User.prototype.isHit = function() {
-	this._hitpoints = getDamageRoll();
-}
+npm install
+npm start
 ```
 
-#### Factories  
-Factories are modules which can used to create specific versions of custom types.
+Discworld can now be accessed with your browser at http://localhost:3000.
 
-```
-/* A Factory Implemented as a Custom Type */
-var Widget = require('./lib/widget');
+# Instructions
 
-var WidgetFactory = module.exports = function WidgetFactory(options) {
-	this.cogs = options.cogs;
-	this.bool = options.bool;
-}
+Discworld will initially show nothing in the browser until a command is typed in to generate a world. The following commands and syntax are:
 
-WidgetFactory.prototype.getRedWidget = function getRedWidget() {
-	var widget = new Widget(this.cogs, this.bool);
-	widget.paintPartA('red');
-	widget.paintPartB('red');
-	widget.paintPartC('red');
-	return widget;
-};
+##### Commands
 
-WidgetFactory.prototype.getBlueWidget = function getBlueWidget() {
-	// ...
-};
-```
+The command line is at the bottom of the screen. You do not need to focus on the command line in order to type -- all keyboard inputs will be directed towards the input.
+
+`/create seed width height`
+Where seed is any single word, phrase, or alphanumeric combination (no spaces), and width/height are numbers. Generally, any width or heights above 1000 will begin to drastically slow down your browser -- a good size is around 256-512 width/height.
+
+`/destroy`
+Destroys the current world and allows you to issue the `/create` command again.
+
+##### Moving the map
+You can move around the map using the mouse by right-clicking the screen in the direction you want to scroll.
+
+##### Zooming in and out
+You can zoom in and out of the map by using the mouse wheel.
