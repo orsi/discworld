@@ -2,6 +2,9 @@
 
 Discworld is a browser-based disc world generator written in Typescript. The backend hosts a web server to serve the frontend client at localhost:3000. Commands are issued through the client to the backend server which generates the map data to send back to the user.
 
+##### Browser Support
+Discworld is created using [Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) and requires a browser that supports them. Discworld works best in Chrome, has some limited zooming in Firefox, and does not work in Safari.
+
 # Installation
 
 In order to install and run the generator, you can download the repository .zip by clicking the "Clone or Download" button above and extracting the files to a folder, or use the command `git clone https://github.com/orsi/discworld` in your terminal. Afterwards, from a command line terminal in the project folder enter the following commands:
