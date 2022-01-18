@@ -309,7 +309,7 @@ export default class World extends Component {
     if (ly < 0) ly = 0;
     return this.model.map[lx][ly];
   }
-  zoomFactor = 1.0;
+  zoomFactor = 4;
   onZoom (e: MouseWheelEvent) {
     if (e.wheelDelta > 0 && this.zoomFactor > .2) {
       this.zoomFactor = this.zoomFactor - .1;
