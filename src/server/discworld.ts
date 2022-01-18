@@ -17,11 +17,10 @@ import WorldDestroyPacket from '../common/data/net/server/worldDestroy';
 import MessagePacket from '../common/data/net/server/serverMessage';
 import ClientEntityPacket from '../common/data/net/server/clientEntity';
 
-
 export const version = {
-    major: 0,
-    minor: 0,
-    patch: 21
+  major: 0,
+  minor: 0,
+  patch: 22,
 };
 
 // root = ~/server/
@@ -29,35 +28,37 @@ console.log('dir', __dirname);
 export const __rootdir = __dirname;
 
 // Main systems
-export function getWorld () {
-    return worldSystem.get();
+export function getWorld() {
+  return worldSystem.get();
 }
 
 /**
  * Begins running the Discworld application loop.
  */
 export function run() {
-    isRunning = true;
-    update();
+  isRunning = true;
+  update();
 }
 /**
  * Exiting process for application.
  */
 export function exit() {
-    process.exit();
+  process.exit();
 }
 /**
  * Dictionary of all connected clients.
  */
 let clients: Dictionary<Client> = {};
-export function getClients () { return clients; }
+export function getClients() {
+  return clients;
+}
 /**
  * Returns a client with given socket id if
  * they are currently connected.
  * @param socketId Socket Id
  */
-export function getClient (socketId: string) {
-    return clients[socketId];
+export function getClient(socketId: string) {
+  return clients[socketId];
 }
 
 // Timer-based properties
@@ -72,13 +73,13 @@ let lastUpdate = startTime.getTime();
 let discworldLoop: NodeJS.Timer;
 
 function getAverageTickTime() {
-    let avg = 0;
-    for (let d of deltas) {
-        avg += d;
-    }
-    avg = avg / deltas.length;
-    if (deltas.length > 10) deltas.pop();
-    return avg;
+  let avg = 0;
+  for (let d of deltas) {
+    avg += d;
+  }
+  avg = avg / deltas.length;
+  if (deltas.length > 10) deltas.pop();
+  return avg;
 }
 
 /**
@@ -86,117 +87,85 @@ function getAverageTickTime() {
  * @param config Optional configuration object for Discworld application.
  */
 
-function onNetworkConnection (socket: SocketIO.Socket) {
-    console.log(`discworld connection: ${socket.id}`);
-    // add to client dictionary
-    const client = clients[socket.id] = new Client(socket);
+function onNetworkConnection(socket: SocketIO.Socket) {
+  console.log(`discworld connection: ${socket.id}`);
+  // add to client dictionary
+  const client = (clients[socket.id] = new Client(socket));
 
-    // send world and entity if exists
-    let world = worldSystem.get();
-    if (world) {
-        client.send(new WorldDataPacket(world));
-        let entity = worldSystem.createEntity(client.socket.handshake.address);
-        client.send(new ClientEntityPacket(entity.serial));
-    }
-
-
+  // send world and entity if exists
+  let world = worldSystem.get();
+  if (world) {
+    client.send(new WorldDataPacket(world));
+    let entity = worldSystem.createEntity(client.socket.handshake.address);
+    client.send(new ClientEntityPacket(entity.serial));
+  }
 }
-function onNetworkDisconnect (...args: any[]) {
-    console.log(...args);
+function onNetworkDisconnect(...args: any[]) {
+  console.log(...args);
 }
-export function onClientMessage (client: Client, message: string) {
-    const words = message.split(' ');
-    if (words.length === 0) return;
-    const command = words.shift();
+export function onClientMessage(client: Client, message: string) {
+  if (!message) {
+    return;
+  }
 
-    switch (command) {
-        case '/create':
-            if (!worldSystem.worldCreated) {
-                if (words.length >= 3) {
-                    const seed = words.shift();
-                    if (!seed) return;
-                    let width = words.shift();
-                    if (!width || isNaN(parseInt(width))) return;
-                    let w = parseInt(width);
-                    let height = words.shift();
-                    if (!height || isNaN(parseInt(height))) return;
-                    let h = parseInt(height);
+  if (worldSystem.worldCreated) {
+    worldSystem.destroy();
+    // broadcast destroy world to all clients
+    network.broadcast(new WorldDestroyPacket());
+  }
 
-                    let model = worldSystem.create(seed, w, h);
-                    client.send(new MessagePacket('You are filled with imagination.'));
+  let width = 250;
+  let height = 250;
+  let model = worldSystem.create(message, width, height);
+  client.send(
+    new MessagePacket("Created new world with '" + message + "' seed.")
+  );
 
-                    // create entities for all connected clients
-                    for (let serial in clients) {
-                        let c = clients[serial];
-                        let entity = worldSystem.createEntity(c.socket.handshake.address);
-                        c.send(new ClientEntityPacket(entity.serial));
-                    }
+  // create entities for all connected clients
+  for (let serial in clients) {
+    let c = clients[serial];
+    let entity = worldSystem.createEntity(c.socket.handshake.address);
+    c.send(new ClientEntityPacket(entity.serial));
+  }
 
-                    // broadcast new world to all clients
-                    network.broadcast(new WorldDataPacket(model));
-                } else {
-                    client.send(new MessagePacket('You can\'t seem to picture anything.'));
-                }
-            } else {
-                client.send(new MessagePacket('You feel a longing for more.'));
-            }
-        break;
-        case '/destroy':
-            if (worldSystem.worldCreated) {
-                worldSystem.destroy();
-                client.send(new MessagePacket('Your mind has become blank.'));
-
-                // broadcast destroy world to all clients
-                network.broadcast(new WorldDestroyPacket());
-            } else {
-                client.send(new MessagePacket('You seem perplexed.'));
-            }
-            break;
-        default:
-            // send to other clients
-            for (let serial in clients) {
-                // if (serial === client.socket.id) continue;
-                let c = clients[serial];
-                c.send(new MessagePacket(`A voice echoes in the distance... "${message}"`));
-            }
-            break;
-    }
+  // broadcast new world to all clients
+  network.broadcast(new WorldDataPacket(model));
 }
-function onTerminalCommand (data: any) {
-    // const entity = this.world.onNewClient();
-    // this.socketEntities[entity.serial] = packet.socket.id;
-    // packet.socket.send('world/playerEntity', new ServerPackets.PlayerEntity(entity));
+function onTerminalCommand(data: any) {
+  // const entity = this.world.onNewClient();
+  // this.socketEntities[entity.serial] = packet.socket.id;
+  // packet.socket.send('world/playerEntity', new ServerPackets.PlayerEntity(entity));
 }
 
 /**
  * Main Discworld application logic loop
  */
 function update() {
-    // update times
-    serverTicks++;
-    const now = new Date().getTime();
-    const delta = now - lastUpdate;
-    lastUpdate = now;
+  // update times
+  serverTicks++;
+  const now = new Date().getTime();
+  const delta = now - lastUpdate;
+  lastUpdate = now;
 
-    // process server timers
-    timers.process(delta);
+  // process server timers
+  timers.process(delta);
 
-    // process event queue
-    events.process();
+  // process event queue
+  events.process();
 
-    // update modules
-    accumulator += delta;
-    while (accumulator >= timePerTick) {
-        worldSystem.update(timePerTick);
-        accumulator -= timePerTick;
-    }
+  // update modules
+  accumulator += delta;
+  while (accumulator >= timePerTick) {
+    worldSystem.update(timePerTick);
+    accumulator -= timePerTick;
+  }
 
-    // asynchronous loop
-    if (isRunning) {
-        discworldLoop = setTimeout(() => update(), timePerTick);
-    } else {
-        // this.exit();
-    }
+  // asynchronous loop
+  if (isRunning) {
+    discworldLoop = setTimeout(() => update(), timePerTick);
+  } else {
+    // this.exit();
+  }
 }
 
 /**
@@ -213,15 +182,19 @@ console.log(`
  \\__,_|_|___/\\___| \\_/\\_/ \\___/|_|  |_|\\__,_|
 =====================================================================
 (v${version.major}.${version.minor}.${version.patch})`);
-    console.log('\n');
+console.log('\n');
 
 // Load all the scripts in the scripts folder
 // console.log('loading command scripts...');
 // const scripts = ScriptLoader.load(this.rootDirectory + '/scripts');
 // console.log('...finished loading scripts');
 
+worldSystem.create('reverie', 250, 250);
+
 // network events
-network.on('connection', (socket: SocketIO.Socket) => onNetworkConnection(socket));
+network.on('connection', (socket: SocketIO.Socket) =>
+  onNetworkConnection(socket)
+);
 network.on('disconnect', (data: any) => onNetworkDisconnect(data));
 
 // internal events
