@@ -31,7 +31,7 @@ export default class Title extends Component {
             }
         </style>
         <h1>Discworld</h1>
-        <div><small>Type and press enter.</small></div>
+        <div><small>Type and press enter. Right-click to move. Mouse wheel to zoom.</small></div>
         `;
     }
 }
