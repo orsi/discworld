@@ -17,14 +17,21 @@ export default class Title extends Component {
                 top: 60px;
                 right: 0;
                 left: 0;
-                padding: 16px;
+            }
+            h1 {
                 font-family: 'Courier New';
                 font-size: 2em;
                 font-weight: 100;
                 text-align: center;
+                margin: 0;
+            }
+            div {
+                font-size: .8em;
+                text-align: center;
             }
         </style>
-        Discworld
+        <h1>Discworld</h1>
+        <div><small>Type and press enter.</small></div>
         `;
     }
 }
