@@ -29,10 +29,11 @@ export default class WorldOverview extends Component {
         right: 0;
         width: ${this.model.width}px;
         height: ${this.model.height}px;
+        max-width: 120px;
+        max-height: 120px;
       }
       canvas {
         display: inline-block;
-        background-color: rgba(0,0,0,.6);
         width: 100%;
         height: 100%;
       }
@@ -52,7 +53,7 @@ export default class WorldOverview extends Component {
           let fill = `rgba(0,0,0,0)`;
           switch (location.biome) {
             case BIOMES.VOID:
-              fill = `#171717`;
+              // fill = `#171717`;
               break;
             case BIOMES.TUNDRA:
               fill = `#b3b5d8`;

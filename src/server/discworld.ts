@@ -114,8 +114,8 @@ export function onClientMessage(client: Client, message: string) {
     network.broadcast(new WorldDestroyPacket());
   }
 
-  let width = 250;
-  let height = 250;
+  let width = 500;
+  let height = 500;
   let model = worldSystem.create(message, width, height);
   client.send(
     new MessagePacket("Created new world with '" + message + "' seed.")
@@ -189,7 +189,7 @@ console.log('\n');
 // const scripts = ScriptLoader.load(this.rootDirectory + '/scripts');
 // console.log('...finished loading scripts');
 
-worldSystem.create('reverie', 250, 250);
+worldSystem.create('reverie', 500, 500);
 
 // network events
 network.on('connection', (socket: SocketIO.Socket) =>

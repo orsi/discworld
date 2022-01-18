@@ -310,17 +310,17 @@ export default class World extends Component {
     if (ly < 0) ly = 0;
     return this.model.map[lx][ly];
   }
-  zoomFactor = 4;
+  zoomFactor = 6;
   onZoom (e: MouseWheelEvent) {
     if (e.wheelDelta > 0 && this.zoomFactor > .2) {
       this.zoomFactor = this.zoomFactor - .1;
-    } else if (e.wheelDelta < 0 && this.zoomFactor < 4) {
+    } else if (e.wheelDelta < 0 && this.zoomFactor < 6) {
       this.zoomFactor = this.zoomFactor + .1;
     }
 
     // normalize
     if (this.zoomFactor < .1) this.zoomFactor = 0.1;
-    if (this.zoomFactor > 4) this.zoomFactor = 4;
+    if (this.zoomFactor > 6) this.zoomFactor = 6;
 
     // chop off excess digits
     this.zoomFactor = parseFloat(this.zoomFactor.toFixed(2));
