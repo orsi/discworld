@@ -7,18 +7,18 @@ export default class WorldOverview extends Component {
   canvas: HTMLCanvasElement = document.createElement('canvas');
   ctx: CanvasRenderingContext2D = this.canvas.getContext('2d')!;
   model: WorldModel;
-  constructor  (model: WorldModel) {
+  constructor(model: WorldModel) {
     super();
     this.model = model;
 
     this.canvas.width = this.model.width;
     this.canvas.height = this.model.height;
   }
-  connectedCallback () {
-      super.connectedCallback();
-      this.shadow.appendChild(this.canvas);
+  connectedCallback() {
+    super.connectedCallback();
+    this.shadow.appendChild(this.canvas);
   }
-  get template () {
+  get template() {
     const style = `
     <style>
       :host {
@@ -42,7 +42,7 @@ export default class WorldOverview extends Component {
   }
 
   rendered = false;
-  update (delta: number) {
+  update(delta: number) {
     if (!this.rendered) {
       for (let y = 0; y < this.model.height; y++) {
         for (let x = 0; x < this.model.width; x++) {
@@ -52,43 +52,43 @@ export default class WorldOverview extends Component {
           let fill = `rgba(0,0,0,0)`;
           switch (location.biome) {
             case BIOMES.VOID:
-              fill = `rgba(10,10,10,1)`;
+              fill = `#171717`;
               break;
             case BIOMES.TUNDRA:
-              fill = `rgba(230,230,230,1)`;
+              fill = `#b3b5d8`;
               break;
             case BIOMES.DESERT:
-              fill = `rgba(93,79,69,1)`;
+              fill = `#ebae87`;
               break;
             case BIOMES.FOREST:
-              fill = `rgba(34,139,34,1)`;
+              fill = `#24561e`;
               break;
             case BIOMES.GRASSLAND:
-              fill = `rgba(124,252,0,1)`;
+              fill = `#34b30b`;
               break;
             case BIOMES.HEATHLAND:
-              fill = `rgba(138,43,226,1)`;
+              fill = `#2a83c3`;
               break;
             case BIOMES.SAVANNA:
-              fill = `rgba(210,129,86,1)`;
+              fill = `#b33839`;
               break;
             case BIOMES.MIRE:
-              fill = `rgba(62,68,60,1)`;
+              fill = `#187a65`;
               break;
             case BIOMES.RIVER:
-              fill = `rgba(23,70,81,1)`;
+              fill = `#348d9f`;
               break;
             case BIOMES.LAKE:
-              fill = `rgba(104,120,201,1)`;
+              fill = `#184464`;
               break;
             case BIOMES.SEA:
-              fill = `rgba(0,105,148,1)`;
+              fill = `#082a42`;
               break;
             case BIOMES.HILLS:
-              fill = `rgba(102,204,0,1)`;
+              fill = `#13b569`;
               break;
             case BIOMES.MOUNTAINS:
-              fill = `rgba(150,141,153,1)`;
+              fill = `#915143`;
               break;
           }
           this.ctx.fillStyle = fill;

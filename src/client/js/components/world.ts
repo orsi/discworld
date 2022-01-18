@@ -216,48 +216,49 @@ export default class World extends Component {
         if (!location.land) continue;
 
         // colour
-        ctx.fillStyle = `hsla(0,0,0,0)`;
+        let fill = `#171717`;
         switch (location.biome) {
           case BIOMES.VOID:
-            ctx.fillStyle = `hsla(10,0%,0%,1)`;
+            fill = `#171717`;
             break;
           case BIOMES.TUNDRA:
-            ctx.fillStyle = `hsla(230,100%,100%,1)`;
+            fill = `#b3b5d8`;
             break;
           case BIOMES.DESERT:
-            ctx.fillStyle = `hsla(60,75%,35%,1)`;
+            fill = `#ebae87`;
             break;
           case BIOMES.FOREST:
-            ctx.fillStyle = `hsla(125,50%,25%,1)`;
+            fill = `#24561e`;
             break;
           case BIOMES.GRASSLAND:
-            ctx.fillStyle = `hsla(125,100%,45%,1)`;
+            fill = `#34b30b`;
             break;
           case BIOMES.HEATHLAND:
-            ctx.fillStyle = `hsla(138,43%,60%,1)`;
+            fill = `#2a83c3`;
             break;
           case BIOMES.SAVANNA:
-            ctx.fillStyle = `hsla(75,75%,75%,1)`;
+            fill = `#b33839`;
             break;
           case BIOMES.MIRE:
-            ctx.fillStyle = `hsla(200,80%,25%,1)`;
+            fill = `#187a65`;
             break;
           case BIOMES.RIVER:
-            ctx.fillStyle = `hsla(220,100%,75%,1)`;
+            fill = `#348d9f`;
             break;
           case BIOMES.LAKE:
-            ctx.fillStyle = `hsla(245,100%,50%,1)`;
+            fill = `#184464`;
             break;
           case BIOMES.SEA:
-            ctx.fillStyle = `hsla(245,1000%,25%,1)`;
+            fill = `#082a42`;
             break;
           case BIOMES.HILLS:
-            ctx.fillStyle = `hsla(85,100%,30%,1)`;
+            fill = `#13b569`;
             break;
           case BIOMES.MOUNTAINS:
-            ctx.fillStyle = `hsla(60,20%,60%,1)`;
+            fill = `#915143`;
             break;
         }
+        ctx.fillStyle = fill;
 
         // elevation
         let drawElevation = location.elevation;
